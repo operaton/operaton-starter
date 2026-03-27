@@ -1,0 +1,39 @@
+# BMAD and agent directories
+_bmad/
+.agent/
+.claude/
+.gemini/skills/
+.github/skills/
+
+# Build artifacts
+target/
+dist/
+build/
+*.class
+*.jar
+*.war
+*.zip
+
+# Node modules
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Maven
+.mvn/wrapper/maven-wrapper.jar
+.mvn/wrapper/maven-wrapper.properties
+
+# Gradle
+.gradle/
+gradle/wrapper/gradle-wrapper.jar
+
+# OS
+Thumbs.db
