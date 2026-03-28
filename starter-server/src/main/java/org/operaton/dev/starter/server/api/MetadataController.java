@@ -1,5 +1,6 @@
 package org.operaton.dev.starter.server.api;
 
+import org.operaton.dev.starter.server.config.StarterProperties;
 import org.operaton.dev.starter.server.model.*;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,15 +17,15 @@ import java.util.List;
 @RestController
 public class MetadataController {
 
-    private static final Metadata METADATA = buildMetadata();
+    private final StarterProperties properties;
+
+    public MetadataController(StarterProperties properties) {
+        this.properties = properties;
+    }
 
     @GetMapping(value = "/api/v1/metadata", produces = MediaType.APPLICATION_JSON_VALUE)
     public Metadata getMetadata() {
-        return METADATA;
-    }
-
-    private static Metadata buildMetadata() {
-        return new Metadata(
+        var metadata = new Metadata(
                 List.of(buildProcessApplication(), buildProcessArchive()),
                 List.of(
                         new BuildSystemInfo("MAVEN", "Maven"),
@@ -33,6 +34,11 @@ public class MetadataController {
                 ),
                 buildGlobalOptions()
         );
+        String defaultGroupId = properties.defaults().groupId();
+        if (defaultGroupId != null && !defaultGroupId.isBlank()) {
+            metadata.setDefaultGroupId(defaultGroupId);
+        }
+        return metadata;
     }
 
     private static ProjectTypeInfo buildProcessApplication() {

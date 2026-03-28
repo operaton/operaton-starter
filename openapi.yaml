@@ -158,6 +158,13 @@ components:
             $ref: "#/components/schemas/BuildSystemInfo"
         globalOptions:
           $ref: "#/components/schemas/GlobalOptions"
+        defaultGroupId:
+          type: string
+          description: >
+            Operator-configured default Group ID. Present only when the self-hosted instance
+            sets STARTER_DEFAULTS_GROUP_ID. Clients should pre-fill the groupId field with
+            this value when present.
+          example: com.example
 
     ProjectTypeInfo:
       type: object

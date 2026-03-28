@@ -9,6 +9,12 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 public class GenerationEngineConfig {
 
+    private final StarterProperties properties;
+
+    public GenerationEngineConfig(StarterProperties properties) {
+        this.properties = properties;
+    }
+
     @Bean
     public GenerationEngine generationEngine() {
         return new GenerationEngine();
@@ -19,11 +25,9 @@ public class GenerationEngineConfig {
         return new WebMvcConfigurer() {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
+                String[] origins = properties.cors().allowedOrigins().toArray(String[]::new);
                 registry.addMapping("/api/**")
-                        .allowedOriginPatterns(
-                                "https://start.operaton.org",
-                                "http://localhost:[*]"
-                        )
+                        .allowedOriginPatterns(origins)
                         .allowedMethods("GET", "POST", "OPTIONS")
                         .allowedHeaders("*");
             }

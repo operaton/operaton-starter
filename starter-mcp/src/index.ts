@@ -9,7 +9,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { z } from 'zod'
 
-const DEFAULT_BASE_URL = process.env.OPERATON_STARTER_BASE_URL ?? 'https://start.operaton.org'
+const DEFAULT_BASE_URL = process.env.OPERATON_STARTER_URL ?? 'https://start.operaton.org'
 
 const server = new McpServer({
   name: 'operaton-starter-mcp',

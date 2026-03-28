@@ -11,7 +11,8 @@
     "type-check": "vue-tsc --build --force",
     "lint": "eslint . --fix",
     "format": "prettier --write src/",
-    "test:unit": "vitest run"
+    "test:unit": "vitest run",
+    "generate:api": "echo 'API types are in src/generated/'"
   },
   "dependencies": {
     "vue": "^3.5.13",
@@ -34,6 +35,8 @@
     "typescript": "~5.6.3",
     "vite": "^6.0.1",
     "vitest": "^2.1.8",
-    "vue-tsc": "^2.1.10"
+    "vue-tsc": "^2.1.10",
+    "tailwindcss": "^3.4.0",
+    "autoprefixer": "^10.4.20"
   }
 }

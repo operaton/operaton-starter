@@ -1,0 +1,28 @@
+{
+  "name": "operaton-starter",
+  "version": "0.1.0",
+  "description": "CLI for generating Operaton BPM projects via npx operaton-starter",
+  "type": "module",
+  "bin": {
+    "operaton-starter": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/index.js"
+  },
+  "keywords": ["operaton", "bpm", "cli", "project-generator"],
+  "license": "Apache-2.0",
+  "dependencies": {
+    "commander": "^12.1.0",
+    "adm-zip": "^0.5.16"
+  },
+  "devDependencies": {
+    "@types/adm-zip": "^0.5.7",
+    "@types/node": "^22.9.0",
+    "typescript": "~5.6.3"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

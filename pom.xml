@@ -33,6 +33,7 @@
     <module>starter-archetypes</module>
     <module>starter-web</module>
     <module>starter-mcp</module>
+    <module>starter-cli</module>
   </modules>
 
   <properties>

@@ -1,0 +1,117 @@
+# generated: 2026-03-28
+# last_updated: 2026-03-28
+# project: operaton-starter
+# project_key: NOKEY
+# tracking_system: file-system
+# story_location: docs/bmad/implementation-artifacts
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Epic Status Transitions:
+#   - backlog → in-progress: Automatically when first story is created (via create-story)
+#   - in-progress → done: Manually when all stories reach 'done' status
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created in stories folder
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review (via Dev's code-review workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when first story is created
+# - Stories can be worked in parallel if team capacity allows
+# - SM typically creates next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+
+generated: 2026-03-28
+last_updated: 2026-03-28
+project: operaton-starter
+project_key: NOKEY
+tracking_system: file-system
+story_location: docs/bmad/implementation-artifacts
+
+development_status:
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Epic 1: Monorepo Foundation & API Contract
+  # ─────────────────────────────────────────────────────────────────────────
+  epic-1: done
+
+  1-1-bootstrap-monorepo-structure: done
+  1-2-author-openapi-spec-metadata-schema: done
+  1-3-github-actions-ci-pipeline: done
+
+  epic-1-retrospective: optional
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Epic 2: Core Generation Engine
+  # ─────────────────────────────────────────────────────────────────────────
+  epic-2: done
+
+  2-1-jte-spike-validate-template-engine-zero-spring-constraint: done
+  2-2-domain-model-project-configuration: done
+  2-3-process-application-generation-maven: done
+  2-4-process-application-generation-gradle-groovy-kotlin-dsl: done
+  2-5-process-archive-generation: done
+  2-6-generated-project-extras-readme-ci-docker-compose-dependabot-renovate: done
+  2-7-ci-test-matrix-validate-all-6-combinations: done
+
+  epic-2-retrospective: optional
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Epic 3: REST API — Programmatic Project Generation
+  # ─────────────────────────────────────────────────────────────────────────
+  epic-3: done
+
+  3-1-wire-generation-engine-into-rest-api-post-api-v1-generate: done
+  3-2-metadata-endpoint-get-api-v1-metadata: done
+  3-3-rate-limiting-error-handling-health-endpoint: done
+  3-4-openapi-docs-endpoint-spec-freeze-enforcement: done
+
+  epic-3-retrospective: optional
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Epic 4: Web UI — Browser-Based Project Generation
+  # ─────────────────────────────────────────────────────────────────────────
+  epic-4: done
+
+  4-1-design-token-extraction-vue-app-foundation: done
+  4-2-project-gallery-view: done
+  4-3-configuration-form-rendering: done
+  4-4-project-generation-download: done
+  4-5-live-file-tree-preview: done
+  4-6-download-ide-deep-links-shareable-config-urls: done
+  4-7-keyboard-navigation-wcag-2-1-aa-accessibility: done
+
+  epic-4-retrospective: optional
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Epic 5: CLI & MCP — Terminal and AI-Native Access
+  # ─────────────────────────────────────────────────────────────────────────
+  epic-5: done
+
+  5-1-cli-npx-operaton-starter-flag-mode-pipe-mode: done
+  5-2-mcp-npm-package-operaton-starter-mcp: done
+
+  epic-5-retrospective: optional
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Epic 6: Self-Hosting & Production Operations
+  # ─────────────────────────────────────────────────────────────────────────
+  epic-6: done
+
+  6-1-docker-image-build-configure-publish: done
+  6-2-environment-variable-configuration-self-hosting-validation: done
+
+  epic-6-retrospective: optional
