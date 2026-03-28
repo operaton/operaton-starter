@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Operaton Starter — Design Direction Mockups</title>
+<style>
+  :root {
+    --primary: #184AEF;
+    --primary-dark: #0a2dbf;
+    --primary-light: #4a70f5;
+    --secondary: #27F3E0;
+    --neutral-0: #ffffff;
+    --neutral-50: #F5F0F3;
+    --neutral-200: #E3D4DD;
+    --neutral-500: #666666;
+    --neutral-900: #000000;
+    --radius: 0.5rem;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Inter, system-ui, -apple-system, sans-serif; background: #1a1a2e; color: white; }
+
+  /* Nav */
+  .nav { display: flex; gap: 1rem; padding: 1rem 2rem; background: #12122a; border-bottom: 1px solid #333; flex-wrap: wrap; }
+  .nav-btn {
+    padding: 0.5rem 1rem; border-radius: var(--radius); font-size: 0.875rem; cursor: pointer; border: none; font-family: inherit;
+    background: #2a2a4a; color: #aaa;
+    transition: all 0.2s;
+  }
+  .nav-btn.active { background: var(--primary); color: white; }
+  .nav-title { font-size: 1.25rem; font-weight: 700; color: white; margin-right: 1rem; align-self: center; }
+
+  /* Mockup frames */
+  .mockup { display: none; }
+  .mockup.active { display: block; }
+
+  /* Browser chrome wrapper */
+  .browser {
+    margin: 2rem auto;
+    max-width: 1200px;
+    border-radius: 0.75rem;
+    overflow: hidden;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.5);
+  }
+  .browser-bar {
+    background: #2a2a2a;
+    padding: 0.75rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .dots { display: flex; gap: 0.5rem; }
+  .dot { width: 12px; height: 12px; border-radius: 50%; }
+  .dot-r { background: #ff5f57; }
+  .dot-y { background: #febc2e; }
+  .dot-g { background: #28c840; }
+  .url-bar {
+    flex: 1; background: #3a3a3a; border-radius: 0.375rem;
+    padding: 0.375rem 0.75rem; font-size: 0.8125rem; color: #aaa; font-family: monospace;
+  }
+
+  /* ── DIRECTION 1: Gallery View ── */
+  .d1-shell { background: var(--neutral-50); min-height: 600px; }
+  .d1-header {
+    background: white; border-bottom: 1px solid var(--neutral-200);
+    padding: 0 2rem; height: 64px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .d1-logo { display: flex; align-items: center; gap: 0.5rem; }
+  .d1-logo-mark { width: 32px; height: 32px; background: var(--primary); border-radius: 0.375rem; }
+  .d1-logo-text { font-size: 1.125rem; font-weight: 700; color: var(--neutral-900); }
+  .d1-logo-sub { font-weight: 400; color: var(--neutral-500); }
+  .d1-nav-links { display: flex; gap: 1.5rem; }
+  .d1-nav-link { font-size: 0.875rem; color: var(--neutral-500); text-decoration: none; }
+  .d1-hero {
+    text-align: center; padding: 4rem 2rem 3rem;
+    background: linear-gradient(180deg, white 0%, var(--neutral-50) 100%);
+    border-bottom: 1px solid var(--neutral-200);
+  }
+  .d1-hero h1 { font-size: 2.25rem; font-weight: 700; color: var(--neutral-900); margin-bottom: 0.75rem; }
+  .d1-hero p { font-size: 1.125rem; color: var(--neutral-500); max-width: 560px; margin: 0 auto 2rem; }
+  .d1-cta-row { display: flex; gap: 1rem; justify-content: center; }
+  .d1-btn-primary { background: var(--primary); color: white; padding: 0.75rem 1.5rem; border-radius: var(--radius); font-weight: 600; font-size: 0.9375rem; border: none; cursor: pointer; }
+  .d1-btn-outline { background: transparent; color: var(--primary); border: 1.5px solid var(--primary); padding: 0.75rem 1.5rem; border-radius: var(--radius); font-weight: 600; font-size: 0.9375rem; cursor: pointer; }
+  .d1-gallery { padding: 3rem 2rem; max-width: 900px; margin: 0 auto; }
+  .d1-gallery h2 { font-size: 1.5rem; font-weight: 600; color: var(--neutral-900); margin-bottom: 1.5rem; }
+  .d1-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; }
+  .d1-card {
+    background: white; border-radius: var(--radius);
+    border: 1px solid var(--neutral-200); padding: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .d1-card:hover { border-color: var(--primary); box-shadow: 0 4px 16px rgba(24,74,239,0.12); }
+  .d1-card-icon { width: 40px; height: 40px; background: rgba(24,74,239,0.1); border-radius: var(--radius); margin-bottom: 1rem; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; }
+  .d1-card h3 { font-size: 1.125rem; font-weight: 600; color: var(--neutral-900); margin-bottom: 0.5rem; }
+  .d1-card p { font-size: 0.875rem; color: var(--neutral-500); margin-bottom: 1rem; line-height: 1.5; }
+  .d1-tags { display: flex; flex-wrap: wrap; gap: 0.375rem; margin-bottom: 0.75rem; }
+  .d1-tag { background: rgba(39,243,224,0.2); color: var(--primary); font-size: 0.75rem; font-weight: 500; padding: 0.2rem 0.5rem; border-radius: 9999px; }
+  .d1-hint { font-size: 0.8125rem; color: var(--primary); font-weight: 500; margin-bottom: 1rem; }
+  .d1-card-cta { width: 100%; background: var(--primary); color: white; padding: 0.5rem; border-radius: var(--radius); border: none; font-weight: 500; cursor: pointer; font-size: 0.875rem; }
+  .d1-footer { background: white; border-top: 1px solid var(--neutral-200); padding: 1.5rem 2rem; text-align: center; font-size: 0.8125rem; color: var(--neutral-500); }
+
+  /* ── DIRECTION 2: Configure View ── */
+  .d2-shell { background: var(--neutral-50); min-height: 700px; }
+  .d2-header { background: white; border-bottom: 1px solid var(--neutral-200); padding: 0 2rem; height: 64px; display: flex; align-items: center; gap: 1rem; }
+  .d2-back { font-size: 0.875rem; color: var(--neutral-500); cursor: pointer; }
+  .d2-back:hover { color: var(--primary); }
+  .d2-logo { display: flex; align-items: center; gap: 0.5rem; margin-right: auto; }
+  .d2-logo-mark { width: 28px; height: 28px; background: var(--primary); border-radius: 0.375rem; }
+  .d2-logo-text { font-size: 1rem; font-weight: 700; color: var(--neutral-900); }
+  .d2-body { display: flex; max-width: 1100px; margin: 0 auto; padding: 2rem; gap: 2rem; }
+  .d2-form-panel { flex: 0 0 400px; }
+  .d2-preview-panel { flex: 1; }
+  .d2-section { background: white; border-radius: var(--radius); border: 1px solid var(--neutral-200); padding: 1.25rem; margin-bottom: 1rem; }
+  .d2-section-title { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--neutral-500); margin-bottom: 1rem; }
+  .d2-field { margin-bottom: 0.875rem; }
+  .d2-label { display: flex; align-items: center; gap: 0.375rem; font-size: 0.8125rem; font-weight: 500; color: var(--neutral-900); margin-bottom: 0.25rem; }
+  .d2-help { width: 14px; height: 14px; border-radius: 50%; background: var(--neutral-200); color: var(--neutral-500); font-size: 0.625rem; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; font-family: monospace; font-weight: 700; }
+  .d2-input { width: 100%; padding: 0.4375rem 0.625rem; border: 1.5px solid var(--neutral-200); border-radius: calc(var(--radius) * 0.75); font-size: 0.8125rem; font-family: inherit; color: var(--neutral-900); }
+  .d2-input:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 3px rgba(24,74,239,0.15); }
+  .d2-radios { display: flex; flex-direction: column; gap: 0.375rem; }
+  .d2-radio { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8125rem; cursor: pointer; }
+  .d2-radio-dot { width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid var(--neutral-200); display: flex; align-items: center; justify-content: center; }
+  .d2-radio-dot.selected { border-color: var(--primary); }
+  .d2-radio-dot.selected::after { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--primary); }
+  .d2-checks { display: flex; flex-direction: column; gap: 0.375rem; }
+  .d2-check { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8125rem; }
+  .d2-checkbox { width: 14px; height: 14px; border-radius: 3px; border: 1.5px solid var(--primary); background: var(--primary); display: flex; align-items: center; justify-content: center; }
+  .d2-checkbox::after { content: '✓'; color: white; font-size: 0.625rem; font-weight: 700; }
+  .d2-checkbox.unchecked { background: transparent; border-color: var(--neutral-200); }
+  .d2-checkbox.unchecked::after { display: none; }
+  .d2-generate-btn { width: 100%; background: var(--primary); color: white; padding: 0.75rem; border-radius: var(--radius); border: none; font-weight: 600; font-size: 0.9375rem; cursor: pointer; margin-top: 0.5rem; }
+  .d2-generate-btn:hover { background: var(--primary-dark); }
+
+  /* Preview Panel */
+  .d2-preview-title { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--neutral-500); margin-bottom: 0.75rem; }
+  .d2-tree { background: white; border-radius: var(--radius); border: 1px solid var(--neutral-200); padding: 1.25rem; font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 0.75rem; color: var(--neutral-900); margin-bottom: 1rem; }
+  .d2-tree ul { list-style: none; padding-left: 1rem; }
+  .d2-tree li { line-height: 1.8; }
+  .d2-folder { color: var(--primary); font-weight: 600; }
+  .d2-actions { background: white; border-radius: var(--radius); border: 1px solid var(--neutral-200); padding: 1.25rem; }
+  .d2-actions-title { font-size: 0.75rem; font-weight: 600; color: var(--neutral-500); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.75rem; }
+  .d2-ide-btns { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem; }
+  .d2-ide-btn { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.75rem; border: 1px solid var(--neutral-200); border-radius: var(--radius); font-size: 0.8125rem; cursor: pointer; background: white; color: var(--neutral-900); }
+  .d2-ide-btn:hover { border-color: var(--primary); color: var(--primary); }
+  .d2-ide-icon { font-size: 1rem; }
+  .d2-share-btn { width: 100%; padding: 0.5rem; border: 1px solid var(--neutral-200); border-radius: var(--radius); font-size: 0.8125rem; cursor: pointer; background: white; color: var(--neutral-500); }
+  .d2-share-btn:hover { border-color: var(--primary); color: var(--primary); }
+
+  /* Description boxes */
+  .desc-box {
+    background: #1e1e3a; border-radius: 0.5rem; padding: 1.5rem 2rem;
+    margin: 0 2rem 1rem; font-size: 0.875rem; color: #aaa; line-height: 1.6;
+    border-left: 3px solid var(--primary);
+  }
+  .desc-box strong { color: white; }
+</style>
+</head>
+<body>
+
+<div class="nav">
+  <span class="nav-title">Operaton Starter</span>
+  <button class="nav-btn active" onclick="show('d1')">Direction 1: Gallery View (/)</button>
+  <button class="nav-btn" onclick="show('d2')">Direction 2: Configure View (/configure)</button>
+</div>
+
+<!-- Direction 1: Gallery View -->
+<div id="d1" class="mockup active">
+  <div class="desc-box">
+    <strong>Gallery View (/) — Explorer Entry Point</strong><br>
+    Split landing page. Hero with two CTAs — "Browse Projects" (scrolls to gallery) and "Configure Now →" (goes directly to /configure for Practitioners). Project type cards are data-driven from <code>GET /api/v1/metadata</code>. Inline [?] help expands without navigation. Visual reference: code.quarkus.io card grid.
+  </div>
+  <div class="browser">
+    <div class="browser-bar">
+      <div class="dots">
+        <div class="dot dot-r"></div>
+        <div class="dot dot-y"></div>
+        <div class="dot dot-g"></div>
+      </div>
+      <div class="url-bar">https://start.operaton.org</div>
+    </div>
+    <div class="d1-shell">
+      <header class="d1-header">
+        <div class="d1-logo">
+          <div class="d1-logo-mark"></div>
+          <span class="d1-logo-text">Operaton <span class="d1-logo-sub">Starter</span></span>
+        </div>
+        <nav class="d1-nav-links">
+          <a class="d1-nav-link" href="#">Docs</a>
+          <a class="d1-nav-link" href="#">operaton.org</a>
+          <a class="d1-nav-link" href="#">GitHub</a>
+        </nav>
+      </header>
+
+      <section class="d1-hero">
+        <h1>Start your Operaton project</h1>
+        <p>Generate a ready-to-run Operaton project in seconds. No setup, no boilerplate — just download and build.</p>
+        <div class="d1-cta-row">
+          <button class="d1-btn-primary">Configure Now →</button>
+          <button class="d1-btn-outline">Browse Project Types ↓</button>
+        </div>
+      </section>
+
+      <section class="d1-gallery">
+        <h2>Choose a project type</h2>
+        <div class="d1-grid">
+          <div class="d1-card">
+            <div class="d1-card-icon">⚡</div>
+            <h3>Process Application</h3>
+            <p>A Spring Boot application with an embedded Operaton engine. Includes a skeleton BPMN process, a JavaDelegate implementation stub, and an end-to-end integration test that passes on first run.</p>
+            <div class="d1-tags">
+              <span class="d1-tag">Spring Boot</span>
+              <span class="d1-tag">Embedded Engine</span>
+              <span class="d1-tag">Java Delegate</span>
+              <span class="d1-tag">JUnit 5</span>
+            </div>
+            <p class="d1-hint">Ideal for Camunda 7 migrators and developers starting fresh</p>
+            <button class="d1-card-cta">Configure →</button>
+          </div>
+          <div class="d1-card">
+            <div class="d1-card-icon">📦</div>
+            <h3>Process Archive</h3>
+            <p>A deployable WAR or JAR archive for a shared Operaton engine (Tomcat or Standalone). No embedded engine — process definitions are deployed to an existing engine via processes.xml.</p>
+            <div class="d1-tags">
+              <span class="d1-tag">Shared Engine</span>
+              <span class="d1-tag">WAR/JAR Deploy</span>
+              <span class="d1-tag">processes.xml</span>
+              <span class="d1-tag">Tomcat</span>
+            </div>
+            <p class="d1-hint">Ideal for teams running a shared Operaton engine</p>
+            <button class="d1-card-cta">Configure →</button>
+          </div>
+        </div>
+      </section>
+
+      <footer class="d1-footer">
+        <p>operaton-starter · Apache 2.0 · <a href="#" style="color:var(--primary);">GitHub</a> · v0.1.0</p>
+      </footer>
+    </div>
+  </div>
+</div>
+
+<!-- Direction 2: Configure View -->
+<div id="d2" class="mockup">
+  <div class="desc-box">
+    <strong>Configure View (/configure) — Practitioner Experience</strong><br>
+    Two-column layout: configuration form (left, fixed 400px) + live preview + actions (right, flex). Form sections: Identity, Build Options, Extras. Live file tree updates client-side as form changes. IDE deep-links + share URL in the action panel. Visual reference: start.spring.io two-column layout.
+  </div>
+  <div class="browser">
+    <div class="browser-bar">
+      <div class="dots">
+        <div class="dot dot-r"></div>
+        <div class="dot dot-y"></div>
+        <div class="dot dot-g"></div>
+      </div>
+      <div class="url-bar">https://start.operaton.org/configure?projectType=PROCESS_APPLICATION&buildSystem=MAVEN</div>
+    </div>
+    <div class="d2-shell">
+      <header class="d2-header">
+        <div class="d2-logo">
+          <div class="d2-logo-mark"></div>
+          <span class="d2-logo-text">Operaton Starter</span>
+        </div>
+        <span class="d2-back">← Back to gallery</span>
+      </header>
+
+      <div class="d2-body">
+        <!-- Form Panel -->
+        <div class="d2-form-panel">
+
+          <!-- Identity -->
+          <div class="d2-section">
+            <div class="d2-section-title">Project Identity</div>
+            <div class="d2-field">
+              <div class="d2-label">Group ID <span class="d2-help">?</span></div>
+              <input class="d2-input" type="text" value="com.example">
+            </div>
+            <div class="d2-field">
+              <div class="d2-label">Artifact ID <span class="d2-help">?</span></div>
+              <input class="d2-input" type="text" value="my-process-app">
+            </div>
+            <div class="d2-field">
+              <div class="d2-label">Project Name <span class="d2-help">?</span></div>
+              <input class="d2-input" type="text" value="My Process App">
+            </div>
+          </div>
+
+          <!-- Build Options -->
+          <div class="d2-section">
+            <div class="d2-section-title">Build Options</div>
+            <div class="d2-field">
+              <div class="d2-label">Project Type <span class="d2-help">?</span></div>
+              <div class="d2-radios">
+                <label class="d2-radio">
+                  <div class="d2-radio-dot selected"></div>
+                  Process Application
+                </label>
+                <label class="d2-radio">
+                  <div class="d2-radio-dot"></div>
+                  Process Archive
+                </label>
+              </div>
+            </div>
+            <div class="d2-field">
+              <div class="d2-label">Build System <span class="d2-help">?</span></div>
+              <div class="d2-radios">
+                <label class="d2-radio">
+                  <div class="d2-radio-dot selected"></div>
+                  Maven
+                </label>
+                <label class="d2-radio">
+                  <div class="d2-radio-dot"></div>
+                  Gradle (Groovy DSL)
+                </label>
+                <label class="d2-radio">
+                  <div class="d2-radio-dot"></div>
+                  Gradle (Kotlin DSL)
+                </label>
+              </div>
+            </div>
+            <div class="d2-field">
+              <div class="d2-label">Java Version <span class="d2-help">?</span></div>
+              <div class="d2-radios" style="flex-direction:row;">
+                <label class="d2-radio">
+                  <div class="d2-radio-dot selected"></div>
+                  17
+                </label>
+                <label class="d2-radio">
+                  <div class="d2-radio-dot"></div>
+                  21
+                </label>
+                <label class="d2-radio">
+                  <div class="d2-radio-dot"></div>
+                  25
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Extras -->
+          <div class="d2-section">
+            <div class="d2-section-title">Extras</div>
+            <div class="d2-checks">
+              <div class="d2-check">
+                <div class="d2-checkbox"></div>
+                <span style="font-size:0.8125rem;">GitHub Actions CI/CD <span class="d2-help" style="display:inline-flex;">?</span></span>
+              </div>
+              <div class="d2-check">
+                <div class="d2-checkbox unchecked"></div>
+                <span style="font-size:0.8125rem;">Docker Compose <span class="d2-help" style="display:inline-flex;">?</span></span>
+              </div>
+            </div>
+            <div class="d2-field" style="margin-top:0.875rem;">
+              <div class="d2-label">Dependency Updates <span class="d2-help">?</span></div>
+              <div class="d2-radios" style="flex-direction:row;">
+                <label class="d2-radio">
+                  <div class="d2-radio-dot selected"></div>
+                  Renovate
+                </label>
+                <label class="d2-radio">
+                  <div class="d2-radio-dot"></div>
+                  Dependabot
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <button class="d2-generate-btn">Generate &amp; Download ↓</button>
+        </div>
+
+        <!-- Preview Panel -->
+        <div class="d2-preview-panel">
+          <div class="d2-preview-title">File Structure Preview</div>
+          <div class="d2-tree">
+            <ul>
+              <li><span class="d2-folder">📁 my-process-app/</span>
+                <ul>
+                  <li>📄 pom.xml</li>
+                  <li>📄 renovate.json</li>
+                  <li>📄 README.md</li>
+                  <li><span class="d2-folder">📁 .github/workflows/</span>
+                    <ul><li>📄 ci.yml</li></ul>
+                  </li>
+                  <li><span class="d2-folder">📁 src/</span>
+                    <ul>
+                      <li><span class="d2-folder">📁 main/java/com/example/</span>
+                        <ul>
+                          <li>📄 Application.java</li>
+                          <li><span class="d2-folder">📁 delegate/</span>
+                            <ul><li>📄 SkeletonDelegate.java</li></ul>
+                          </li>
+                        </ul>
+                      </li>
+                      <li><span class="d2-folder">📁 main/resources/</span>
+                        <ul>
+                          <li>📄 my-process-app.bpmn</li>
+                          <li>📄 application.properties</li>
+                        </ul>
+                      </li>
+                      <li><span class="d2-folder">📁 test/java/com/example/</span>
+                        <ul><li>📄 ProcessIT.java</li></ul>
+                      </li>
+                    </ul>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </div>
+
+          <div class="d2-actions">
+            <div class="d2-actions-title">Open in IDE</div>
+            <div class="d2-ide-btns">
+              <button class="d2-ide-btn">
+                <span class="d2-ide-icon">🧩</span>
+                Open in IntelliJ IDEA
+              </button>
+              <button class="d2-ide-btn">
+                <span class="d2-ide-icon">💻</span>
+                Open in VS Code
+              </button>
+            </div>
+            <button class="d2-share-btn">🔗 Copy Shareable Link</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function show(id) {
+  document.querySelectorAll('.mockup').forEach(m => m.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  event.target.classList.add('active');
+}
+</script>
+</body>
+</html>

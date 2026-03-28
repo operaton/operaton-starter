@@ -804,6 +804,10 @@ So that I can discover the right project type for my use case without consulting
 
 **Given** a user navigates to `/` (GalleryView)
 **When** the page loads
+**Then** a hero section is shown at the top with a headline ("Start your Operaton project"), a one-sentence subtitle, and two CTAs: "Configure Now →" (navigates directly to `/configure`, bypassing the gallery) and "Browse Project Types ↓" (scrolls to the gallery cards section); the hero allows Practitioners to skip gallery discovery entirely
+
+**Given** the gallery section below the hero
+**When** the page loads
 **Then** it fetches metadata from `useMetadata` and renders one card per `projectType` entry; cards display `displayName`, `description`, `tags` as badges, and `personaHint` as a contextual positioning statement; no project type is hardcoded in the component
 
 **Given** metadata is loading
@@ -817,6 +821,10 @@ So that I can discover the right project type for my use case without consulting
 **Given** the gallery layout
 **When** rendered at desktop width
 **Then** cards are displayed in a grid; the layout is clean and not overbloated — consistent with the code.quarkus.io extension gallery as the visual reference for discovery UX
+
+**Given** the gallery layout
+**When** rendered at mobile width (< 768px)
+**Then** the card grid collapses to a single column; cards are full-width; no horizontal scrolling occurs
 
 **Given** a user hovering over a project type card
 **When** the `?` help icon is present
@@ -838,6 +846,10 @@ So that I can configure my project without hunting through documentation.
 
 **Acceptance Criteria:**
 
+**Given** a user is on `/configure`
+**When** they want to return to the gallery
+**Then** a "← Back to gallery" link is visible in the header area and navigates to `/` without losing the current form state in the URL
+
 **Given** a user navigates to `/configure`
 **When** the page loads
 **Then** the form renders with all configuration options populated from `useMetadata` — no option list is hardcoded; defaults are applied: `projectType=PROCESS_APPLICATION`, `buildSystem=MAVEN`, `javaVersion=17`, `dependencyUpdater=RENOVATE`, `dockerCompose=false`, `githubActions=true`
@@ -852,7 +864,11 @@ So that I can configure my project without hunting through documentation.
 
 **Given** the form layout
 **When** rendered at desktop width
-**Then** it follows a clean single-column or two-column structure with clear visual grouping of related fields (identity, build options, extras) — `start.spring.io` is the visual benchmark; no sprawling multi-panel layout
+**Then** it follows a clean single-column or two-column structure with clear visual grouping of related fields (identity, build options, extras) — `start.spring.io` is the visual benchmark; no sprawling multi-panel layout; related fields are grouped with `<fieldset>` + `<legend>` for semantic structure; all labels are positioned above their inputs (no floating labels or placeholder-as-label patterns)
+
+**Given** the form layout
+**When** rendered at mobile width (< 768px)
+**Then** the layout is a single column with the form above and the preview panel collapsed to a `<details>` disclosure element below; the full form is accessible without horizontal scrolling
 
 **Given** any configuration option on the form (project type, build system, Java version, deployment target, dependency updater, Docker Compose, GitHub Actions)
 **When** the user clicks or hovers over its `?` help icon
@@ -890,6 +906,10 @@ So that I can move immediately from configuration to working with my new project
 **When** generation fails
 **Then** `<ErrorBanner>` displays the Problem Details message; the form remains filled so the user can correct and retry without re-entering all fields
 
+**Given** generation succeeds
+**When** the ZIP download starts
+**Then** a transient success message "Downloaded {artifactId}.zip" is shown to confirm the download initiated; the message disappears automatically after a short delay
+
 **Given** the "Generate & Download" button
 **When** navigated by keyboard
 **Then** it is reachable via Tab and triggerable via Enter; a visible loading state is shown during generation
@@ -926,6 +946,10 @@ So that I know exactly what files will be generated before I download the ZIP.
 **When** rendered at desktop width
 **Then** it is visually distinct from the form but does not dominate the layout — clean, readable, not overbloated; consistent with how `start.spring.io` presents its file tree
 
+**Given** the preview panel
+**When** rendered at mobile width (< 768px)
+**Then** it is shown as a `<details>` disclosure element below the form with summary text "File Structure Preview"; it is collapsed by default and expands on click; the file tree is still fully navigable when expanded
+
 ### Story 4.6: Download, IDE Deep-Links & Shareable Config URLs
 
 As a **developer who has configured their project**,
@@ -936,15 +960,15 @@ So that I save time on import steps and colleagues can reproduce my exact setup 
 
 **Given** a form with all required fields valid
 **When** the configuration is complete (no prior download required)
-**Then** an IntelliJ IDEA deep-link button and a VS Code deep-link button are shown; clicking either constructs a deep-link URL passing the API generate URL with current configuration as parameters — the IDE fetches the ZIP directly from the API using `idea://com.intellij.ide.starter?url={encoded_generate_url}` and the VS Code equivalent scheme
+**Then** an IntelliJ IDEA deep-link button and a VS Code deep-link button are shown in an action panel alongside the file tree preview; clicking the IntelliJ button constructs and opens `idea://com.intellij.ide.starter?url={encoded_generate_url}` where `{encoded_generate_url}` is the full `POST /api/v1/generate` URL with form state encoded as query params; clicking the VS Code button opens `vscode://vscjava.vscode-spring-initializr/open?url={encoded_generate_url}` with the same encoding scheme
 
 **Given** an IDE deep-link button is clicked
 **When** the IDE handles the URL scheme
 **Then** the IDE downloads the ZIP from `POST /api/v1/generate` (using the encoded configuration params) and imports the project — no file is required in the browser's Downloads folder; the service remains stateless
 
 **Given** a user has configured the form with non-default values
-**When** they click "Share Configuration"
-**Then** the browser URL is updated with query parameters encoding the full current configuration; copying and opening this URL in a new tab restores and pre-fills the form with the same configuration
+**When** they click the "Copy Shareable Link" button in the action panel
+**Then** the full URL with query parameters encoding the current configuration is copied to the clipboard; a brief confirmation ("Link copied!") is shown; opening this URL in a new tab restores and pre-fills the form with the same configuration
 
 **Given** a shareable config URL is opened
 **When** the page loads
@@ -965,6 +989,10 @@ I want the full configuration and download flow to be operable without a mouse a
 So that the tool is inclusive and accessible to all developers regardless of input method.
 
 **Acceptance Criteria:**
+
+**Given** the app shell
+**When** rendered
+**Then** a visually hidden skip link "Skip to main content" is the first focusable element; it becomes visible on keyboard focus and navigates to the `#main-content` landmark, bypassing the header navigation
 
 **Given** the full user journey from `/` (gallery) to `/configure` (form) to "Generate & Download"
 **When** navigated using only Tab, Shift+Tab, Enter, Space, and arrow keys
