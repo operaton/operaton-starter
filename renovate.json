@@ -1,0 +1,19 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "packageRules": [
+    {
+      "matchPackagePatterns": ["^org.operaton"],
+      "groupName": "Operaton BPM",
+      "automerge": false
+    },
+    {
+      "matchManagers": ["npm"],
+      "matchPackagePatterns": ["^@modelcontextprotocol"],
+      "groupName": "MCP SDK"
+    }
+  ],
+  "schedule": ["before 9am on monday"],
+  "prConcurrentLimit": 5,
+  "labels": ["dependencies"]
+}

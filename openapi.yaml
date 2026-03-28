@@ -1,0 +1,281 @@
+openapi: "3.1.0"
+info:
+  title: Operaton Starter API
+  description: |
+    REST API for the Operaton Starter project generator.
+    Generates ready-to-build Operaton BPM project archives.
+  version: "1.0.0"
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+
+servers:
+  - url: https://start.operaton.org
+    description: Public instance
+  - url: http://localhost:8080
+    description: Local development
+
+paths:
+  /api/v1/generate:
+    post:
+      operationId: generateProject
+      summary: Generate a project archive
+      description: |
+        Generates an Operaton project archive (ZIP) based on the provided configuration.
+        Returns the ZIP file as a binary response.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProjectConfig"
+            examples:
+              process-application-maven:
+                summary: Process Application with Maven
+                value:
+                  projectType: PROCESS_APPLICATION
+                  buildSystem: MAVEN
+                  groupId: com.example
+                  artifactId: my-process
+                  projectName: My Process
+                  javaVersion: 21
+                  dependencyUpdater: RENOVATE
+                  dockerCompose: false
+                  githubActions: true
+      responses:
+        "200":
+          description: ZIP archive of the generated project
+          content:
+            application/zip:
+              schema:
+                type: string
+                format: binary
+        "400":
+          description: Invalid configuration
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "429":
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the rate limit resets
+              schema:
+                type: integer
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+
+  /api/v1/metadata:
+    get:
+      operationId: getMetadata
+      summary: Get available configuration options
+      description: |
+        Returns all supported configuration options and project template manifests.
+        The web UI populates all dropdowns and gallery content from this endpoint.
+      responses:
+        "200":
+          description: Available configuration metadata
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Metadata"
+
+components:
+  schemas:
+    ProjectConfig:
+      type: object
+      required:
+        - projectType
+        - buildSystem
+        - groupId
+        - artifactId
+        - projectName
+      properties:
+        projectType:
+          type: string
+          enum: [PROCESS_APPLICATION, PROCESS_ARCHIVE]
+          description: Type of Operaton project to generate
+        buildSystem:
+          type: string
+          enum: [MAVEN, GRADLE_GROOVY, GRADLE_KOTLIN]
+          description: Build system to use
+        groupId:
+          type: string
+          description: Maven Group ID (e.g. com.example)
+          pattern: "^[a-zA-Z][a-zA-Z0-9.\\-]*$"
+          example: com.example
+        artifactId:
+          type: string
+          description: Maven Artifact ID (e.g. my-process)
+          pattern: "^[a-zA-Z][a-zA-Z0-9\\-]*$"
+          example: my-process
+        projectName:
+          type: string
+          description: Human-readable project name
+          example: My Process
+        javaVersion:
+          type: integer
+          description: Java version to target (17, 21, or 25)
+          enum: [17, 21, 25]
+          default: 17
+        deploymentTarget:
+          type: string
+          enum: [TOMCAT, STANDALONE_ENGINE]
+          description: |
+            Deployment target for Process Archive projects.
+            Required when projectType is PROCESS_ARCHIVE.
+        dependencyUpdater:
+          type: string
+          enum: [DEPENDABOT, RENOVATE]
+          description: Dependency update tool to configure in generated project
+          default: RENOVATE
+        dockerCompose:
+          type: boolean
+          description: Include a docker-compose.yml in the generated project
+          default: false
+        githubActions:
+          type: boolean
+          description: Include GitHub Actions CI/CD skeleton in generated project
+          default: true
+
+    Metadata:
+      type: object
+      required:
+        - projectTypes
+        - buildSystems
+        - globalOptions
+      properties:
+        projectTypes:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProjectTypeInfo"
+        buildSystems:
+          type: array
+          items:
+            $ref: "#/components/schemas/BuildSystemInfo"
+        globalOptions:
+          $ref: "#/components/schemas/GlobalOptions"
+
+    ProjectTypeInfo:
+      type: object
+      required:
+        - id
+        - displayName
+        - description
+        - tags
+        - personaHint
+        - templateManifest
+      properties:
+        id:
+          type: string
+          description: Identifier used as flag value for CLI and MCP tool parameter
+          example: PROCESS_APPLICATION
+        displayName:
+          type: string
+          description: Human-readable name rendered in gallery and dropdowns
+          example: Process Application
+        description:
+          type: string
+          description: Gallery card body copy explaining the project type
+        tags:
+          type: array
+          items:
+            type: string
+          description: Capability badges displayed on gallery cards
+          example: ["Spring Boot", "Embedded Engine", "Java Delegate"]
+        personaHint:
+          type: string
+          description: Contextual positioning for the project type
+          example: Ideal for Camunda 7 migrators
+        templateManifest:
+          type: array
+          items:
+            $ref: "#/components/schemas/TemplateManifestEntry"
+          description: Flat list of files generated for this project type
+
+    BuildSystemInfo:
+      type: object
+      required:
+        - id
+        - displayName
+      properties:
+        id:
+          type: string
+          description: Identifier for the build system
+          example: MAVEN
+        displayName:
+          type: string
+          description: Human-readable name
+          example: Maven
+
+    GlobalOptions:
+      type: object
+      required:
+        - javaVersions
+      properties:
+        javaVersions:
+          type: object
+          required:
+            - options
+            - default
+          properties:
+            options:
+              type: array
+              items:
+                type: integer
+              description: Available Java versions
+              example: [17, 21, 25]
+            default:
+              type: integer
+              description: Default Java version
+              example: 17
+
+    TemplateManifestEntry:
+      type: object
+      required:
+        - path
+        - templateId
+      properties:
+        path:
+          type: string
+          description: File path in the generated project (relative to project root)
+          example: src/main/java/com/example/Application.java
+        condition:
+          type: string
+          nullable: true
+          description: |
+            Optional condition expression. When null, the file is always included.
+            When set, the file is included only when the condition evaluates to true.
+          example: "githubActions == true"
+        templateId:
+          type: string
+          description: Identifier of the JTE template that generates this file
+          example: process-application/Application.java.jte
+
+    ProblemDetail:
+      type: object
+      description: RFC 7807 Problem Details
+      required:
+        - type
+        - title
+        - status
+      properties:
+        type:
+          type: string
+          format: uri
+          example: https://start.operaton.org/problems/validation-error
+        title:
+          type: string
+          example: Validation Error
+        status:
+          type: integer
+          example: 400
+        detail:
+          type: string
+          example: deploymentTarget is required for PROCESS_ARCHIVE projects
+        instance:
+          type: string
+          format: uri

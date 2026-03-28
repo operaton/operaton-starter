@@ -14,6 +14,10 @@ build/
 *.war
 *.zip
 
+# Frontend Maven Plugin (downloaded Node.js binaries)
+starter-web/node/
+starter-mcp/node/
+
 # Node modules
 node_modules/
 npm-debug.log
