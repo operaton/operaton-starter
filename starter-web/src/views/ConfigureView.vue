@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, RouterLink } from 'vue-router'
 import { useMetadata } from '@/composables/useMetadata'
 import { useProjectForm } from '@/composables/useProjectForm'
@@ -15,6 +15,9 @@ const { isGenerating, error: generateError, generate } = useGenerate()
 
 const successMsg = ref<string | null>(null)
 const helpOpen = ref<Record<string, boolean>>({})
+const hasGroupIdQuery = computed(
+  () => typeof route.query.groupId === 'string' && route.query.groupId.trim().length > 0
+)
 
 function toggleHelp(field: string) {
   helpOpen.value[field] = !helpOpen.value[field]
@@ -24,6 +27,19 @@ function toggleHelp(field: string) {
 onMounted(() => {
   initFromQuery(route.query as Record<string, string>)
 })
+
+watch(
+  () => metadata.value?.defaultGroupId,
+  (defaultGroupId) => {
+    if (!defaultGroupId || hasGroupIdQuery.value) {
+      return
+    }
+    if (form.groupId === 'com.example') {
+      form.groupId = defaultGroupId
+    }
+  },
+  { immediate: true }
+)
 
 // Selected project type manifest
 const selectedTypeManifest = computed(() => {

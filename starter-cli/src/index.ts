@@ -50,7 +50,7 @@ async function main(): Promise<void> {
     .option('--deploymentTarget <target>', 'Deployment target: TOMCAT | STANDALONE_ENGINE')
     .option('--dependencyUpdater <updater>', 'Dependency updater: DEPENDABOT | RENOVATE', 'RENOVATE')
     .option('--dockerCompose', 'Include Docker Compose file', false)
-    .option('--githubActions', 'Include GitHub Actions CI skeleton', true)
+    .option('--githubActions <enabled>', 'Include GitHub Actions CI skeleton: true | false', 'true')
     .option('--output <dir>', 'Extract ZIP into this directory (created if absent)')
     .option('--extract', 'Extract ZIP into ./{artifactId}/ in the current directory')
 
@@ -65,7 +65,7 @@ async function main(): Promise<void> {
     deploymentTarget?: string
     dependencyUpdater: string
     dockerCompose: boolean
-    githubActions: boolean
+    githubActions: string
     output?: string
     extract?: boolean
   }>()
@@ -88,6 +88,9 @@ async function main(): Promise<void> {
   if (!validUpdaters.includes(opts.dependencyUpdater)) {
     fatal(`--dependencyUpdater must be one of: ${validUpdaters.join(', ')}`)
   }
+  if (!['true', 'false'].includes(opts.githubActions)) {
+    fatal('--githubActions must be true or false')
+  }
 
   const config: ProjectConfig = {
     projectType: opts.projectType as ProjectConfig['projectType'],
@@ -99,7 +102,7 @@ async function main(): Promise<void> {
     deploymentTarget: opts.deploymentTarget as ProjectConfig['deploymentTarget'],
     dependencyUpdater: opts.dependencyUpdater as ProjectConfig['dependencyUpdater'],
     dockerCompose: opts.dockerCompose,
-    githubActions: opts.githubActions
+    githubActions: opts.githubActions === 'true'
   }
 
   const isPiped = !process.stdout.isTTY

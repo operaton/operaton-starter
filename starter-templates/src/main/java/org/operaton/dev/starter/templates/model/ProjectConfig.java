@@ -21,7 +21,9 @@ public record ProjectConfig(
         Optional<DeploymentTarget> deploymentTarget,
         DependencyUpdater dependencyUpdater,
         boolean dockerCompose,
-        boolean githubActions
+        boolean githubActions,
+        String operatonVersionOverride,
+        String mavenRegistryUrl
 ) {
 
     /** Default Java version used when not specified by the user. */
@@ -43,6 +45,43 @@ public record ProjectConfig(
         return javaPackage().replace('.', '/');
     }
 
+    /**
+     * Returns the effective Operaton version for generated build files.
+     * Self-hosted instances can override the default stable version.
+     */
+    public String effectiveOperatonVersion() {
+        return operatonVersionOverride == null || operatonVersionOverride.isBlank()
+                ? VersionConstants.OPERATON_VERSION
+                : operatonVersionOverride;
+    }
+
+    /**
+     * Returns whether generated build files should point at a custom Maven registry.
+     */
+    public boolean hasCustomMavenRegistry() {
+        return mavenRegistryUrl != null && !mavenRegistryUrl.isBlank();
+    }
+
+    /**
+     * Applies self-hosted generation defaults without altering user-facing project inputs.
+     */
+    public ProjectConfig withGeneratorDefaults(String operatonVersionOverride, String mavenRegistryUrl) {
+        return new ProjectConfig(
+                groupId,
+                artifactId,
+                projectName,
+                projectType,
+                buildSystem,
+                javaVersion,
+                deploymentTarget,
+                dependencyUpdater,
+                dockerCompose,
+                githubActions,
+                normalizeBlank(operatonVersionOverride),
+                normalizeBlank(mavenRegistryUrl)
+        );
+    }
+
     /** Builder for {@link ProjectConfig}. */
     public static Builder builder() {
         return new Builder();
@@ -59,6 +98,8 @@ public record ProjectConfig(
         private DependencyUpdater dependencyUpdater = DependencyUpdater.RENOVATE;
         private boolean dockerCompose = false;
         private boolean githubActions = true;
+        private String operatonVersionOverride = "";
+        private String mavenRegistryUrl = "";
 
         private Builder() {}
 
@@ -78,6 +119,14 @@ public record ProjectConfig(
         }
         public Builder dockerCompose(boolean dockerCompose) { this.dockerCompose = dockerCompose; return this; }
         public Builder githubActions(boolean githubActions) { this.githubActions = githubActions; return this; }
+        public Builder operatonVersionOverride(String operatonVersionOverride) {
+            this.operatonVersionOverride = operatonVersionOverride;
+            return this;
+        }
+        public Builder mavenRegistryUrl(String mavenRegistryUrl) {
+            this.mavenRegistryUrl = mavenRegistryUrl;
+            return this;
+        }
 
         public ProjectConfig build() {
             if (groupId == null || groupId.isBlank()) {
@@ -96,8 +145,14 @@ public record ProjectConfig(
                     groupId, artifactId, projectName,
                     projectType, buildSystem, javaVersion,
                     deploymentTarget, dependencyUpdater,
-                    dockerCompose, githubActions
+                    dockerCompose, githubActions,
+                    normalizeBlank(operatonVersionOverride),
+                    normalizeBlank(mavenRegistryUrl)
             );
         }
+    }
+
+    private static String normalizeBlank(String value) {
+        return value == null ? "" : value.trim();
     }
 }

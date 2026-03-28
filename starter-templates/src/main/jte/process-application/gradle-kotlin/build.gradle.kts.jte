@@ -16,9 +16,19 @@ java {
     }
 }
 
+repositories {
+@if(config.hasCustomMavenRegistry())
+    maven {
+        url = uri("${config.mavenRegistryUrl()}")
+    }
+@else
+    mavenCentral()
+@endif
+}
+
 dependencyManagement {
     imports {
-        mavenBom("org.operaton.bpm:operaton-bom:${VersionConstants.OPERATON_VERSION}")
+        mavenBom("org.operaton.bpm:operaton-bom:${config.effectiveOperatonVersion()}")
     }
 }
 

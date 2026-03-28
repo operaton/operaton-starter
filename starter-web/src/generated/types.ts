@@ -15,6 +15,7 @@ export interface Metadata {
   projectTypes: ProjectTypeInfo[]
   buildSystems: BuildSystemInfo[]
   globalOptions: GlobalOptions
+  defaultGroupId?: string
 }
 
 export interface ProjectTypeInfo {

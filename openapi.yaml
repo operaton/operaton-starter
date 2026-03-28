@@ -17,6 +17,94 @@ servers:
 
 paths:
   /api/v1/generate:
+    get:
+      operationId: generateProjectFromQuery
+      summary: Generate a project archive from query parameters
+      description: |
+        Generates an Operaton project archive (ZIP) based on query parameters.
+        This exists primarily for IDE deep-link compatibility.
+      parameters:
+        - name: projectType
+          in: query
+          schema:
+            type: string
+            enum: [PROCESS_APPLICATION, PROCESS_ARCHIVE]
+            default: PROCESS_APPLICATION
+        - name: buildSystem
+          in: query
+          schema:
+            type: string
+            enum: [MAVEN, GRADLE_GROOVY, GRADLE_KOTLIN]
+            default: MAVEN
+        - name: groupId
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: "^[a-zA-Z][a-zA-Z0-9.\\-]*$"
+        - name: artifactId
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: "^[a-zA-Z][a-zA-Z0-9\\-]*$"
+        - name: projectName
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: javaVersion
+          in: query
+          schema:
+            type: integer
+            enum: [17, 21, 25]
+            default: 17
+        - name: deploymentTarget
+          in: query
+          schema:
+            type: string
+            enum: [TOMCAT, STANDALONE_ENGINE]
+        - name: dependencyUpdater
+          in: query
+          schema:
+            type: string
+            enum: [DEPENDABOT, RENOVATE]
+            default: RENOVATE
+        - name: dockerCompose
+          in: query
+          schema:
+            type: boolean
+            default: false
+        - name: githubActions
+          in: query
+          schema:
+            type: boolean
+            default: true
+      responses:
+        "200":
+          description: ZIP archive of the generated project
+          content:
+            application/zip:
+              schema:
+                type: string
+                format: binary
+        "400":
+          description: Invalid configuration
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "429":
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the rate limit resets
+              schema:
+                type: integer
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
     post:
       operationId: generateProject
       summary: Generate a project archive

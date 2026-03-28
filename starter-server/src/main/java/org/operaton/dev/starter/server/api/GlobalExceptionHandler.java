@@ -61,6 +61,17 @@ public class GlobalExceptionHandler {
                 .body(problem);
     }
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ProblemDetail> handleIllegalArgument(IllegalArgumentException ex) {
+        var problem = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
+        problem.setType(URI.create(BASE_URI + "invalid-request"));
+        problem.setTitle("Invalid Request");
+        problem.setDetail(ex.getMessage());
+        return ResponseEntity.badRequest()
+                .contentType(org.springframework.http.MediaType.parseMediaType("application/problem+json"))
+                .body(problem);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ProblemDetail> handleGeneric(Exception ex) {
         log.error("Unhandled server error", ex);

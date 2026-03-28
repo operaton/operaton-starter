@@ -8,6 +8,7 @@ import org.operaton.dev.starter.templates.engine.GenerationEngine;
 import org.operaton.dev.starter.templates.model.*;
 
 import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -84,14 +85,26 @@ class GenerationEngineTest {
 
         // Assert build file present (not pom.xml for Gradle)
         switch (buildSystem) {
-            case MAVEN -> assertTrue(entries.contains("pom.xml"), "Should contain pom.xml");
+            case MAVEN -> {
+                assertTrue(entries.contains("pom.xml"), "Should contain pom.xml");
+                String pom = readZipEntry(zip, "pom.xml");
+                assertTrue(pom.contains("<artifactId>my-process</artifactId>"));
+            }
             case GRADLE_GROOVY -> {
                 assertTrue(entries.contains("build.gradle"), "Should contain build.gradle");
                 assertFalse(entries.contains("pom.xml"), "Should NOT contain pom.xml");
+                assertEquals("rootProject.name = 'My Process'", readZipEntry(zip, "settings.gradle").trim());
+                String buildFile = readZipEntry(zip, "build.gradle");
+                assertTrue(buildFile.contains("repositories {"));
+                assertTrue(buildFile.contains("mavenCentral()"));
             }
             case GRADLE_KOTLIN -> {
                 assertTrue(entries.contains("build.gradle.kts"), "Should contain build.gradle.kts");
                 assertFalse(entries.contains("pom.xml"), "Should NOT contain pom.xml");
+                assertEquals("rootProject.name = \"My Process\"", readZipEntry(zip, "settings.gradle.kts").trim());
+                String buildFile = readZipEntry(zip, "build.gradle.kts");
+                assertTrue(buildFile.contains("repositories {"));
+                assertTrue(buildFile.contains("mavenCentral()"));
             }
         }
 
@@ -135,6 +148,70 @@ class GenerationEngineTest {
         assertFalse(entries.stream().anyMatch(e -> e.contains("Application.java")));
         assertFalse(entries.stream().anyMatch(e -> e.contains("SkeletonDelegate.java")));
         assertFalse(entries.stream().anyMatch(e -> e.contains("ProcessIT.java")));
+    }
+
+    @ParameterizedTest(name = "ProcessArchive {0} / {1}")
+    @MethodSource("processArchiveCombinations")
+    void process_archive_build_files_match_target(BuildSystem buildSystem,
+                                                  DeploymentTarget deploymentTarget) throws Exception {
+        var config = ProjectConfig.builder()
+                .groupId("com.example")
+                .artifactId("my-archive")
+                .projectName("My Archive")
+                .projectType(ProjectType.PROCESS_ARCHIVE)
+                .buildSystem(buildSystem)
+                .deploymentTarget(deploymentTarget)
+                .build();
+
+        byte[] zip = engine.generate(config);
+        var entries = listZipEntries(zip);
+
+        assertTrue(entries.contains("src/main/resources/META-INF/processes.xml"));
+        assertTrue(entries.contains("src/main/resources/my-archive.bpmn"));
+        assertFalse(entries.stream().anyMatch(e -> e.contains("Application.java")));
+        assertFalse(entries.stream().anyMatch(e -> e.contains("SkeletonDelegate.java")));
+        assertFalse(entries.stream().anyMatch(e -> e.contains("ProcessIT.java")));
+
+        String processesXml = readZipEntry(zip, "src/main/resources/META-INF/processes.xml");
+        assertTrue(processesXml.contains("<process-archive name=\"my-archive\">"));
+
+        switch (buildSystem) {
+            case MAVEN -> {
+                String pom = readZipEntry(zip, "pom.xml");
+                String expectedPackaging = deploymentTarget == DeploymentTarget.TOMCAT ? "war" : "jar";
+                assertTrue(pom.contains("<packaging>" + expectedPackaging + "</packaging>"));
+            }
+            case GRADLE_GROOVY -> {
+                String buildFile = readZipEntry(zip, "build.gradle");
+                assertTrue(buildFile.contains("compileOnly \"org.operaton.bpm:operaton-engine:"));
+                assertTrue(buildFile.contains("repositories {"));
+                assertTrue(buildFile.contains("mavenCentral()"));
+                if (deploymentTarget == DeploymentTarget.TOMCAT) {
+                    assertTrue(buildFile.contains("id 'war'"));
+                    assertTrue(buildFile.contains("tasks.named('jar')"));
+                } else {
+                    assertFalse(buildFile.contains("id 'war'"));
+                }
+            }
+            case GRADLE_KOTLIN -> {
+                String buildFile = readZipEntry(zip, "build.gradle.kts");
+                assertTrue(buildFile.contains("compileOnly(\"org.operaton.bpm:operaton-engine:"));
+                assertTrue(buildFile.contains("repositories {"));
+                assertTrue(buildFile.contains("mavenCentral()"));
+                if (deploymentTarget == DeploymentTarget.TOMCAT) {
+                    assertTrue(buildFile.contains("\n    war\n"));
+                    assertTrue(buildFile.contains("tasks.named<Jar>(\"jar\")"));
+                } else {
+                    assertFalse(buildFile.contains("\n    war\n"));
+                }
+            }
+        }
+    }
+
+    static Stream<Arguments> processArchiveCombinations() {
+        return Stream.of(BuildSystem.values())
+                .flatMap(buildSystem -> Stream.of(DeploymentTarget.values())
+                        .map(target -> Arguments.of(buildSystem, target)));
     }
 
     @Test
@@ -210,6 +287,35 @@ class GenerationEngineTest {
         assertFalse(entries.contains("docker-compose.yml"));
     }
 
+    @Test
+    void generation_defaults_override_operaton_version_and_maven_registry() throws Exception {
+        var gradleConfig = ProjectConfig.builder()
+                .groupId("com.example")
+                .artifactId("gradle-project")
+                .projectName("Gradle Project")
+                .buildSystem(BuildSystem.GRADLE_GROOVY)
+                .operatonVersionOverride("9.9.9")
+                .mavenRegistryUrl("https://repo.example.test/maven")
+                .build();
+
+        String gradleBuild = readZipEntry(engine.generate(gradleConfig), "build.gradle");
+        assertTrue(gradleBuild.contains("org.operaton.bpm:operaton-bom:9.9.9"));
+        assertTrue(gradleBuild.contains("https://repo.example.test/maven"));
+
+        var mavenConfig = ProjectConfig.builder()
+                .groupId("com.example")
+                .artifactId("maven-project")
+                .projectName("Maven Project")
+                .buildSystem(BuildSystem.MAVEN)
+                .operatonVersionOverride("9.9.9")
+                .mavenRegistryUrl("https://repo.example.test/maven")
+                .build();
+
+        String pom = readZipEntry(engine.generate(mavenConfig), "pom.xml");
+        assertTrue(pom.contains("<operaton.version>9.9.9</operaton.version>"));
+        assertTrue(pom.contains("<url>https://repo.example.test/maven</url>"));
+    }
+
     private static List<String> listZipEntries(byte[] zip) throws Exception {
         var entries = new ArrayList<String>();
         try (var zis = new ZipInputStream(new ByteArrayInputStream(zip))) {
@@ -220,5 +326,19 @@ class GenerationEngineTest {
             }
         }
         return entries;
+    }
+
+    private static String readZipEntry(byte[] zip, String path) throws Exception {
+        try (var zis = new ZipInputStream(new ByteArrayInputStream(zip))) {
+            var entry = zis.getNextEntry();
+            while (entry != null) {
+                if (path.equals(entry.getName())) {
+                    return new String(zis.readAllBytes(), StandardCharsets.UTF_8);
+                }
+                entry = zis.getNextEntry();
+            }
+        }
+        fail("ZIP entry not found: " + path);
+        return "";
     }
 }

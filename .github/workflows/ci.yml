@@ -3,6 +3,7 @@ name: CI
 on:
   push:
     branches: ["main"]
+    tags: ["v*"]
   pull_request:
     branches: ["main"]
 
@@ -127,11 +128,22 @@ jobs:
           docker run -d --name smoke -p 8080:8080 operaton/operaton-starter:${{ steps.version.outputs.version }}
           for i in $(seq 1 30); do
             if curl -sf http://localhost:8080/actuator/health | grep -q '"UP"'; then
-              echo "Health check passed"; exit 0
+              echo "Health check passed"
+              break
             fi
             sleep 1
           done
-          echo "Health check timed out" && docker logs smoke && exit 1
+          curl -sf http://localhost:8080/actuator/health | grep -q '"UP"' || (echo "Health check timed out" && docker logs smoke && exit 1)
+      - name: Smoke test — project generation
+        run: |
+          curl --fail --silent --show-error \
+            -X POST http://localhost:8080/api/v1/generate \
+            -H 'Content-Type: application/json' \
+            -H 'Accept: application/zip' \
+            -d '{"projectType":"PROCESS_APPLICATION","buildSystem":"MAVEN","groupId":"com.example","artifactId":"smoke-project","projectName":"Smoke Project","javaVersion":17,"dependencyUpdater":"RENOVATE","dockerCompose":false,"githubActions":true}' \
+            --output smoke-project.zip
+          test -s smoke-project.zip
+          file smoke-project.zip | grep -q 'Zip archive data'
 
   npm-publish:
     name: NPM Publish
@@ -146,12 +158,12 @@ jobs:
           node-version: "22"
           registry-url: "https://registry.npmjs.org"
       - name: Publish operaton-starter-mcp
-        run: npm ci && npm publish --access public
+        run: npm ci && npm run build && npm publish --access public
         working-directory: starter-mcp
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Publish operaton-starter (CLI)
-        run: npm ci && npm publish --access public
+        run: npm ci && npm run build && npm publish --access public
         working-directory: starter-cli
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

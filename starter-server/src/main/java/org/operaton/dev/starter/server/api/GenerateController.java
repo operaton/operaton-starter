@@ -1,6 +1,8 @@
 package org.operaton.dev.starter.server.api;
 
+import jakarta.validation.Valid;
 import org.operaton.dev.starter.server.model.ProjectConfig;
+import org.operaton.dev.starter.server.config.StarterProperties;
 import org.operaton.dev.starter.templates.engine.GenerationEngine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,10 +23,12 @@ public class GenerateController {
 
     private final GenerationEngine engine;
     private final ProjectConfigMapper mapper;
+    private final StarterProperties properties;
 
-    public GenerateController(GenerationEngine engine, ProjectConfigMapper mapper) {
+    public GenerateController(GenerationEngine engine, ProjectConfigMapper mapper, StarterProperties properties) {
         this.engine = engine;
         this.mapper = mapper;
+        this.properties = properties;
     }
 
     @PostMapping(
@@ -32,9 +36,51 @@ public class GenerateController {
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = "application/zip"
     )
-    public ResponseEntity<byte[]> generateProject(@RequestBody ProjectConfig dto) {
-        var config = mapper.toDomain(dto);
+    public ResponseEntity<byte[]> generateProject(@Valid @RequestBody ProjectConfig dto) {
+        return generateProjectResponse(toEffectiveConfig(dto));
+    }
 
+    @GetMapping(value = "/api/v1/generate", produces = "application/zip")
+    public ResponseEntity<byte[]> generateProjectFromQuery(
+            @RequestParam String groupId,
+            @RequestParam String artifactId,
+            @RequestParam String projectName,
+            @RequestParam(defaultValue = "PROCESS_APPLICATION") String projectType,
+            @RequestParam(defaultValue = "MAVEN") String buildSystem,
+            @RequestParam(defaultValue = "17") Integer javaVersion,
+            @RequestParam(required = false) String deploymentTarget,
+            @RequestParam(defaultValue = "RENOVATE") String dependencyUpdater,
+            @RequestParam(defaultValue = "false") boolean dockerCompose,
+            @RequestParam(defaultValue = "true") boolean githubActions
+    ) {
+        var dto = new ProjectConfig(
+                ProjectConfig.ProjectTypeEnum.fromValue(projectType),
+                ProjectConfig.BuildSystemEnum.fromValue(buildSystem),
+                groupId,
+                artifactId,
+                projectName
+        );
+        dto.setJavaVersion(ProjectConfig.JavaVersionEnum.fromValue(javaVersion));
+        if (deploymentTarget != null && !deploymentTarget.isBlank()) {
+            dto.setDeploymentTarget(ProjectConfig.DeploymentTargetEnum.fromValue(deploymentTarget));
+        }
+        dto.setDependencyUpdater(ProjectConfig.DependencyUpdaterEnum.fromValue(dependencyUpdater));
+        dto.setDockerCompose(dockerCompose);
+        dto.setGithubActions(githubActions);
+
+        return generateProjectResponse(toEffectiveConfig(dto));
+    }
+
+    private org.operaton.dev.starter.templates.model.ProjectConfig toEffectiveConfig(ProjectConfig dto) {
+        return mapper.toDomain(dto).withGeneratorDefaults(
+                properties.defaults().operatonVersion(),
+                properties.defaults().mavenRegistry()
+        );
+    }
+
+    private ResponseEntity<byte[]> generateProjectResponse(
+            org.operaton.dev.starter.templates.model.ProjectConfig config
+    ) {
         log.info("Generating project: projectType={} buildSystem={} javaVersion={}",
                 config.projectType(), config.buildSystem(), config.javaVersion());
 

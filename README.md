@@ -28,11 +28,12 @@ Browser-based generator with a project gallery (Explorer path) and a configurati
 
 **CLI**
 ```bash
-npx operaton-starter generate \
-  --type process-application \
-  --build gradle-kotlin \
-  --group-id com.example \
-  --artifact-id my-process \
+npx operaton-starter \
+  --groupId com.example \
+  --artifactId my-process \
+  --projectName "My Process" \
+  --projectType PROCESS_APPLICATION \
+  --buildSystem GRADLE_KOTLIN \
   > my-process.zip
 ```
 
@@ -54,7 +55,7 @@ Run your own instance with Docker:
 
 ```bash
 docker run -p 8080:8080 \
-  -e DEFAULT_GROUP_ID=com.myorg \
+  -e STARTER_DEFAULTS_GROUP_ID=com.myorg \
   docker.io/operaton/operaton-starter:latest
 ```
 
@@ -62,9 +63,10 @@ The image starts with zero external network calls. All configuration is via envi
 
 | Variable | Description |
 |----------|-------------|
-| `DEFAULT_GROUP_ID` | Pre-fills the Group ID field |
-| `MAVEN_REGISTRY` | Maven repository URL for generated projects |
+| `STARTER_DEFAULTS_GROUP_ID` | Pre-fills the Group ID field |
+| `STARTER_DEFAULTS_MAVEN_REGISTRY` | Maven repository URL for generated projects |
 | `STARTER_DEFAULTS_OPERATON_VERSION` | Pin Operaton version (self-hosted only) |
+| `STARTER_CORS_ALLOWED_ORIGINS` | Comma-separated CORS allowlist for `/api/**` |
 
 ## Architecture
 

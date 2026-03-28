@@ -86,10 +86,10 @@ public class MetadataController {
     private static List<TemplateManifestEntry> processArchiveManifest() {
         List<TemplateManifestEntry> entries = new ArrayList<>();
         entries.add(entry("pom.xml", "buildSystem == 'MAVEN'", "process-archive/maven/pom.xml.jte"));
-        entries.add(entry("build.gradle", "buildSystem == 'GRADLE_GROOVY'", "process-application/gradle-groovy/build.gradle.jte"));
-        entries.add(entry("settings.gradle", "buildSystem == 'GRADLE_GROOVY'", "process-application/gradle-groovy/settings.gradle.jte"));
-        entries.add(entry("build.gradle.kts", "buildSystem == 'GRADLE_KOTLIN'", "process-application/gradle-kotlin/build.gradle.kts.jte"));
-        entries.add(entry("settings.gradle.kts", "buildSystem == 'GRADLE_KOTLIN'", "process-application/gradle-kotlin/settings.gradle.kts.jte"));
+        entries.add(entry("build.gradle", "buildSystem == 'GRADLE_GROOVY'", "process-archive/gradle-groovy/build.gradle.jte"));
+        entries.add(entry("settings.gradle", "buildSystem == 'GRADLE_GROOVY'", "process-archive/gradle-groovy/settings.gradle.jte"));
+        entries.add(entry("build.gradle.kts", "buildSystem == 'GRADLE_KOTLIN'", "process-archive/gradle-kotlin/build.gradle.kts.jte"));
+        entries.add(entry("settings.gradle.kts", "buildSystem == 'GRADLE_KOTLIN'", "process-archive/gradle-kotlin/settings.gradle.kts.jte"));
         entries.add(entry("src/main/resources/META-INF/processes.xml", null, "process-archive/processes.xml.jte"));
         entries.add(entry("src/main/resources/{artifactId}.bpmn", null, "process-archive/process.bpmn.jte"));
         entries.add(entry("README.md", null, "common/README.md.jte"));

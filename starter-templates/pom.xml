@@ -50,8 +50,9 @@
         <artifactId>jte-maven-plugin</artifactId>
         <configuration>
           <sourceDirectory>${project.basedir}/src/main/jte</sourceDirectory>
-          <targetDirectory>${project.build.directory}/generated-sources/jte</targetDirectory>
+          <targetDirectory>${project.build.outputDirectory}</targetDirectory>
           <contentType>Plain</contentType>
+          <packageName>gg.jte.generated.precompiled</packageName>
         </configuration>
         <executions>
           <execution>

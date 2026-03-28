@@ -72,8 +72,6 @@ public class GenerationEngine {
     }
 
     private void generateProcessApplication(ProjectConfig config, ZipOutputStream zos) throws IOException {
-        String buildSystem = config.buildSystem().name().toLowerCase().replace('_', '-');
-
         // Build files
         switch (config.buildSystem()) {
             case MAVEN -> {
@@ -128,18 +126,17 @@ public class GenerationEngine {
                         "process-archive/maven/pom.xml.jte", config);
             }
             case GRADLE_GROOVY -> {
-                // Reuse process-application Groovy template structure
                 addTemplateEntry(zos, "build.gradle",
-                        "process-application/gradle-groovy/build.gradle.jte", config);
+                        "process-archive/gradle-groovy/build.gradle.jte", config);
                 addTemplateEntry(zos, "settings.gradle",
-                        "process-application/gradle-groovy/settings.gradle.jte", config);
+                        "process-archive/gradle-groovy/settings.gradle.jte", config);
                 addGradleWrapper(zos);
             }
             case GRADLE_KOTLIN -> {
                 addTemplateEntry(zos, "build.gradle.kts",
-                        "process-application/gradle-kotlin/build.gradle.kts.jte", config);
+                        "process-archive/gradle-kotlin/build.gradle.kts.jte", config);
                 addTemplateEntry(zos, "settings.gradle.kts",
-                        "process-application/gradle-kotlin/settings.gradle.kts.jte", config);
+                        "process-archive/gradle-kotlin/settings.gradle.kts.jte", config);
                 addGradleWrapper(zos);
             }
         }

@@ -22,7 +22,7 @@
   <properties>
     <java.version>${config.javaVersion()}</java.version>
     <maven.compiler.release>${config.javaVersion()}</maven.compiler.release>
-    <operaton.version>${VersionConstants.OPERATON_VERSION}</operaton.version>
+    <operaton.version>${config.effectiveOperatonVersion()}</operaton.version>
   </properties>
 
   <dependencyManagement>
@@ -30,12 +30,28 @@
       <dependency>
         <groupId>org.operaton.bpm</groupId>
         <artifactId>operaton-bom</artifactId>
-        <version>${VersionConstants.OPERATON_VERSION}</version>
+        <version>${config.effectiveOperatonVersion()}</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
     </dependencies>
   </dependencyManagement>
+
+@if(config.hasCustomMavenRegistry())
+  <repositories>
+    <repository>
+      <id>starter-default-repository</id>
+      <url>${config.mavenRegistryUrl()}</url>
+    </repository>
+  </repositories>
+
+  <pluginRepositories>
+    <pluginRepository>
+      <id>starter-default-plugin-repository</id>
+      <url>${config.mavenRegistryUrl()}</url>
+    </pluginRepository>
+  </pluginRepositories>
+@endif
 
   <dependencies>
     <dependency>
