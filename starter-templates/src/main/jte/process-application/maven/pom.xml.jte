@@ -16,7 +16,7 @@
 
   <groupId>${config.groupId()}</groupId>
   <artifactId>${config.artifactId()}</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
+  <version>0.1-SNAPSHOT</version>
   <name>${config.projectName()}</name>
 
   <properties>
@@ -30,7 +30,7 @@
       <dependency>
         <groupId>org.operaton.bpm</groupId>
         <artifactId>operaton-bom</artifactId>
-        <version>${config.effectiveOperatonVersion()}</version>
+        <version>${'$'}{operaton.version}</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
@@ -56,7 +56,7 @@
   <dependencies>
     <dependency>
       <groupId>org.operaton.bpm.springboot</groupId>
-      <artifactId>operaton-bpm-spring-boot-starter</artifactId>
+      <artifactId>operaton-bpm-spring-boot-starter-webapp</artifactId>
     </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>

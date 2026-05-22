@@ -9,10 +9,7 @@ package org.operaton.dev.starter.templates.model;
 public final class VersionConstants {
 
     /** Current stable Operaton BPM version. */
-    public static final String OPERATON_VERSION = "2.0.0";
-
-    /** Spring Boot version bundled in the current Operaton BOM. */
-    public static final String SPRING_BOOT_VERSION = "4.0.4";
+    public static final String OPERATON_VERSION = "2.1.0";
 
     /** Gradle wrapper version used in generated Gradle projects. */
     public static final String GRADLE_VERSION = "8.14";

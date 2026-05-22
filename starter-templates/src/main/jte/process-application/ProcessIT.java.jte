@@ -17,9 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class ProcessIT {
 
     @RegisterExtension
-    static ProcessEngineExtension extension = ProcessEngineExtension.builder()
-            .useDefaultConfiguration()
-            .build();
+    static ProcessEngineExtension extension = ProcessEngineExtension.builder().build();
 
     @Test
     @Deployment(resources = "${config.artifactId()}.bpmn")
