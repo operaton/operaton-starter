@@ -19,6 +19,9 @@ starter-web/node/
 starter-mcp/node/
 starter-cli/node/
 
+# Compiled classes
+starter-templates/jte-classes
+
 # Node modules
 node_modules/
 npm-debug.log
