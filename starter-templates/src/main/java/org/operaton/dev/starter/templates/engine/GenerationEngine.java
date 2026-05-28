@@ -3,12 +3,9 @@ package org.operaton.dev.starter.templates.engine;
 import gg.jte.CodeResolver;
 import gg.jte.ContentType;
 import gg.jte.TemplateEngine;
-import gg.jte.TemplateOutput;
 import gg.jte.output.StringOutput;
 import gg.jte.resolve.DirectoryCodeResolver;
-import org.operaton.dev.starter.templates.model.BuildSystem;
 import org.operaton.dev.starter.templates.model.DependencyUpdater;
-import org.operaton.dev.starter.templates.model.DeploymentTarget;
 import org.operaton.dev.starter.templates.model.ProjectConfig;
 import org.operaton.dev.starter.templates.model.ProjectType;
 
@@ -16,7 +13,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Path;
-import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -169,6 +165,7 @@ public class GenerationEngine {
         // Optional Docker Compose
         if (config.dockerCompose()) {
             addTemplateEntry(zos, "docker-compose.yml", "common/docker-compose.yml.jte", config);
+            addTemplateEntry(zos, "Dockerfile", "common/dockerfile.jte", config);
         }
     }
 

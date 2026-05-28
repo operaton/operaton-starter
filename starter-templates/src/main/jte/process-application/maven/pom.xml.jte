@@ -7,26 +7,28 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <parent>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-parent</artifactId>
-    <version>${VersionConstants.SPRING_BOOT_VERSION}</version>
-    <relativePath/>
-  </parent>
-
   <groupId>${config.groupId()}</groupId>
   <artifactId>${config.artifactId()}</artifactId>
-  <version>0.1-SNAPSHOT</version>
+  <version>${VersionConstants.INITIAL_PROJECT_VERSION}</version>
   <name>${config.projectName()}</name>
 
   <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <java.version>${config.javaVersion()}</java.version>
     <maven.compiler.release>${config.javaVersion()}</maven.compiler.release>
+    <spring-boot.version>${VersionConstants.SPRING_BOOT_VERSION}</spring-boot.version>
     <operaton.version>${config.effectiveOperatonVersion()}</operaton.version>
   </properties>
 
   <dependencyManagement>
     <dependencies>
+      <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-dependencies</artifactId>
+        <version>${'$'}{spring-boot.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
       <dependency>
         <groupId>org.operaton.bpm</groupId>
         <artifactId>operaton-bom</artifactId>
@@ -84,6 +86,17 @@
       <plugin>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
+        <version>${'$'}{spring-boot.version}</version>
+        <configuration>
+          <layout>ZIP</layout>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>repackage</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>

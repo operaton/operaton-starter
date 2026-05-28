@@ -1,7 +1,7 @@
 @import org.operaton.dev.starter.templates.model.ProjectConfig
 @param ProjectConfig config
 spring.application.name=${config.projectName()}
-server.port=8080
+server.port=${config.serverPort()}
 
 # H2 in-memory datasource — replace with a persistent DB for production
 spring.datasource.url=jdbc:h2:mem:operaton;DB_CLOSE_DELAY=-1

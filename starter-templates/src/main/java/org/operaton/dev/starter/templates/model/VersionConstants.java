@@ -7,6 +7,7 @@ package org.operaton.dev.starter.templates.model;
  * No user-selectable version exists — generated projects always target the current stable release.
  */
 public final class VersionConstants {
+    private VersionConstants() {}
 
     /** Current stable Operaton BPM version. */
     public static final String OPERATON_VERSION = "2.1.0";
@@ -14,5 +15,8 @@ public final class VersionConstants {
     /** Gradle wrapper version used in generated Gradle projects. */
     public static final String GRADLE_VERSION = "8.14";
 
-    private VersionConstants() {}
+    /** Current Spring Boot version */
+    public static final String SPRING_BOOT_VERSION = "4.0.6";
+
+    public static final String INITIAL_PROJECT_VERSION = "0.1-SNAPSHOT";
 }

@@ -7,12 +7,12 @@ services:
   app:
     build: .
     ports:
-      - "8080:8080"
+      - "${config.serverPort()}:${config.serverPort()}"
     environment:
       - SPRING_PROFILES_ACTIVE=docker
 @if(config.projectType() == ProjectType.PROCESS_APPLICATION)
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:${config.serverPort()}/actuator/health"]
       interval: 30s
       timeout: 10s
       retries: 3

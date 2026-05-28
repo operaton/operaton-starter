@@ -23,7 +23,8 @@ public record ProjectConfig(
         boolean dockerCompose,
         boolean githubActions,
         String operatonVersionOverride,
-        String mavenRegistryUrl
+        String mavenRegistryUrl,
+        int serverPort
 ) {
 
     /** Default Java version used when not specified by the user. */
@@ -78,7 +79,8 @@ public record ProjectConfig(
                 dockerCompose,
                 githubActions,
                 normalizeBlank(operatonVersionOverride),
-                normalizeBlank(mavenRegistryUrl)
+                normalizeBlank(mavenRegistryUrl),
+                serverPort
         );
     }
 
@@ -100,6 +102,7 @@ public record ProjectConfig(
         private boolean githubActions = true;
         private String operatonVersionOverride = "";
         private String mavenRegistryUrl = "";
+        private int serverPort = 8080;
 
         private Builder() {}
 
@@ -128,6 +131,11 @@ public record ProjectConfig(
             return this;
         }
 
+        public Builder serverPort(int serverPort) {
+            this.serverPort = serverPort;
+            return this;
+        }
+
         public ProjectConfig build() {
             if (groupId == null || groupId.isBlank()) {
                 throw new IllegalStateException("groupId is required");
@@ -147,7 +155,8 @@ public record ProjectConfig(
                     deploymentTarget, dependencyUpdater,
                     dockerCompose, githubActions,
                     normalizeBlank(operatonVersionOverride),
-                    normalizeBlank(mavenRegistryUrl)
+                    normalizeBlank(mavenRegistryUrl),
+                    serverPort
             );
         }
     }
