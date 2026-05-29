@@ -75,6 +75,7 @@ public class GenerationEngine {
             case MAVEN -> {
                 addTemplateEntry(zos, "pom.xml",
                         "process-application/maven/pom.xml.jte", config);
+                addMavenWrapper(zos);
             }
             case GRADLE_GROOVY -> {
                 addTemplateEntry(zos, "build.gradle",
@@ -166,6 +167,7 @@ public class GenerationEngine {
             case MAVEN -> {
                 addTemplateEntry(zos, "pom.xml",
                         "process-archive/maven/pom.xml.jte", config);
+                addMavenWrapper(zos);
             }
             case GRADLE_GROOVY -> {
                 addTemplateEntry(zos, "build.gradle",
@@ -234,10 +236,9 @@ public class GenerationEngine {
     }
 
     private void addGradleWrapper(ZipOutputStream zos) throws IOException {
-        // gradlew script
-        addGradleWrapperResource(zos, "gradlew", "gradle-wrapper/gradlew");
-        addGradleWrapperResource(zos, "gradlew.bat", "gradle-wrapper/gradlew.bat");
-        addGradleWrapperResource(zos, "gradle/wrapper/gradle-wrapper.jar",
+        addClasspathResource(zos, "gradlew", "gradle-wrapper/gradlew");
+        addClasspathResource(zos, "gradlew.bat", "gradle-wrapper/gradlew.bat");
+        addClasspathResource(zos, "gradle/wrapper/gradle-wrapper.jar",
                 "gradle-wrapper/gradle-wrapper.jar");
 
         // gradle-wrapper.properties is always generated with the pinned version constant
@@ -252,15 +253,20 @@ public class GenerationEngine {
                 wrapperProps.getBytes(java.nio.charset.StandardCharsets.UTF_8));
     }
 
-    private void addGradleWrapperResource(ZipOutputStream zos, String entryPath,
-                                           String resourcePath) throws IOException {
+    private void addMavenWrapper(ZipOutputStream zos) throws IOException {
+        addClasspathResource(zos, "mvnw", "maven-wrapper/mvnw");
+        addClasspathResource(zos, "mvnw.cmd", "maven-wrapper/mvnw.cmd");
+        addClasspathResource(zos, ".mvn/wrapper/maven-wrapper.properties",
+                "maven-wrapper/.mvn/wrapper/maven-wrapper.properties");
+    }
+
+    private void addClasspathResource(ZipOutputStream zos, String entryPath,
+                                       String resourcePath) throws IOException {
         try (var is = getClass().getClassLoader().getResourceAsStream(resourcePath)) {
             if (is != null) {
                 addEntry(zos, entryPath, is.readAllBytes());
             } else {
-                // Placeholder — real Gradle wrapper jar is a binary resource bundled at build time
-                addEntry(zos, entryPath,
-                        ("# Gradle wrapper placeholder — see https://gradle.org/install/\n").getBytes());
+                addEntry(zos, entryPath, new byte[0]);
             }
         }
     }

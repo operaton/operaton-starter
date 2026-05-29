@@ -320,6 +320,84 @@ class GenerationEngineTest {
         assertTrue(pom.contains("<url>https://repo.example.test/maven</url>"));
     }
 
+    @Test
+    void maven_zip_contains_maven_wrapper() throws Exception {
+        var config = ProjectConfig.builder()
+                .groupId("com.example")
+                .artifactId("my-process")
+                .projectName("My Process")
+                .projectType(ProjectType.PROCESS_APPLICATION)
+                .buildSystem(BuildSystem.MAVEN)
+                .build();
+
+        var entries = listZipEntries(engine.generate(config));
+
+        assertTrue(entries.contains("mvnw"), "Should contain mvnw");
+        assertTrue(entries.contains("mvnw.cmd"), "Should contain mvnw.cmd");
+        assertTrue(entries.contains(".mvn/wrapper/maven-wrapper.properties"),
+                "Should contain maven-wrapper.properties");
+    }
+
+    @ParameterizedTest(name = "Gradle wrapper present — {0}")
+    @MethodSource("gradleBuildSystems")
+    void gradle_zip_contains_gradle_wrapper(BuildSystem buildSystem) throws Exception {
+        var config = ProjectConfig.builder()
+                .groupId("com.example")
+                .artifactId("my-process")
+                .projectName("My Process")
+                .projectType(ProjectType.PROCESS_APPLICATION)
+                .buildSystem(buildSystem)
+                .build();
+
+        var entries = listZipEntries(engine.generate(config));
+
+        assertTrue(entries.contains("gradlew"), "Should contain gradlew");
+        assertTrue(entries.contains("gradlew.bat"), "Should contain gradlew.bat");
+        assertTrue(entries.contains("gradle/wrapper/gradle-wrapper.jar"),
+                "Should contain gradle-wrapper.jar");
+        assertTrue(entries.contains("gradle/wrapper/gradle-wrapper.properties"),
+                "Should contain gradle-wrapper.properties");
+    }
+
+    static Stream<Arguments> gradleBuildSystems() {
+        return Stream.of(BuildSystem.GRADLE_GROOVY, BuildSystem.GRADLE_KOTLIN).map(Arguments::of);
+    }
+
+    @Test
+    void readme_contains_chmod_instruction_for_maven() throws Exception {
+        var config = ProjectConfig.builder()
+                .groupId("com.example")
+                .artifactId("my-process")
+                .projectName("My Process")
+                .projectType(ProjectType.PROCESS_APPLICATION)
+                .buildSystem(BuildSystem.MAVEN)
+                .build();
+
+        String readme = readZipEntry(engine.generate(config), "README.md");
+
+        assertTrue(readme.contains("chmod +x"), "README should mention chmod +x");
+        assertTrue(readme.contains("mvnw"), "README should reference mvnw");
+        assertTrue(readme.contains("./mvnw"), "README build commands should use ./mvnw");
+    }
+
+    @ParameterizedTest(name = "README uses wrapper commands — {0}")
+    @MethodSource("gradleBuildSystems")
+    void readme_contains_chmod_instruction_for_gradle(BuildSystem buildSystem) throws Exception {
+        var config = ProjectConfig.builder()
+                .groupId("com.example")
+                .artifactId("my-process")
+                .projectName("My Process")
+                .projectType(ProjectType.PROCESS_APPLICATION)
+                .buildSystem(buildSystem)
+                .build();
+
+        String readme = readZipEntry(engine.generate(config), "README.md");
+
+        assertTrue(readme.contains("chmod +x"), "README should mention chmod +x");
+        assertTrue(readme.contains("gradlew"), "README should reference gradlew");
+        assertTrue(readme.contains("./gradlew"), "README build commands should use ./gradlew");
+    }
+
     private static List<String> listZipEntries(byte[] zip) throws Exception {
         var entries = new ArrayList<String>();
         try (var zis = new ZipInputStream(new ByteArrayInputStream(zip))) {
