@@ -284,6 +284,7 @@ The repository spans Java (server, templates, archetypes) and JavaScript (Node.j
 | `POST` | `/api/v1/generate` | Generate project archive. `Accept: application/zip` returns ZIP (only supported format at this time). Request body: project configuration JSON. |
 | `GET` | `/api/v1/metadata` | Retrieve all configuration options (project types, build systems, etc.) and **project template manifests** — the set of files generated per project type and their conditions (e.g., `docker-compose.yml` included if `dockerCompose: true`), enabling client-side preview rendering without server round-trips. |
 | `GET` | `/api/v1/docs` | OpenAPI 3.x specification (generated from the spec-first source) |
+| `GET` | `/docs` | Interactive Redoc API documentation UI — renders the OpenAPI spec as a navigable HTML page; no external CDN dependency in production (Redoc bundle served locally) |
 
 **Operational Endpoints (infrastructure, not part of developer API contract):**
 
@@ -431,7 +432,7 @@ Project types are phased by adoption value, not technical complexity. Process Ap
 
 - **FR24:** An API consumer can generate and download a project archive via `POST /api/v1/generate` with `Accept: application/zip`
 - **FR25:** An API consumer can retrieve all supported configuration options and project template manifests via `GET /api/v1/metadata`
-- **FR26:** An API consumer can access the complete OpenAPI specification at `/api/v1/docs`
+- **FR26:** An API consumer can access the complete OpenAPI specification at `/api/v1/docs` and an interactive Redoc documentation UI at `/docs`; the Redoc bundle is served locally — no external CDN calls are required at runtime
 - **FR27:** The system enforces a rate limit per IP address and returns a structured error response when exceeded
 
 ### CLI
@@ -456,7 +457,8 @@ Project types are phased by adoption value, not technical complexity. Process Ap
 ### Self-Hosting & Operations
 
 - **FR37:** An operator can deploy Operaton Starter as a self-hosted instance using a single Docker image that bundles the web UI (served as static assets), the REST API, and the generation engine — starting the image produces a fully functional project generator accessible on a single port with no external service dependencies at startup
-- **FR47:** The repository contains a `Dockerfile` for building the Operaton Starter application image; the build sequence is: (1) run the Maven build to produce the application JAR (mandatory prerequisite), then (2) build the Docker image from the pre-built JAR — the Docker build itself requires no Maven or internet access and is fully self-contained once the JAR is present
+- **FR47:** The repository contains a `Dockerfile` for building the Operaton Starter application image
+- **FR48:** The self-hosted Docker image documents how to connect the `operaton-starter-mcp` npm package to the running instance via the `BASE_URL` environment variable, so AI assistants can use a self-hosted deployment as their generation backend; whether the MCP server process is bundled inside the image alongside the JVM application requires an explicit design decision *(bundling adds a Node.js runtime to the image — trade-off: operational simplicity vs. image size and multi-process complexity)*; the build sequence is: (1) run the Maven build to produce the application JAR (mandatory prerequisite), then (2) build the Docker image from the pre-built JAR — the Docker build itself requires no Maven or internet access and is fully self-contained once the JAR is present
 - **FR38:** An operator can configure self-hosted instance defaults (default Group ID, Maven registry URL, Operaton version) via environment variables
 - **FR39:** The running instance exposes a health check endpoint for operational monitoring
 
