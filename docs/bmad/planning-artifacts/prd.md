@@ -507,4 +507,5 @@ Project types are phased by adoption value, not technical complexity. Process Ap
 
 - **NFR18:** The service emits structured JSON logs compatible with standard log aggregation tools
 - **NFR19:** The Docker image is configurable entirely via environment variables; no file-based configuration is required at runtime
+- **NFR22:** Each submodule in the monorepo (`starter-server`, `starter-templates`, `starter-archetypes`, `starter-mcp`, `starter-web`) has its own `README.md` covering: the submodule's role within the overall system, prerequisites, how to build it in isolation, how to run or use it locally, and at least one concrete usage example; a contributor must be able to build and exercise any submodule using only its README without consulting other sources
 
