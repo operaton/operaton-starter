@@ -462,6 +462,14 @@ Project types are phased by adoption value, not technical complexity. Process Ap
 - **FR38:** An operator can configure self-hosted instance defaults (default Group ID, Maven registry URL, Operaton version) via environment variables
 - **FR39:** The running instance exposes a health check endpoint for operational monitoring
 
+### Release & Distribution
+
+- **FR49:** Releases are created via a GitHub Actions workflow using **JReleaser**, following the release workflow pattern established in the `operaton/operaton` repository; JReleaser creates the GitHub Release, generates the changelog from conventional commits, and coordinates publishing to all distribution targets in a single automated run
+- **FR50:** The Docker image is published to Docker Hub as `operaton/operaton-starter` on every release; image tags follow semantic versioning (`x.y.z`) with a `latest` tag updated on each stable release
+- **FR51:** Maven artifacts (generation engine, archetypes, server) are published to Maven Central on every release via the standard Sonatype OSSRH publication flow coordinated by JReleaser
+- **FR52:** The `operaton-starter-mcp` npm package is published to the public npm registry (`npmjs.com`) on every release, version-aligned with the overall project release tag
+- **FR53:** The repository documentation specifies all credentials that must be configured as GitHub Actions secrets for the release workflow to succeed, including: Docker Hub credentials (`DOCKER_USERNAME`, `DOCKER_PASSWORD`), Maven Central / Sonatype credentials (`MAVEN_CENTRAL_USERNAME`, `MAVEN_CENTRAL_TOKEN`), npm publish token (`NPM_TOKEN`), and the GitHub token required by JReleaser for GitHub Release creation; no release should be possible without this credential inventory being current and complete
+
 ---
 
 ## Non-Functional Requirements
