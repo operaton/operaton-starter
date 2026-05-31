@@ -71,7 +71,7 @@ Operaton Starter is an open-source infrastructure tool with no authentication or
 
 - **Generation speed:** REST API response for `POST /api/v1/generate` ≤ 1 second under normal load.
 - **Availability:** The public instance at `start.operaton.org` targets 99.9% uptime — achievable for a stateless, read-only service with no database dependency.
-- **Correctness:** 100% of generated projects compile and pass their included tests across all supported project type × build system combinations (MVP: 2 types × 3 build systems = 6 combinations; expanding to 15 as project types are added in subsequent phases). This implies a required CI test matrix as a non-negotiable implementation constraint.
+- **Correctness:** 100% of generated projects compile, pass their included tests, and start successfully across all supported project type × build system combinations (MVP: 2 types × 3 build systems = 6 combinations; expanding to 15 as project types are added in subsequent phases). This implies a required CI test matrix as a non-negotiable implementation constraint. Template changes on a PR trigger a targeted integration workflow that validates only the affected combinations — generate, build, and start — as a merge gate.
 - **Channel consistency:** The web UI, REST API, CLI, and `mvn archetype:generate` must invoke the same generation engine — no divergence between channels is acceptable.
 - **Version currency:** The starter is updated within 24 hours of a new Operaton stable release.
 - **Self-hostability:** The Docker image runs with zero configuration beyond environment variables — no external service dependencies at startup.
@@ -134,15 +134,15 @@ Operaton Starter becomes the **inevitable front door** of the Operaton developer
 
 **Opening Scene:** Marcus has a new GitHub repo open in one tab and `start.operaton.org` in another. He's done this before — not with Operaton, but with Spring Initializr and code.quarkus.io. He expects it to work the same way.
 
-**Rising Action:** He lands on the form view. Group ID: `com.acme.logistics`. Artifact: `shipment-tracking`. Project type: Process Application. Build: Gradle Kotlin DSL. He adds the REST starter, enables Renovate, toggles Docker Compose on. The live preview panel updates with every selection — he can see `shipment-tracking.bpmn`, `build.gradle.kts`, `docker-compose.yml` appearing in the file tree. He clicks the IntelliJ deep-link button.
+**Rising Action:** He lands on the form view. Group ID: `com.acme.logistics`. Artifact: `shipment-tracking`. Project type: Process Application. Build: Gradle Kotlin DSL. He adds the REST starter, enables Renovate, toggles Docker Compose on. The live preview panel updates with every selection — he can see `shipment-tracking.bpmn`, `build.gradle.kts`, `docker-compose.yml`, and `Dockerfile` appearing in the file tree. He clicks the IntelliJ deep-link button.
 
 **Climax:** IntelliJ opens with the project already imported, indexed, and ready. `build.gradle.kts` is open. The BPMN file is in `src/main/resources`. There is nothing to configure.
 
-**Resolution:** Marcus runs `./gradlew bootRun`. The Operaton engine starts. He opens Cockpit at `localhost:8080`. The skeleton process is deployed. Total time from landing to running engine: under 3 minutes. He copies the shareable link and sends it to his colleague starting the companion process archive.
+**Resolution:** Marcus runs `./gradlew bootRun`. The Operaton engine starts. He opens Cockpit at the URL shown in the generated README — the README knows his configured server port (default: 8080), so the link is accurate. The skeleton process is deployed. Total time from landing to running engine: under 3 minutes. He copies the shareable link and sends it to his colleague starting the companion process archive.
 
-**Edge Case — Project Fails to Start:** If Marcus's project fails to start (e.g., port conflict, missing datasource), the generated README contains a "Troubleshooting" section with the three most common startup failure modes and their resolutions. The README is the first line of support — it is generated specifically for his stack, not generic boilerplate.
+**Edge Case — Project Fails to Start:** If Marcus's project fails to start (e.g., port conflict, missing datasource), the generated README contains a "Troubleshooting" section with the most common startup failure modes and their resolutions, including a port-specific instruction that references the actual configured port. The README is the first line of support — it is generated specifically for his stack, not generic boilerplate.
 
-**Capabilities revealed:** form view, build system selection, live preview, IDE deep-link, Docker Compose toggle, Renovate option, shareable config link, identity-aware scaffolding, skeleton BPMN, zero-boilerplate startup, troubleshooting README.
+**Capabilities revealed:** form view, build system selection, live preview, IDE deep-link, Docker Compose toggle (includes Dockerfile), Renovate option, shareable config link, identity-aware scaffolding, skeleton BPMN, zero-boilerplate startup, port-aware troubleshooting README.
 
 ---
 
@@ -397,7 +397,7 @@ Project types are phased by adoption value, not technical complexity. Process Ap
 - **FR4:** The system propagates developer identity (Group ID, Artifact ID, project name) consistently across all generated files — Java package names, BPMN process IDs, Spring application name
 - **FR5:** The system generates a skeleton BPMN process file for applicable project types
 - **FR6:** The system generates a `processes.xml` deployment descriptor for Process Archive projects, pre-configured with the selected deployment target
-- **FR7:** The system generates deployment-target-appropriate artifact configuration (WAR/JAR) for Process Archive projects
+- **FR7:** The system generates target-platform-appropriate artifact configuration (WAR/JAR) for Process Archive projects, matching the platform selected via FR12
 - **FR8:** The generation engine is a single shared implementation invoked by all channels — web UI, REST API, CLI, and MCP module; no per-channel generation logic
 - **FR42:** The CLI and `operaton-starter-mcp` client code are generated from the OpenAPI specification; no hand-written client code exists independently of the API contract
 
@@ -406,9 +406,9 @@ Project types are phased by adoption value, not technical complexity. Process Ap
 - **FR9:** A developer can select a project type (MVP: Process Application, Process Archive)
 - **FR10:** A developer can select a build system (Maven, Gradle Groovy DSL, Gradle Kotlin DSL)
 - **FR11:** A developer can specify Group ID, Artifact ID, and project name as project identity
-- **FR12:** A developer can select a deployment target for Process Archive projects
+- **FR12:** A developer can select a target platform for Process Archive projects (MVP platforms: Tomcat, Wildfly; list is extensible); the selected platform determines artifact type (WAR/JAR) and deployment descriptor pre-configuration
 - **FR13:** A developer can choose between Dependabot and Renovate for dependency update configuration
-- **FR14:** A developer can opt in to Docker Compose file generation
+- **FR14:** A developer can opt in to Docker Compose file generation; this option is only presented for project types that support containerised embedded deployment (Process Application); it is not shown for Process Archive projects
 - **FR15:** A developer can opt in to GitHub Actions CI/CD skeleton generation
 - **FR16:** A developer can share a project configuration as a URL that restores and pre-fills the configuration form when opened
 
@@ -423,6 +423,8 @@ Project types are phased by adoption value, not technical complexity. Process Ap
 - **FR23:** The web UI populates all configuration options and gallery content from the REST API metadata endpoint
 - **FR40:** A developer can access the tool through two distinct entry points: a direct configuration form (for developers who know what they want) and a project gallery (for discovery-oriented developers), with both leading to the same generation flow
 - **FR41:** A developer can access an explanation distinguishing between available project types to inform their selection
+- **FR45:** When a developer reaches the configuration details page via the gallery or a direct project-type entry point, the project type is pre-set from that selection and displayed as read-only context — it is not re-presented as an editable field on the details page
+- **FR46:** Configuration options on the details page are conditionally rendered based on the selected project type; options that do not apply to the current project type are hidden entirely (not shown as disabled); the visible option set updates if the developer navigates back and changes the project type selection
 - **FR43:** The web UI renders the project file tree preview from template manifests in the metadata response, without a per-change server round-trip
 
 ### REST API
@@ -445,10 +447,10 @@ Project types are phased by adoption value, not technical complexity. Process Ap
 
 ### Generated Project Quality
 
-- **FR33:** Every generated project includes a README with project-specific next-step instructions tailored to the selected project type and build system
+- **FR33:** Every generated project includes a README with project-specific next-step instructions tailored to the selected project type and build system; all URLs and commands in the README (Cockpit URL, troubleshooting port instructions, docker-compose launch steps) reflect the actual project configuration (e.g., server port, Docker Compose enabled/disabled)
 - **FR34:** Every generated project includes a configured dependency update file (Dependabot or Renovate) ready to use without modification
 - **FR35:** Generated Process Application projects include a GitHub Actions CI/CD workflow that passes on first push
-- **FR36:** Generated projects with Docker Compose enabled include a `docker-compose.yml` that starts the application
+- **FR36:** Generated projects with Docker Compose enabled include a `docker-compose.yml` that starts the application and a multi-stage `Dockerfile` (Maven build stage + runtime image) for containerised builds
 - **FR44:** Generated Process Application projects include a `JavaDelegate` implementation stub wired to the skeleton BPMN service task and a JUnit test that deploys and executes the skeleton process end-to-end without modification
 
 ### Self-Hosting & Operations
@@ -499,6 +501,7 @@ Project types are phased by adoption value, not technical complexity. Process Ap
 ### Correctness
 
 - **NFR17:** All supported project type × build system combinations (MVP: 6) are validated in CI on every template change; each combination is compiled and its tests executed in a CI matrix job; zero test failures are acceptable; any failure blocks merge
+- **NFR21:** On any pull request that modifies generation templates, a dedicated CI workflow — separate from the unit test suite — identifies the project type × build system combinations affected by the changed template files, generates a project for each affected combination, builds the generated project, and starts the application to verify it comes up successfully; all steps must pass for the PR to be mergeable; combinations not touched by the PR's template changes are excluded from that run to keep feedback fast
 
 ### Maintainability & Operability
 
