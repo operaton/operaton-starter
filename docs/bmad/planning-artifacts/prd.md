@@ -93,7 +93,7 @@ Operaton Starter is an open-source infrastructure tool with no authentication or
 
 ### MVP — Minimum Viable Product
 
-Core generation engine supporting **2 project types (Process Application, Process Archive)** across Maven, Gradle Groovy DSL, and Gradle Kotlin DSL (6 combinations). Identity-aware scaffolding, skeleton BPMN with wired JavaDelegate stub, deployment-target selector for Process Archive, zero boilerplate config classes, always-latest Operaton version.
+Core generation engine supporting **2 project types (Process Application, Process Archive)** across Maven and Gradle (Groovy or Kotlin DSL) — 6 combinations total; Gradle DSL choice is a sub-option that appears only when Gradle is selected. Identity-aware scaffolding, skeleton BPMN with wired JavaDelegate stub, deployment-target selector for Process Archive, zero boilerplate config classes, always-latest Operaton version.
 
 Web UI at `start.operaton.org`: split landing (form + gallery), live project preview panel, capability tags, shareable config links, IDE deep-link (IntelliJ + VS Code), inline "explain this" help.
 
@@ -346,7 +346,7 @@ operaton-starter/
 - Process Application (Spring Boot embedded engine)
 - Process Archive (engine-agnostic WAR/JAR for Standalone Engine)
 
-**Build systems:** Maven, Gradle Groovy DSL, Gradle Kotlin DSL — 6 combinations total
+**Build systems:** Maven; Gradle with Groovy DSL; Gradle with Kotlin DSL — selected as a two-level choice (build system, then DSL if Gradle); 6 combinations total
 
 **All channels ship in MVP:** Web UI, REST API (`POST /api/v1/generate`), CLI (`npx operaton-starter`), `operaton-starter-mcp` npm package
 
@@ -404,7 +404,7 @@ Project types are phased by adoption value, not technical complexity. Process Ap
 ### Project Configuration
 
 - **FR9:** A developer can select a project type (MVP: Process Application, Process Archive)
-- **FR10:** A developer can select a build system (Maven, Gradle Groovy DSL, Gradle Kotlin DSL)
+- **FR10:** A developer selects a build system in two steps: first choosing between Maven and Gradle; if Gradle is chosen, a DSL sub-option (Groovy or Kotlin) becomes visible and must be selected before generation; the DSL sub-option is hidden when Maven is selected
 - **FR11:** A developer can specify Group ID, Artifact ID, and project name as project identity
 - **FR12:** A developer can select a target platform for Process Archive projects (MVP platforms: Tomcat, Wildfly; list is extensible); the selected platform determines artifact type (WAR/JAR) and deployment descriptor pre-configuration
 - **FR13:** A developer can choose between Dependabot and Renovate for dependency update configuration
@@ -455,7 +455,8 @@ Project types are phased by adoption value, not technical complexity. Process Ap
 
 ### Self-Hosting & Operations
 
-- **FR37:** An operator can deploy Operaton Starter as a self-hosted instance using a Docker image with no external service dependencies at startup
+- **FR37:** An operator can deploy Operaton Starter as a self-hosted instance using a single Docker image that bundles the web UI (served as static assets), the REST API, and the generation engine — starting the image produces a fully functional project generator accessible on a single port with no external service dependencies at startup
+- **FR47:** The repository contains a `Dockerfile` for building the Operaton Starter application image; the build sequence is: (1) run the Maven build to produce the application JAR (mandatory prerequisite), then (2) build the Docker image from the pre-built JAR — the Docker build itself requires no Maven or internet access and is fully self-contained once the JAR is present
 - **FR38:** An operator can configure self-hosted instance defaults (default Group ID, Maven registry URL, Operaton version) via environment variables
 - **FR39:** The running instance exposes a health check endpoint for operational monitoring
 
