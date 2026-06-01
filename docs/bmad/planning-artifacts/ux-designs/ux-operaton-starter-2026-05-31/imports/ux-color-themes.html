@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Operaton Starter — Color Theme Visualizer</title>
+<style>
+  :root {
+    --color-primary: #184AEF;
+    --color-primary-dark: #0a2dbf;
+    --color-primary-light: #4a70f5;
+    --color-secondary: #27F3E0;
+    --color-neutral-0: #ffffff;
+    --color-neutral-50: #F5F0F3;
+    --color-neutral-200: #E3D4DD;
+    --color-neutral-500: #666666;
+    --color-neutral-900: #000000;
+    --color-success: #16a34a;
+    --color-error: #dc2626;
+    --border-radius: 0.5em;
+    --max-width: 80rem;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: Inter, system-ui, -apple-system, sans-serif;
+    background: var(--color-neutral-50);
+    color: var(--color-neutral-900);
+    padding: 2rem;
+  }
+
+  h1 { font-size: 1.875rem; font-weight: 700; margin-bottom: 0.5rem; }
+  h2 { font-size: 1.25rem; font-weight: 600; margin: 2rem 0 1rem; }
+  h3 { font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; }
+
+  .section { margin-bottom: 3rem; }
+
+  /* Color Swatches */
+  .swatches { display: flex; flex-wrap: wrap; gap: 1rem; }
+  .swatch {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .swatch-box {
+    width: 100px;
+    height: 100px;
+    border-radius: var(--border-radius);
+    border: 1px solid var(--color-neutral-200);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+  .swatch-label { font-size: 0.75rem; text-align: center; color: var(--color-neutral-500); }
+  .swatch-hex { font-size: 0.75rem; font-family: monospace; }
+
+  /* Typography Preview */
+  .type-specimen { background: white; border-radius: var(--border-radius); border: 1px solid var(--color-neutral-200); padding: 2rem; }
+  .type-row { margin-bottom: 1rem; border-bottom: 1px solid var(--color-neutral-50); padding-bottom: 1rem; display: flex; align-items: baseline; gap: 2rem; }
+  .type-meta { font-size: 0.75rem; color: var(--color-neutral-500); min-width: 140px; font-family: monospace; }
+
+  /* Button Preview */
+  .btn-row { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; padding: 1.5rem; background: white; border-radius: var(--border-radius); border: 1px solid var(--color-neutral-200); }
+  button, .btn {
+    padding: 0.5rem 1.25rem;
+    border-radius: var(--border-radius);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    font-family: inherit;
+  }
+  .btn-primary { background: var(--color-primary); color: white; }
+  .btn-primary:hover { background: var(--color-primary-dark); }
+  .btn-secondary { background: transparent; color: var(--color-primary); border: 1.5px solid var(--color-primary); }
+  .btn-ghost { background: transparent; color: var(--color-neutral-500); border: none; }
+  .btn-ghost:hover { color: var(--color-primary); }
+  .btn-danger { background: var(--color-error); color: white; }
+
+  /* Card Preview */
+  .card-row { display: flex; flex-wrap: wrap; gap: 1.5rem; }
+  .card {
+    background: white;
+    border-radius: var(--border-radius);
+    border: 1px solid var(--color-neutral-200);
+    padding: 1.5rem;
+    width: 280px;
+  }
+  .card:hover { box-shadow: 0 4px 16px rgba(24,74,239,0.12); border-color: var(--color-primary); }
+  .card-title { font-size: 1.125rem; font-weight: 600; margin-bottom: 0.5rem; }
+  .card-desc { font-size: 0.875rem; color: var(--color-neutral-500); margin-bottom: 1rem; }
+  .tags { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; }
+  .tag {
+    display: inline-flex;
+    background: rgba(39,243,224,0.2);
+    color: var(--color-primary);
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 0.25rem 0.5rem;
+    border-radius: 9999px;
+  }
+  .persona-hint { font-size: 0.875rem; color: var(--color-primary); font-weight: 500; margin-bottom: 1rem; }
+  .card-btn { width: 100%; padding: 0.5rem; background: var(--color-primary); color: white; border-radius: var(--border-radius); border: none; font-weight: 500; cursor: pointer; }
+
+  /* Form Preview */
+  .form-preview { background: white; border-radius: var(--border-radius); border: 1px solid var(--color-neutral-200); padding: 2rem; max-width: 420px; }
+  .field-group { margin-bottom: 1.25rem; }
+  label { font-size: 0.875rem; font-weight: 500; display: flex; align-items: center; gap: 0.375rem; margin-bottom: 0.375rem; }
+  .help-btn {
+    width: 16px; height: 16px; border-radius: 50%;
+    background: var(--color-neutral-200); color: var(--color-neutral-500);
+    font-size: 0.625rem; border: none; cursor: pointer; padding: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-family: monospace; font-weight: 700;
+  }
+  input[type=text], select {
+    width: 100%; padding: 0.5rem 0.75rem;
+    border: 1.5px solid var(--color-neutral-200);
+    border-radius: var(--border-radius);
+    font-family: inherit; font-size: 0.875rem;
+    outline: none;
+  }
+  input:focus, select:focus { border-color: var(--color-primary); box-shadow: 0 0 0 3px rgba(24,74,239,0.15); }
+  .error-msg { font-size: 0.75rem; color: var(--color-error); margin-top: 0.25rem; }
+
+  /* File Tree Preview */
+  .file-tree {
+    background: var(--color-neutral-50);
+    border-radius: var(--border-radius);
+    border: 1px solid var(--color-neutral-200);
+    padding: 1rem;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 0.8125rem;
+  }
+  .file-tree ul { list-style: none; padding-left: 1rem; }
+  .file-tree li { line-height: 1.75; color: var(--color-neutral-900); }
+  .file-tree .folder { color: var(--color-primary); font-weight: 600; }
+
+  /* Spacing ruler */
+  .space-ruler { display: flex; flex-direction: column; gap: 0.5rem; }
+  .space-demo { display: flex; align-items: center; gap: 1rem; }
+  .space-box { background: var(--color-primary); height: 1rem; }
+  .space-label { font-size: 0.75rem; color: var(--color-neutral-500); font-family: monospace; min-width: 160px; }
+
+  /* Error Banner */
+  .error-banner {
+    border-radius: var(--border-radius);
+    border: 1px solid #fecaca;
+    background: #fef2f2;
+    padding: 1rem;
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+  }
+  .error-icon { color: var(--color-error); font-size: 1.25rem; }
+  .error-title { font-weight: 600; color: #b91c1c; }
+  .error-detail { font-size: 0.875rem; color: var(--color-error); margin-top: 0.25rem; }
+
+  /* Skeleton */
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+  .skeleton { animation: pulse 2s ease-in-out infinite; }
+  .sk-box { background: var(--color-neutral-200); border-radius: 4px; }
+  .skeleton-card { background: white; border-radius: var(--border-radius); border: 1px solid var(--color-neutral-200); padding: 1.5rem; width: 280px; }
+</style>
+</head>
+<body>
+
+<h1>Operaton Starter — Color & Component Palette</h1>
+<p style="color: var(--color-neutral-500); margin-top: 0.5rem;">Design tokens extracted from operaton.org · Visual reference for starter-web implementation</p>
+
+<!-- Colors -->
+<div class="section">
+  <h2>Color Palette</h2>
+  <div class="swatches">
+    <div class="swatch">
+      <div class="swatch-box" style="background:#184AEF; color:white;">Aa</div>
+      <div class="swatch-label">primary</div>
+      <div class="swatch-hex">#184AEF</div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-box" style="background:#0a2dbf; color:white;">Aa</div>
+      <div class="swatch-label">primary-dark</div>
+      <div class="swatch-hex">#0a2dbf</div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-box" style="background:#4a70f5; color:white;">Aa</div>
+      <div class="swatch-label">primary-light</div>
+      <div class="swatch-hex">#4a70f5</div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-box" style="background:#27F3E0; border:1px solid #E3D4DD;">Aa</div>
+      <div class="swatch-label">secondary</div>
+      <div class="swatch-hex">#27F3E0</div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-box" style="background:#ffffff; border:2px solid #E3D4DD;">Aa</div>
+      <div class="swatch-label">neutral-0</div>
+      <div class="swatch-hex">#ffffff</div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-box" style="background:#F5F0F3;">Aa</div>
+      <div class="swatch-label">neutral-50</div>
+      <div class="swatch-hex">#F5F0F3</div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-box" style="background:#E3D4DD;">Aa</div>
+      <div class="swatch-label">neutral-200</div>
+      <div class="swatch-hex">#E3D4DD</div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-box" style="background:#666666; color:white;">Aa</div>
+      <div class="swatch-label">neutral-500</div>
+      <div class="swatch-hex">#666666</div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-box" style="background:#000000; color:white;">Aa</div>
+      <div class="swatch-label">neutral-900</div>
+      <div class="swatch-hex">#000000</div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-box" style="background:#16a34a; color:white;">Aa</div>
+      <div class="swatch-label">success</div>
+      <div class="swatch-hex">#16a34a</div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-box" style="background:#dc2626; color:white;">Aa</div>
+      <div class="swatch-label">error</div>
+      <div class="swatch-hex">#dc2626</div>
+    </div>
+  </div>
+</div>
+
+<!-- Typography -->
+<div class="section">
+  <h2>Typography Scale</h2>
+  <div class="type-specimen">
+    <div class="type-row">
+      <span class="type-meta">3xl · 1.875rem · 700</span>
+      <span style="font-size:1.875rem; font-weight:700;">Start your Operaton project</span>
+    </div>
+    <div class="type-row">
+      <span class="type-meta">2xl · 1.5rem · 600</span>
+      <span style="font-size:1.5rem; font-weight:600;">Choose a project type</span>
+    </div>
+    <div class="type-row">
+      <span class="type-meta">xl · 1.25rem · 600</span>
+      <span style="font-size:1.25rem; font-weight:600;">Process Application</span>
+    </div>
+    <div class="type-row">
+      <span class="type-meta">base · 1rem · 400</span>
+      <span style="font-size:1rem;">A Spring Boot application with an embedded Operaton engine.</span>
+    </div>
+    <div class="type-row">
+      <span class="type-meta">sm · 0.875rem · 500</span>
+      <span style="font-size:0.875rem; font-weight:500; color:#666;">Ideal for Camunda 7 migrators</span>
+    </div>
+    <div class="type-row">
+      <span class="type-meta">sm · monospace</span>
+      <span style="font-size:0.875rem; font-family:monospace; color:#184AEF;">src/main/java/com/example/Application.java</span>
+    </div>
+  </div>
+</div>
+
+<!-- Spacing -->
+<div class="section">
+  <h2>Spacing System</h2>
+  <div style="background:white; border-radius:var(--border-radius); border:1px solid var(--color-neutral-200); padding:1.5rem;">
+    <div class="space-ruler">
+      <div class="space-demo"><div class="space-box" style="width:4px;"></div><span class="space-label">xs · 0.25em (4px)</span></div>
+      <div class="space-demo"><div class="space-box" style="width:8px;"></div><span class="space-label">s · 0.5em (8px)</span></div>
+      <div class="space-demo"><div class="space-box" style="width:16px;"></div><span class="space-label">m · 1em (16px)</span></div>
+      <div class="space-demo"><div class="space-box" style="width:32px;"></div><span class="space-label">l · 2em (32px)</span></div>
+      <div class="space-demo"><div class="space-box" style="width:64px;"></div><span class="space-label">xl · 4em (64px)</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- Buttons -->
+<div class="section">
+  <h2>Button Hierarchy</h2>
+  <div class="btn-row">
+    <button class="btn btn-primary">Generate &amp; Download ↓</button>
+    <button class="btn btn-primary">Configure →</button>
+    <button class="btn btn-secondary">Open in IntelliJ IDEA</button>
+    <button class="btn btn-secondary">Open in VS Code</button>
+    <button class="btn btn-ghost">← Back to gallery</button>
+    <button class="btn btn-secondary">Copy Link</button>
+  </div>
+</div>
+
+<!-- Gallery Card -->
+<div class="section">
+  <h2>Project Type Cards</h2>
+  <div class="card-row">
+    <div class="card">
+      <div class="card-title">Process Application</div>
+      <p class="card-desc">A Spring Boot application with an embedded Operaton engine. Includes a skeleton BPMN process, a JavaDelegate implementation stub, and an end-to-end integration test that passes on first run.</p>
+      <div class="tags">
+        <span class="tag">Spring Boot</span>
+        <span class="tag">Embedded Engine</span>
+        <span class="tag">Java Delegate</span>
+        <span class="tag">JUnit 5</span>
+      </div>
+      <p class="persona-hint">Ideal for Camunda 7 migrators and developers starting fresh</p>
+      <button class="card-btn">Configure →</button>
+    </div>
+    <div class="card">
+      <div class="card-title">Process Archive</div>
+      <p class="card-desc">A deployable WAR or JAR archive for a shared Operaton engine (Tomcat or Standalone). No embedded engine — process definitions are deployed to an existing engine via processes.xml.</p>
+      <div class="tags">
+        <span class="tag">Shared Engine</span>
+        <span class="tag">WAR/JAR Deploy</span>
+        <span class="tag">processes.xml</span>
+        <span class="tag">Tomcat</span>
+      </div>
+      <p class="persona-hint">Ideal for teams running a shared Operaton engine</p>
+      <button class="card-btn">Configure →</button>
+    </div>
+    <!-- Skeleton loading state -->
+    <div class="skeleton-card skeleton">
+      <div class="sk-box" style="height:1.5rem; width:60%; margin-bottom:0.75rem;"></div>
+      <div class="sk-box" style="height:1rem; width:100%; margin-bottom:0.5rem;"></div>
+      <div class="sk-box" style="height:1rem; width:80%; margin-bottom:1rem;"></div>
+      <div style="display:flex; gap:0.5rem; margin-bottom:1rem;">
+        <div class="sk-box" style="height:1.5rem; width:60px;"></div>
+        <div class="sk-box" style="height:1.5rem; width:80px;"></div>
+      </div>
+      <div class="sk-box" style="height:2.5rem; width:100%;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Form Fields -->
+<div class="section">
+  <h2>Form Components</h2>
+  <div class="form-preview">
+    <div class="field-group">
+      <label>
+        Group ID
+        <button class="help-btn" aria-label="Help: Group ID">?</button>
+      </label>
+      <input type="text" value="com.example" placeholder="com.example">
+    </div>
+    <div class="field-group">
+      <label>
+        Artifact ID
+        <button class="help-btn" aria-label="Help: Artifact ID">?</button>
+      </label>
+      <input type="text" value="my process app" placeholder="my-process-app" style="border-color:#dc2626; box-shadow:0 0 0 3px rgba(220,38,38,0.15);">
+      <p class="error-msg">Use lowercase letters, numbers, and hyphens only</p>
+    </div>
+    <div class="field-group">
+      <label>
+        Build System
+        <button class="help-btn" aria-label="Help: Build System">?</button>
+      </label>
+      <select>
+        <option>Maven</option>
+        <option>Gradle (Groovy DSL)</option>
+        <option>Gradle (Kotlin DSL)</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<!-- File Tree -->
+<div class="section">
+  <h2>File Tree Preview</h2>
+  <div class="file-tree">
+    <ul>
+      <li><span class="folder">📁 my-process-app/</span>
+        <ul>
+          <li>📄 pom.xml</li>
+          <li>📄 renovate.json</li>
+          <li><span class="folder">📁 src/</span>
+            <ul>
+              <li><span class="folder">📁 main/java/com/example/</span>
+                <ul>
+                  <li>📄 Application.java</li>
+                  <li><span class="folder">📁 delegate/</span>
+                    <ul><li>📄 SkeletonDelegate.java</li></ul>
+                  </li>
+                </ul>
+              </li>
+              <li><span class="folder">📁 main/resources/</span>
+                <ul>
+                  <li>📄 my-process-app.bpmn</li>
+                  <li>📄 application.properties</li>
+                </ul>
+              </li>
+              <li><span class="folder">📁 test/java/com/example/</span>
+                <ul><li>📄 ProcessIT.java</li></ul>
+              </li>
+            </ul>
+          </li>
+          <li><span class="folder">📁 .github/workflows/</span>
+            <ul><li>📄 ci.yml</li></ul>
+          </li>
+          <li>📄 README.md</li>
+        </ul>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<!-- Error Banner -->
+<div class="section">
+  <h2>Error Banner</h2>
+  <div class="error-banner" role="alert">
+    <span class="error-icon">⚠</span>
+    <div>
+      <p class="error-title">Rate Limit Exceeded</p>
+      <p class="error-detail">Too many requests. Please retry after 60 seconds.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Focus Ring Demo -->
+<div class="section">
+  <h2>Focus Ring (Accessibility)</h2>
+  <div style="background:white; border-radius:var(--border-radius); border:1px solid var(--color-neutral-200); padding:1.5rem; display:flex; gap:1rem; align-items:center;">
+    <button class="btn btn-primary" style="outline:2px solid #184AEF; outline-offset:2px;">Focused Button</button>
+    <input type="text" placeholder="Focused input" style="width:200px; padding:0.5rem; border:1.5px solid var(--color-primary); border-radius:var(--border-radius); box-shadow:0 0 0 3px rgba(24,74,239,0.25); font-family:inherit; font-size:0.875rem; outline:none;">
+    <p style="font-size:0.875rem; color:var(--color-neutral-500);">Focus ring: 2px solid #184AEF (5.9:1 contrast ratio — WCAG AA ✓)</p>
+  </div>
+</div>
+
+<footer style="margin-top:4rem; padding-top:2rem; border-top:1px solid var(--color-neutral-200); color:var(--color-neutral-500); font-size:0.75rem;">
+  Generated: 2026-03-28 · operaton-starter UX Design Specification · docs/bmad/planning-artifacts/ux-color-themes.html
+</footer>
+
+</body>
+</html>

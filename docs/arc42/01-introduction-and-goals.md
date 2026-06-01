@@ -21,10 +21,11 @@ Access is available through three first-class channels: a web UI at `start.opera
 
 ### Functional Goals
 
-- Generate ready-to-build Operaton project archives (MVP: 2 types × 3 build systems = 6 combinations)
+- Generate ready-to-build Operaton project archives (3 project types × 3 build systems = 9 combinations: `PROCESS_APPLICATION`, `PROCESS_ARCHIVE`, `DMN_PROJECT` × `MAVEN`, `GRADLE_GROOVY`, `GRADLE_KOTLIN`)
 - Identity-aware scaffolding — Group ID, Artifact ID, and project name propagate into BPMN process IDs, Java packages, and `spring.application.name`
 - Metadata-driven UI and CLI — no hardcoded option lists in any channel
 - Self-hostable Docker image configurable via environment variables only
+- Gallery-to-form context handoff — project type selected in gallery shown as read-only context in form; irrelevant options hidden
 
 ## User Personas and Journeys
 
@@ -41,7 +42,7 @@ Spring Boot developer new to BPM tooling. Uses the gallery and inline contextual
 Integrates the REST API and MCP module into an internal Backstage developer portal. Self-hosts the Docker image with enterprise defaults via environment variables.
 
 ### Klaus — The Self-Hosted Admin
-Runs the Docker image on-premises with `DEFAULT_GROUP_ID`, `MAVEN_REGISTRY`, and `OPERATON_VERSION` environment variables. Zero external startup dependencies; simple quarterly update cadence.
+Runs the Docker image on-premises with `STARTER_DEFAULTS_GROUP_ID`, `STARTER_DEFAULTS_MAVEN_REGISTRY`, and `STARTER_DEFAULTS_OPERATON_VERSION` environment variables. Zero external startup dependencies; simple quarterly update cadence.
 
 ## Stakeholders
 

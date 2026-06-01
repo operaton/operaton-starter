@@ -283,8 +283,7 @@ The repository spans Java (server, templates, archetypes) and JavaScript (Node.j
 |--------|------|-------------|
 | `POST` | `/api/v1/generate` | Generate project archive. `Accept: application/zip` returns ZIP (only supported format at this time). Request body: project configuration JSON. |
 | `GET` | `/api/v1/metadata` | Retrieve all configuration options (project types, build systems, etc.) and **project template manifests** — the set of files generated per project type and their conditions (e.g., `docker-compose.yml` included if `dockerCompose: true`), enabling client-side preview rendering without server round-trips. |
-| `GET` | `/api/v1/docs` | OpenAPI 3.x specification (generated from the spec-first source) |
-| `GET` | `/docs` | Interactive Redoc API documentation UI — renders the OpenAPI spec as a navigable HTML page; no external CDN dependency in production (Redoc bundle served locally) |
+| `GET` | `/api/v1/docs` | OpenAPI 3.x specification (generated from the spec-first source) and interactive Scalar API documentation UI rendered via static HTML loading Scalar from CDN |
 
 **Operational Endpoints (infrastructure, not part of developer API contract):**
 
@@ -432,7 +431,7 @@ Project types are phased by adoption value, not technical complexity. Process Ap
 
 - **FR24:** An API consumer can generate and download a project archive via `POST /api/v1/generate` with `Accept: application/zip`
 - **FR25:** An API consumer can retrieve all supported configuration options and project template manifests via `GET /api/v1/metadata`
-- **FR26:** An API consumer can access the complete OpenAPI specification at `/api/v1/docs` and an interactive Redoc documentation UI at `/docs`; the Redoc bundle is served locally — no external CDN calls are required at runtime
+- **FR26:** An API consumer can access the complete OpenAPI specification and an interactive Scalar API documentation UI at `/api/v1/docs`; the Scalar UI is rendered via a static HTML page loading Scalar from CDN — no Spring Boot version coupling
 - **FR27:** The system enforces a rate limit per IP address and returns a structured error response when exceeded
 
 ### CLI

@@ -68,6 +68,64 @@ The image starts with zero external network calls. All configuration is via envi
 | `STARTER_DEFAULTS_OPERATON_VERSION` | Pin Operaton version (self-hosted only) |
 | `STARTER_CORS_ALLOWED_ORIGINS` | Comma-separated CORS allowlist for `/api/**` |
 
+### Self-Hosting with MCP
+
+Connect the `operaton-starter-mcp` AI tool to your private instance so AI assistants generate projects against your internal deployment.
+
+**Build and start the server:**
+
+```bash
+# 1. Build the fat JAR (required before docker build)
+./mvnw verify -pl starter-templates,starter-server -am
+
+# 2. Build the Docker image
+docker build -t operaton-starter:local .
+
+# 3. Start the server
+docker run -p 8080:8080 operaton-starter:local
+```
+
+Or with docker compose (development):
+
+```bash
+./mvnw verify -pl starter-templates,starter-server -am
+docker compose -f docker-compose.dev.yml up
+```
+
+**Configure Claude Desktop** (`~/Library/Application Support/Claude/claude_desktop_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "operaton-starter": {
+      "command": "npx",
+      "args": ["-y", "operaton-starter-mcp"],
+      "env": {
+        "OPERATON_STARTER_URL": "http://localhost:8080"
+      }
+    }
+  }
+}
+```
+
+**Configure VS Code / GitHub Copilot** (`.vscode/mcp.json` or user settings):
+
+```json
+{
+  "servers": {
+    "operaton-starter": {
+      "command": "npx",
+      "args": ["-y", "operaton-starter-mcp"],
+      "env": {
+        "OPERATON_STARTER_URL": "http://localhost:8080"
+      }
+    }
+  }
+}
+```
+
+The `OPERATON_STARTER_URL` variable tells the MCP package which backend to call. Omitting it falls back to `https://start.operaton.org`.
+
 ## Architecture
 
 operaton-starter is a 6-module Maven monorepo:
@@ -89,6 +147,10 @@ See [`docs/arc42/`](docs/arc42/) for full architecture documentation.
 ## Development
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for setup instructions and contribution guidelines.
+
+## Releasing
+
+See [`docs/release.md`](docs/release.md) for the release procedure, required GitHub Actions secrets, and troubleshooting guide.
 
 ## License
 

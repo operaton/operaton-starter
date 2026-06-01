@@ -1,5 +1,5 @@
 # generated: 2026-03-28
-# last_updated: 2026-03-28
+# last_updated: 2026-05-31
 # project: operaton-starter
 # project_key: NOKEY
 # tracking_system: file-system
@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-03-28
-last_updated: 2026-03-28
+last_updated: 2026-06-01
 project: operaton-starter
 project_key: NOKEY
 tracking_system: file-system
@@ -57,7 +57,7 @@ development_status:
   # ─────────────────────────────────────────────────────────────────────────
   # Epic 2: Core Generation Engine
   # ─────────────────────────────────────────────────────────────────────────
-  epic-2: done
+  epic-2: in-progress
 
   2-1-jte-spike-validate-template-engine-zero-spring-constraint: done
   2-2-domain-model-project-configuration: done
@@ -66,6 +66,7 @@ development_status:
   2-5-process-archive-generation: done
   2-6-generated-project-extras-readme-ci-docker-compose-dependabot-renovate: done
   2-7-ci-test-matrix-validate-all-6-combinations: done
+  2-8-smart-ci-matrix-affected-combinations-only-validation: done
 
   epic-2-retrospective: optional
 
@@ -84,7 +85,7 @@ development_status:
   # ─────────────────────────────────────────────────────────────────────────
   # Epic 4: Web UI — Browser-Based Project Generation
   # ─────────────────────────────────────────────────────────────────────────
-  epic-4: done
+  epic-4: in-progress
 
   4-1-design-token-extraction-vue-app-foundation: done
   4-2-project-gallery-view: done
@@ -93,6 +94,7 @@ development_status:
   4-5-live-file-tree-preview: done
   4-6-download-ide-deep-links-shareable-config-urls: done
   4-7-keyboard-navigation-wcag-2-1-aa-accessibility: done
+  4-8-conditional-form-rendering-gallery-to-form-context-handoff: done
 
   epic-4-retrospective: optional
 
@@ -109,9 +111,22 @@ development_status:
   # ─────────────────────────────────────────────────────────────────────────
   # Epic 6: Self-Hosting & Production Operations
   # ─────────────────────────────────────────────────────────────────────────
-  epic-6: done
+  epic-6: in-progress
 
   6-1-docker-image-build-configure-publish: done
   6-2-environment-variable-configuration-self-hosting-validation: done
+  6-3-mcp-self-hosting-documentation: done
+  6-4-submodule-readmes: done
 
   epic-6-retrospective: optional
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Epic 7: Release & Distribution
+  # ─────────────────────────────────────────────────────────────────────────
+  epic-7: in-progress
+
+  7-1-jreleaser-release-workflow: done
+  7-2-artifact-publishing-docker-hub-maven-central-npm: done
+  7-3-release-credentials-secrets-documentation: done
+
+  epic-7-retrospective: optional

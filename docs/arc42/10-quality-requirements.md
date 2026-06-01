@@ -87,14 +87,16 @@ Quality
 | NFR23 | Docker configuration | Env-var only; no file-based config at runtime |
 | NFR24 | Version update SLA | Operaton release → starter updated within 24h (conditional on CI matrix pass) |
 | NFR25 | Dependency automation | Renovate/Dependabot PR + CI matrix = automated version update path |
+| NFR26 | Smart CI matrix | Template PRs validate only affected project-type × build-system combinations; `affected-combinations.sh` maps changed JTE paths to affected jobs |
+| NFR27 | Submodule documentation | Each of the 5 Maven submodules has its own `README.md` covering role, prerequisites, build, and run instructions |
 
 ### Accessibility
 
 | ID | Requirement | Implementation |
 |----|------------|---------------|
-| NFR26 | WCAG 2.1 AA compliance | axe-core in CI (hard block on violations) |
-| NFR27 | Full keyboard navigation | Tab order, focus management, keyboard-complete generation flow |
-| NFR28 | Screen reader support | `aria-live="polite"` on preview; `role="alert"` on errors |
+| NFR28 | WCAG 2.1 AA compliance | axe-core in CI (hard block on violations) |
+| NFR29 | Full keyboard navigation | Tab order, focus management, keyboard-complete generation flow |
+| NFR30 | Screen reader support | `aria-live="polite"` on preview; `role="alert"` on errors |
 
 ## Measurable Outcomes
 

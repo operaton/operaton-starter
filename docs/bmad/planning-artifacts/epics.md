@@ -2,9 +2,12 @@
 stepsCompleted: ['step-01-validate-prerequisites', 'step-02-design-epics', 'step-03-create-stories', 'step-04-final-validation']
 workflowStatus: complete
 completedAt: '2026-03-27'
+updatedAt: '2026-05-31'
+updateReason: 'Targeted update: added FR45-FR53, NFR21-NFR22, updated FR10 (two-step build selection); added Epic 7 Release & Distribution; added Story 4.8, Story 2.8, Story 6.3, Story 6.4'
 inputDocuments:
-  - '_bmad-output/planning-artifacts/prd.md'
-  - '_bmad-output/planning-artifacts/architecture.md'
+  - 'docs/bmad/planning-artifacts/prd.md'
+  - 'docs/bmad/planning-artifacts/architecture.md'
+  - 'docs/bmad/planning-artifacts/ux-design-specification.md'
 ---
 
 # operaton-starter - Epic Breakdown
@@ -26,7 +29,7 @@ FR6: The system generates a `processes.xml` deployment descriptor for Process Ar
 FR7: The system generates deployment-target-appropriate artifact configuration (WAR/JAR) for Process Archive projects
 FR8: The generation engine is a single shared implementation invoked by all channels — web UI, REST API, CLI, and MCP module; no per-channel generation logic
 FR9: A developer can select a project type (MVP: Process Application, Process Archive)
-FR10: A developer can select a build system (Maven, Gradle Groovy DSL, Gradle Kotlin DSL)
+FR10: A developer selects a build system in two steps: first choosing between Maven and Gradle; if Gradle is chosen, a DSL sub-option (Groovy or Kotlin) becomes visible and must be selected before generation; the DSL sub-option is hidden when Maven is selected
 FR11: A developer can specify Group ID, Artifact ID, and project name as project identity
 FR12: A developer can select a deployment target for Process Archive projects
 FR13: A developer can choose between Dependabot and Renovate for dependency update configuration
@@ -61,6 +64,15 @@ FR41: A developer can access an explanation distinguishing between available pro
 FR42: The CLI and `operaton-starter-mcp` client code are generated from the OpenAPI specification; no hand-written client code exists independently of the API contract
 FR43: The web UI renders the project file tree preview from template manifests in the metadata response, without a per-change server round-trip
 FR44: Generated Process Application projects include a `JavaDelegate` implementation stub wired to the skeleton BPMN service task and a JUnit test that deploys and executes the skeleton process end-to-end without modification
+FR45: When a developer reaches the configuration details page via the gallery or a direct project-type entry point, the project type is pre-set from that selection and displayed as read-only context — it is not re-presented as an editable field on the details page
+FR46: Configuration options on the details page are conditionally rendered based on the selected project type; options that do not apply to the current project type are hidden entirely (not shown as disabled); the visible option set updates if the developer navigates back and changes the project type selection
+FR47: The repository contains a `Dockerfile` for building the Operaton Starter application image
+FR48: The self-hosted Docker image documents how to connect the `operaton-starter-mcp` npm package to the running instance via the `BASE_URL` environment variable, so AI assistants can use a self-hosted deployment as their generation backend; the build sequence is: (1) run `mvn verify` to produce the JAR, (2) build the Docker image from the pre-built JAR — the Docker build requires no Maven or internet access once the JAR is present
+FR49: Releases are created via a GitHub Actions workflow using **JReleaser**, following the release workflow pattern established in the `operaton/operaton` repository; JReleaser creates the GitHub Release, generates the changelog from conventional commits, and coordinates publishing to all distribution targets in a single automated run
+FR50: The Docker image is published to Docker Hub as `operaton/operaton-starter` on every release; image tags follow semantic versioning (`x.y.z`) with a `latest` tag updated on each stable release
+FR51: Maven artifacts (generation engine, archetypes, server) are published to Maven Central on every release via the standard Sonatype OSSRH publication flow coordinated by JReleaser
+FR52: The `operaton-starter-mcp` npm package is published to the public npm registry (`npmjs.com`) on every release, version-aligned with the overall project release tag
+FR53: The repository documentation specifies all credentials that must be configured as GitHub Actions secrets for the release workflow to succeed: Docker Hub credentials (`DOCKER_USERNAME`, `DOCKER_PASSWORD`), Maven Central/Sonatype credentials (`MAVEN_CENTRAL_USERNAME`, `MAVEN_CENTRAL_TOKEN`), npm publish token (`NPM_TOKEN`), and the GitHub token required by JReleaser for GitHub Release creation
 
 ### NonFunctional Requirements
 
@@ -84,6 +96,8 @@ NFR17: All supported project type × build system combinations (MVP: 6) are vali
 NFR18: The service emits structured JSON logs compatible with standard log aggregation tools
 NFR19: The Docker image is configurable entirely via environment variables; no file-based configuration is required at runtime
 NFR20: The web UI visual design is consistent with the `operaton.org` and `docs.operaton.org` design system — colors, typography, and component patterns signal the same product family
+NFR21: On any pull request that modifies generation templates, a dedicated CI workflow — separate from the unit test suite — identifies the project type × build system combinations affected by the changed template files, generates a project for each affected combination, builds the generated project, and starts the application to verify it comes up successfully; all steps must pass for the PR to be mergeable; combinations not touched by the PR's template changes are excluded from that run to keep feedback fast
+NFR22: Each submodule in the monorepo (`starter-server`, `starter-templates`, `starter-archetypes`, `starter-mcp`, `starter-web`) has its own `README.md` covering: the submodule's role, prerequisites, how to build it in isolation, how to run or use it locally, and at least one concrete usage example; a contributor must be able to build and exercise any submodule using only its README without consulting other sources
 
 ### Additional Requirements
 
@@ -167,6 +181,17 @@ FR41: Epic 4 — Project type disambiguation explanation
 FR42: Epic 5 — CLI + MCP clients generated from OpenAPI spec
 FR43: Epic 4 — Client-side preview from template manifests
 FR44: Epic 2 — JavaDelegate stub + end-to-end JUnit test
+FR45: Epic 4 — Project type pre-set as read-only context when arriving from gallery
+FR46: Epic 4 — Conditional rendering of config options per project type (hidden, not disabled)
+FR47: Epic 6 — Dockerfile in repository (already covered in Story 6.1)
+FR48: Epic 6 — MCP self-hosting documentation
+FR49: Epic 7 — JReleaser-based release workflow
+FR50: Epic 7 — Docker Hub publishing on release
+FR51: Epic 7 — Maven Central publishing on release
+FR52: Epic 7 — npm publishing for operaton-starter-mcp on release
+FR53: Epic 7 — GitHub Actions secrets documentation
+NFR21: Epic 2 — Smart CI matrix: affected-combinations-only validation on template PRs
+NFR22: Epic 6 — Submodule READMEs for all five modules
 
 ## Epic List
 
@@ -180,7 +205,7 @@ The monorepo is bootstrapped, the OpenAPI spec and metadata schema are defined a
 Any developer can invoke the pure-Java generation engine and receive a valid, compiling, immediately runnable Operaton project archive for any project type × build system combination — with correct identity propagation, skeleton BPMN, all generated project extras, and a full CI validation matrix.
 **FRs covered:** FR1–15, FR33–36, FR44
 **ARCH covered:** ARCH-3, ARCH-4, ARCH-12, ARCH-13, ARCH-19
-**NFRs:** NFR1 (partial), NFR13, NFR14, NFR17
+**NFRs:** NFR1 (partial), NFR13, NFR14, NFR17, NFR21
 
 ### Epic 3: REST API — Programmatic Project Generation
 Any developer with internet access (or a curl command) can generate an Operaton project via `POST /api/v1/generate`, inspect all configuration options via the metadata endpoint, and read the OpenAPI spec — making the service usable from any tool, script, or integration.
@@ -190,7 +215,7 @@ Any developer with internet access (or a curl command) can generate an Operaton 
 
 ### Epic 4: Web UI — Browser-Based Project Generation
 Practitioners complete configuration and download a ZIP in under 30 seconds. Explorers discover their project type through a visual gallery. Both enjoy a professional, keyboard-accessible, operaton.org-consistent interface with live preview, IDE deep-links, and shareable config URLs — benchmarked against start.spring.io and code.quarkus.io.
-**FRs covered:** FR16–23, FR40–41, FR43
+**FRs covered:** FR16–23, FR40–41, FR43, FR45, FR46
 **UX-DRs covered:** UX-DR1 through UX-DR11
 **ARCH covered:** ARCH-8
 **NFRs:** NFR2, NFR3, NFR11, NFR12, NFR16, NFR20
@@ -199,6 +224,17 @@ Practitioners complete configuration and download a ZIP in under 30 seconds. Exp
 Developers generate projects from `npx operaton-starter` in scriptable or interactive mode. AI assistants (Claude, GitHub Copilot, Cursor) generate projects mid-conversation via the `operaton-starter-mcp` npm tool. All four access channels are live.
 **FRs covered:** FR28–32, FR42
 **NFRs:** NFR15
+
+### Epic 6: Self-Hosting & Production Operations
+Platform engineers and enterprise teams run a private Operaton Starter instance behind their firewall — configured entirely via environment variables, deployed from a published Docker image, with zero external dependencies at startup. Self-hosting documentation enables operators to connect the MCP client to their private instance.
+**FRs covered:** FR37–38, FR47, FR48
+**ARCH covered:** ARCH-9, ARCH-10
+**NFRs:** NFR5, NFR6, NFR19, NFR22
+
+### Epic 7: Release & Distribution
+Every tagged release automatically publishes to all distribution channels — Docker Hub, Maven Central, and npm — via a single JReleaser-orchestrated GitHub Actions workflow. The release process is fully documented including all required secrets.
+**FRs covered:** FR49–53
+**NFRs:** (none additional)
 
 ---
 
@@ -586,6 +622,44 @@ So that no template change can silently break any supported combination.
 **When** the job runs
 **Then** it extracts the generated ZIP, runs `mvn spring-boot:run` in the background, polls `GET http://localhost:8080/actuator/health` until it returns `200 OK` (timeout: 60 seconds), then stops the process; the job fails if the application does not start within 60 seconds — this validates the PRD's hard guarantee that every generated Process Application starts without manual modification
 
+> **Note:** Story 2.7 runs all 6 combinations on every PR. The smart affected-only CI workflow required by NFR21 is implemented separately in Story 2.8.
+
+### Story 2.8: Smart CI Matrix — Affected-Combinations-Only Validation (NFR21)
+
+As a **developer merging a template change**,
+I want the CI pipeline to identify and validate only the project type × build system combinations actually affected by my template changes,
+So that feedback is fast — unaffected combinations don't slow down every PR.
+
+**Acceptance Criteria:**
+
+**Given** a PR that modifies one or more files in `starter-templates/src/main/jte/`
+**When** the smart matrix CI workflow triggers
+**Then** it determines which `projectType` × `buildSystem` combinations reference the changed template files; only those combinations are included in the matrix run for that PR
+
+**Given** the smart matrix workflow
+**When** inspected
+**Then** it is a dedicated GitHub Actions workflow file separate from the `test-matrix` job in Story 2.7; it uses a script (shell or Node.js) that reads the JTE template manifest to resolve which combinations depend on which template files, then outputs a GitHub Actions matrix JSON to drive the job dimensions
+
+**Given** a PR that modifies a shared template used by all combinations (e.g. `pom.xml.jte`)
+**When** the smart matrix runs
+**Then** all 6 combinations are included — the smart selection degrades gracefully to a full run when all are affected
+
+**Given** a PR that modifies a template used only by `PROCESS_APPLICATION` × `MAVEN` (e.g. `process-application/maven/pom.xml.jte`)
+**When** the smart matrix runs
+**Then** only the `PROCESS_APPLICATION/MAVEN` combination job runs; the other 5 combinations are excluded from this run
+
+**Given** each affected-combination job in the smart matrix
+**When** it runs
+**Then** it: (1) generates a project for its combination, (2) builds the generated project (`mvn verify` or `./gradlew build`), (3) starts the application and polls `GET /actuator/health` until `200 OK` (timeout: 60 seconds); all three steps must pass for the job to succeed
+
+**Given** any smart matrix job fails
+**When** the PR is reviewed
+**Then** the PR is blocked from merging — this is a hard merge block
+
+**Given** a PR that modifies no template files (e.g. documentation changes only)
+**When** the smart matrix workflow triggers
+**Then** it emits zero matrix jobs and completes with a green status immediately — no generation or build steps run
+
 ---
 
 ## Epic 3: REST API — Programmatic Project Generation
@@ -856,7 +930,15 @@ So that I can configure my project without hunting through documentation.
 
 **Given** a user arriving from the gallery with a pre-selected project type
 **When** the form renders
-**Then** the `projectType` field is pre-selected to match the gallery selection; all other fields use defaults
+**Then** the project type is displayed as read-only context (e.g. a badge or summary line: "Project type: Process Application") — it is not rendered as an editable form field; a "← Change project type" link returns the user to the gallery (covers FR45)
+
+**Given** a user navigating directly to `/configure` without a gallery selection
+**When** the form renders
+**Then** the project type is presented as an editable selector with all available types; this is the Practitioner path where project type is a first-class form option
+
+**Given** `buildSystem` selection on the form
+**When** a user interacts with it
+**Then** it is a two-step control: first a choice between Maven and Gradle (radio or segmented control); if Gradle is chosen, a DSL sub-option (Groovy DSL / Kotlin DSL) appears immediately below with a smooth transition; the DSL sub-option is hidden when Maven is selected; the sub-option must be selected before generation is enabled (covers FR10)
 
 **Given** `projectType=PROCESS_ARCHIVE` is selected
 **When** the form updates
@@ -1017,6 +1099,42 @@ So that the tool is inclusive and accessible to all developers regardless of inp
 **Given** error messages displayed by `<ErrorBanner>` or inline field validation
 **When** they appear
 **Then** they are announced by screen readers via `role="alert"` or `aria-live="assertive"`; focus is not forcibly moved away from the current field
+
+### Story 4.8: Conditional Form Rendering & Gallery-to-Form Context Handoff (FR45, FR46)
+
+As a **developer arriving from the project gallery**,
+I want the configuration details page to display my pre-selected project type as read-only context and hide options that don't apply,
+So that the form is focused, unambiguous, and never presents irrelevant configuration choices.
+
+**Acceptance Criteria:**
+
+**Given** a user clicks a gallery card (e.g. "Process Application")
+**When** they land on `/configure`
+**Then** the project type is displayed as a read-only context banner (e.g. "Configuring: Process Application") at the top of the form — not as an editable field; a "← Change project type" link navigates back to the gallery without losing any other form state stored in the URL
+
+**Given** the project type is pre-set from a gallery selection
+**When** the form renders
+**Then** the project type field is absent from the editable form fields entirely — no disabled selector, no greyed-out option; the read-only context banner is the only place the project type appears
+
+**Given** `projectType=PROCESS_APPLICATION` is pre-set (from gallery or URL)
+**When** the form renders
+**Then** the `deploymentTarget` selector is hidden entirely; the `dockerCompose` and `githubActions` toggles are visible; no label, placeholder, or empty space indicates a hidden `deploymentTarget` field
+
+**Given** `projectType=PROCESS_ARCHIVE` is pre-set
+**When** the form renders
+**Then** the `deploymentTarget` selector is visible and required; the `githubActions` toggle is hidden entirely; `dockerCompose` remains visible
+
+**Given** the user navigates back to the gallery and selects a different project type
+**When** they arrive on `/configure` with the new type
+**Then** the visible option set updates to match the new project type — options that did not apply to the previous type but apply to the new one appear; options that no longer apply disappear; all other previously entered field values are preserved where they still apply
+
+**Given** a shareable URL encoding a `projectType` query parameter
+**When** the form loads
+**Then** it applies the conditional rendering rules for that project type as if the user had arrived from the gallery — the same hidden/visible logic applies regardless of how the project type was set
+
+**Given** a Vitest unit test for the conditional rendering composable
+**When** the test runs
+**Then** it covers: `PROCESS_APPLICATION` hides `deploymentTarget` and shows `githubActions`; `PROCESS_ARCHIVE` shows `deploymentTarget` and hides `githubActions`; switching project type updates the visible option set correctly
 
 ---
 
@@ -1189,7 +1307,145 @@ So that generated projects automatically use my organisation's standards without
 **Given** the Docker image documentation (README or `docker-compose.dev.yml`)
 **When** inspected
 **Then** all supported environment variables are listed with their default values and descriptions; no undocumented env vars affect behaviour
-Platform engineers and enterprise teams run a private Operaton Starter instance behind their firewall — configured entirely via environment variables, deployed from a published Docker image, with zero external dependencies at startup and automated release pipelines.
-**FRs covered:** FR37–38
-**ARCH covered:** ARCH-9, ARCH-10
-**NFRs:** NFR5, NFR6, NFR19
+
+### Story 6.3: MCP Self-Hosting Documentation (FR48)
+
+As a **developer running a self-hosted Operaton Starter instance**,
+I want clear documentation on how to connect the `operaton-starter-mcp` npm package to my private instance,
+So that AI assistants in my team can generate projects against our internal deployment without pointing at the public instance.
+
+**Acceptance Criteria:**
+
+**Given** the root `README.md` (or a dedicated `docs/self-hosting.md`)
+**When** inspected
+**Then** it contains a "Self-Hosting with MCP" section that explains: (1) how to start the Docker image, (2) how to set `OPERATON_STARTER_URL=http://localhost:8080` (or the appropriate host) when registering `operaton-starter-mcp` in an AI assistant's MCP config, (3) a complete working example MCP config JSON snippet that a developer can copy-paste
+
+**Given** the self-hosting documentation section
+**When** inspected
+**Then** it documents the Docker build prerequisite explicitly: `mvn verify` must complete before `docker build` is run; the Docker build itself requires no Maven or internet access once the JAR is present; a one-liner command sequence is provided
+
+**Given** the `docker-compose.dev.yml`
+**When** expanded in this story
+**Then** it includes a commented-out `operaton-starter-mcp` service entry showing the `BASE_URL` environment variable wired to the backend service — a developer can uncomment it to run the full MCP stack locally
+
+**Given** the documentation
+**When** a developer follows it from zero
+**Then** they can have a locally running self-hosted instance accessible from their AI assistant's MCP client in under 5 minutes — this is the manual acceptance gate
+
+### Story 6.4: Submodule READMEs (NFR22)
+
+As a **new contributor to operaton-starter**,
+I want each submodule to have its own `README.md` covering role, prerequisites, build, and run instructions,
+So that I can build and exercise any submodule in isolation without consulting other documentation sources.
+
+**Acceptance Criteria:**
+
+**Given** each of the five submodules: `starter-server`, `starter-templates`, `starter-archetypes`, `starter-mcp`, `starter-web`
+**When** their root directories are inspected
+**Then** each contains a `README.md` with these sections: (1) **Role** — one paragraph describing what this module does within the overall system, (2) **Prerequisites** — exact versions of Java/Node.js/Maven/npm required, (3) **Build in isolation** — the exact command to build this module alone (e.g. `mvn verify -pl starter-templates`), (4) **Run / Use locally** — how to start or exercise the module locally, (5) **Example** — at least one concrete usage example (a curl command, a code snippet, or a CLI invocation)
+
+**Given** `starter-templates/README.md`
+**When** inspected
+**Then** the example section shows a Java code snippet invoking `GenerationEngine.generate(config)` in-process and asserting the returned ZIP is non-empty — demonstrating the zero-Spring, no-server-required nature of the module
+
+**Given** `starter-server/README.md`
+**When** inspected
+**Then** the run section includes the command to start the server standalone (`mvn spring-boot:run -pl starter-server`) and a curl example calling `POST /api/v1/generate` and saving the result to a file
+
+**Given** `starter-web/README.md`
+**When** inspected
+**Then** the run section includes `npm run dev` and notes that the Vite dev server proxies API calls to `http://localhost:8080`; it references that `docker compose -f docker-compose.dev.yml up` is the recommended way to start the backend for local frontend development
+
+**Given** `starter-mcp/README.md`
+**When** inspected
+**Then** the example section contains a complete MCP config JSON snippet for registering the package in Claude Desktop or VS Code Copilot, with the `OPERATON_STARTER_URL` env var documented
+
+**Given** a contributor who has never read the project root README
+**When** they follow any single submodule README
+**Then** they can successfully build and exercise that submodule in isolation — this is the manual acceptance gate for each submodule README
+
+---
+
+## Epic 7: Release & Distribution
+
+Every tagged release automatically publishes to all distribution channels — Docker Hub, Maven Central, and npm — via a single JReleaser-orchestrated GitHub Actions workflow. The release process is fully documented including all required secrets.
+
+### Story 7.1: JReleaser Release Workflow (FR49)
+
+As a **maintainer cutting a release**,
+I want a single GitHub Actions workflow using JReleaser to create the GitHub Release and coordinate all distribution publishing,
+So that releasing operaton-starter is a one-click operation with no manual steps across multiple registries.
+
+**Acceptance Criteria:**
+
+**Given** the `.github/workflows/release.yml` file
+**When** inspected
+**Then** it is triggered only on pushed tags matching `v*.*.*`; it uses JReleaser to: (1) create a GitHub Release with auto-generated changelog from conventional commits, (2) coordinate publishing to Docker Hub, Maven Central, and npm in a single orchestrated run; the JReleaser configuration lives in `jreleaser.yml` at the project root
+
+**Given** the `jreleaser.yml` configuration
+**When** inspected
+**Then** it follows the same pattern as the `operaton/operaton` repository's JReleaser config; it defines all three distribution targets (Docker, Maven, npm); changelog generation uses the conventional commits format
+
+**Given** a tagged commit (e.g. `git tag v1.0.0 && git push origin v1.0.0`)
+**When** the release workflow runs
+**Then** a GitHub Release is created at that tag with the generated changelog; the release body lists all published artifacts with their registry coordinates
+
+**Given** the release workflow
+**When** any publishing step fails
+**Then** JReleaser reports the failure clearly and the workflow exits non-zero; no partial release state is silently swallowed; the failed step can be retried independently without re-running the full workflow
+
+**Given** no release workflow run
+**When** a push occurs to `main` (not a tag)
+**Then** the release workflow does not trigger — it is tag-only
+
+### Story 7.2: Artifact Publishing — Docker Hub, Maven Central & npm (FR50, FR51, FR52)
+
+As a **developer or operator**,
+I want every operaton-starter release to be published to Docker Hub, Maven Central, and npm automatically,
+So that I can consume the latest version from my preferred package manager without any manual download.
+
+**Acceptance Criteria:**
+
+**Given** a tagged release runs successfully
+**When** the Docker Hub publish step completes
+**Then** the image `operaton/operaton-starter` is available on Docker Hub with two tags: the semantic version tag (e.g. `1.0.0`) and `latest`; `docker pull operaton/operaton-starter:1.0.0` succeeds without authentication
+
+**Given** a tagged release runs successfully
+**When** the Maven Central publish step completes
+**Then** the following artifacts are available at `central.sonatype.com` and synced to Maven Central within the standard propagation window: `org.operaton.dev:starter-templates`, `org.operaton.dev:starter-archetypes`, `org.operaton.dev:starter-server`; each artifact includes `-sources.jar` and `-javadoc.jar`; all artifacts are signed with the project GPG key
+
+**Given** a tagged release runs successfully
+**When** the npm publish step completes
+**Then** `operaton-starter-mcp` is available on `npmjs.com` at the release version; `npx operaton-starter-mcp@1.0.0` resolves and runs correctly; the `operaton-starter` CLI package is published on the same run at the same version
+
+**Given** the Maven artifacts
+**When** published
+**Then** they pass the Sonatype OSSRH validation checks: valid POM with `<name>`, `<description>`, `<url>`, `<licenses>`, `<developers>`, `<scm>` sections; signed JARs; sources and javadoc JARs present
+
+**Given** the prerequisite from ARCH-14
+**When** this story is implemented
+**Then** `org.operaton.dev` groupId is verified as claimed at `central.sonatype.com` — publishing fails fast with a clear error if the groupId is not yet registered
+
+### Story 7.3: Release Credentials & Secrets Documentation (FR53)
+
+As a **maintainer setting up the release pipeline for the first time**,
+I want complete documentation of every GitHub Actions secret required for the release workflow,
+So that I can configure the repository secrets once and have confidence the release workflow will succeed.
+
+**Acceptance Criteria:**
+
+**Given** the root `README.md` or a `docs/release.md` file
+**When** inspected
+**Then** it contains a "Release Setup" section listing every required GitHub Actions secret with: secret name, what it contains, where to obtain the credential, and which distribution target it enables
+
+**Given** the required secrets documentation
+**When** inspected
+**Then** it lists all of the following: `DOCKER_USERNAME` and `DOCKER_PASSWORD` (Docker Hub credentials for `operaton/operaton-starter` repository); `MAVEN_CENTRAL_USERNAME` and `MAVEN_CENTRAL_TOKEN` (Sonatype OSSRH credentials); `GPG_PRIVATE_KEY` and `GPG_PASSPHRASE` (for signing Maven artifacts); `NPM_TOKEN` (npm automation token for `operaton-starter-mcp` and `operaton-starter` packages); `GITHUB_TOKEN` (used by JReleaser for GitHub Release creation — this is the standard Actions token, not a PAT, unless repo rules require otherwise)
+
+**Given** the documentation
+**When** a new maintainer follows it from zero
+**Then** they can configure all required secrets and successfully trigger a dry-run release (JReleaser `--dry-run` mode) that validates credentials without actually publishing — this is the acceptance gate
+
+**Given** the release documentation
+**When** the prerequisite groupId claim (ARCH-14) is not yet complete
+**Then** the documentation explicitly calls it out as a one-time prerequisite with a link to `central.sonatype.com` and instructions for the claim process

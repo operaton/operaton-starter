@@ -55,8 +55,10 @@ flowchart TD
 
 **Key rule:** Zero Spring dependencies. ArchUnit test (`ZeroSpringDependencyTest`) enforces this at build time.
 
+**Project types supported:** `PROCESS_APPLICATION` (Spring Boot + embedded engine), `PROCESS_ARCHIVE` (engine-agnostic deployable), `DMN_PROJECT` (standalone DMN decision evaluation service).
+
 **Packages:**
-- `org.operaton.dev.starter.templates.model` — `ProjectConfig`, `ProjectType`, `BuildSystem`, `DeploymentTarget`
+- `org.operaton.dev.starter.templates.model` — `ProjectConfig`, `ProjectType` (3 values), `BuildSystem`, `DeploymentTarget`
 - `org.operaton.dev.starter.templates.engine` — `GenerationEngine`, `ZipGenerator`, `TemplateRenderer`
 - `org.operaton.dev.starter.templates.metadata` — `MetadataProvider`, `ProjectTypeDescriptor`, `TemplateManifest`
 
@@ -86,16 +88,25 @@ flowchart TD
 
 **Responsibility:** Browser-based user interface. Serves both Practitioner (form-first) and Explorer (gallery-first) workflows. Client-side file tree preview with no server round-trips.
 
+**Gallery-to-form context handoff:** When a user arrives from the gallery with a `?projectType=...` query param, `ConfigureView` displays the project type as a read-only banner (no editable selector) and hides options that don't apply to that type (e.g., `deploymentTarget` is hidden for `PROCESS_APPLICATION`; `githubActions` is hidden for `PROCESS_ARCHIVE`).
+
+**Two-step build system selection:** `useProjectForm.ts` exposes `buildSystemCategory` (`'maven'|'gradle'`) and `gradleDsl` (`'GRADLE_GROOVY'|'GRADLE_KOTLIN'|null`) as intermediate reactive state. `ConfigureView` first shows Maven/Gradle choice; Gradle sub-option for DSL selection appears only when Gradle is selected. `form.buildSystem` is kept in sync via a watcher.
+
 **Layout:**
 ```
 src/
 ├── assets/          ← design token CSS (extracted from operaton.org)
 ├── components/
+│   ├── UseCaseCard.vue
 │   ├── gallery/     ← ProjectGallery.vue, ProjectCard.vue, TypeBadge.vue
 │   ├── form/        ← ConfigurationForm.vue, BuildSystemSelector.vue, IdentityFields.vue, etc.
 │   ├── preview/     ← FileTreePreview.vue, FileTreeNode.vue
 │   └── shared/      ← ErrorBanner.vue, LoadingSpinner.vue
-├── composables/     ← useMetadata.ts, useGenerate.ts, useShareableLink.ts
+├── composables/
+│   ├── useMetadata.ts
+│   ├── useGenerate.ts
+│   ├── useProjectForm.ts  ← form state, two-step build, gallery detection, validation
+│   └── useShareableLink.ts
 ├── generated/       ← OpenAPI-generated API client (do not edit)
 ├── router/          ← index.ts (gallery / configure routes)
 ├── types/           ← api.ts
@@ -148,7 +159,8 @@ operaton-starter/
 ├── .github/
 │   └── workflows/
 │       ├── ci.yml                   ← build-java + test-matrix + contract-check + lint-web
-│       └── release.yml              ← docker-publish + npm-publish (on tag)
+│       ├── affected-matrix.yml      ← smart CI matrix (PR only: affected combinations)
+│       └── release.yml              ← JReleaser full-release (on v*.*.* tag)
 │
 ├── docs/
 │   └── arc42/                       ← this directory
@@ -177,6 +189,10 @@ operaton-starter/
 │       │       │   ├── gradle-groovy/
 │       │       │   └── gradle-kotlin/
 │       │       ├── process-archive/
+│       │       │   ├── maven/
+│       │       │   ├── gradle-groovy/
+│       │       │   └── gradle-kotlin/
+│       │       ├── dmn-project/
 │       │       │   ├── maven/
 │       │       │   ├── gradle-groovy/
 │       │       │   └── gradle-kotlin/

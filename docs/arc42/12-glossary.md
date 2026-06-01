@@ -8,6 +8,7 @@
 | **Operaton BOM** | Bill of Materials POM (`operaton-bom`) that provides dependency management for all Operaton artifacts; generated projects always target the current stable version |
 | **Process Application** | A Spring Boot application embedding the Operaton engine. Includes a skeleton BPMN process, a Java delegate stub, and full Spring Boot configuration. The default project type for developers building new Operaton-powered applications. |
 | **Process Archive** | An engine-agnostic deployable artifact (WAR or JAR) for deployment to a Standalone Engine. Contains `processes.xml` and BPMN resources but no embedded engine. Used when an organisation runs a shared Operaton server (Tomcat or Standalone). |
+| **DMN Project** | A Spring Boot application focused on DMN decision evaluation. Generates a skeleton DMN decision table and an integration test that evaluates it. Third supported project type (`DMN_PROJECT`). |
 | **DeploymentTarget** | Enum specifying where a Process Archive will run: `TOMCAT` or `STANDALONE_ENGINE`. Relevant only for the `PROCESS_ARCHIVE` project type. |
 | **Identity Propagation** | The invariant that `groupId`, `artifactId`, and `projectName` from `ProjectConfig` flow into all generated files: `pom.xml`/`build.gradle`, Java package names, BPMN process ID, and `spring.application.name`. |
 | **BPMN** | Business Process Model and Notation. The XML-based standard for defining executable process models. Generated projects include a skeleton `.bpmn` file. |
@@ -48,6 +49,8 @@
 | **axe-core** | Accessibility testing engine. Used in the CI `lint-web` job to enforce WCAG 2.1 AA compliance. Hard block on violations. |
 | **Spring Boot Actuator** | Spring Boot module providing the `/actuator/health` endpoint used by load balancers for health checks. |
 | **Layered JAR** | Spring Boot feature that splits the application JAR into layers (dependencies, spring-boot-loader, snapshot-dependencies, application) for Docker layer cache efficiency. |
+| **JReleaser** | Release automation tool. Coordinates GitHub Release creation, Docker Hub push, Maven Central publish, and npm publish from a single `jreleaser.yml` configuration. Used in `.github/workflows/release.yml`. |
+| **central-publishing-maven-plugin** | Sonatype's Maven plugin for publishing artifacts to Maven Central via the Central Portal. Replaces the old `nexus-staging-maven-plugin`. |
 
 ## Personas
 
@@ -69,10 +72,12 @@
 
 ## Environment Variables
 
-| Variable | Scope | Description |
-|----------|-------|-------------|
-| `DEFAULT_GROUP_ID` | Self-hosted | Pre-fills Group ID field; injected into generated project coordinates |
-| `MAVEN_REGISTRY` | Self-hosted | Maven repository URL injected into generated `pom.xml` / `build.gradle` |
-| `STARTER_DEFAULTS_OPERATON_VERSION` | Self-hosted only | Pins Operaton version; public instance uses version baked at build time |
-| `CORS_ALLOWED_ORIGINS` | Self-hosted | Additional CORS origins beyond `start.operaton.org` and `localhost` |
-| `OPERATON_STARTER_URL` | CLI, MCP | Override base URL for CLI and MCP clients (default: `https://start.operaton.org`) |
+| Variable | Description |
+|----------|-------------|
+| `STARTER_DEFAULTS_GROUP_ID` | Pre-fills Group ID field; injected into generated project coordinates |
+| `STARTER_DEFAULTS_MAVEN_REGISTRY` | Maven repository URL injected into generated `pom.xml` / `build.gradle` |
+| `STARTER_DEFAULTS_OPERATON_VERSION` | Pins Operaton version; public instance uses version baked at build time |
+| `STARTER_CORS_ALLOWED_ORIGINS` | Comma-separated CORS origins beyond the default allowlist |
+| `OPERATON_STARTER_URL` | Override base URL for CLI and MCP clients (default: `https://start.operaton.org`) |
+
+Old-form names (`DEFAULT_GROUP_ID`, `MAVEN_REGISTRY`, `CORS_ALLOWED_ORIGINS`) are supported as fallbacks via Spring property binding.

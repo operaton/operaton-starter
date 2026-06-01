@@ -26,7 +26,7 @@ public class MetadataController {
     @GetMapping(value = "/api/v1/metadata", produces = MediaType.APPLICATION_JSON_VALUE)
     public Metadata getMetadata() {
         var metadata = new Metadata(
-                List.of(buildProcessApplication(), buildProcessArchive()),
+                List.of(buildProcessApplication(), buildProcessArchive(), buildDmnProject()),
                 List.of(
                         new BuildSystemInfo("MAVEN", "Maven"),
                         new BuildSystemInfo("GRADLE_GROOVY", "Gradle (Groovy DSL)"),
@@ -52,6 +52,17 @@ public class MetadataController {
         );
     }
 
+    private static ProjectTypeInfo buildDmnProject() {
+        return new ProjectTypeInfo(
+                "DMN_PROJECT",
+                "DMN Decision Project",
+                "A Spring Boot application focused on DMN decision table evaluation. Includes a skeleton decision table (hit policy FIRST), an integration test that evaluates it, and full build tooling — ready to run on first checkout.",
+                List.of("DMN", "Decision Table", "Spring Boot", "JUnit 5"),
+                "Ideal for teams building rules engines, approval logic, or pricing models",
+                dmnProjectManifest()
+        );
+    }
+
     private static ProjectTypeInfo buildProcessArchive() {
         return new ProjectTypeInfo(
                 "PROCESS_ARCHIVE",
@@ -61,6 +72,25 @@ public class MetadataController {
                 "Ideal for teams running a shared Operaton engine",
                 processArchiveManifest()
         );
+    }
+
+    private static List<TemplateManifestEntry> dmnProjectManifest() {
+        List<TemplateManifestEntry> entries = new ArrayList<>();
+        entries.add(entry("pom.xml", "buildSystem == 'MAVEN'", "dmn-project/maven/pom.xml.jte"));
+        entries.add(entry("build.gradle", "buildSystem == 'GRADLE_GROOVY'", "dmn-project/gradle-groovy/build.gradle.jte"));
+        entries.add(entry("settings.gradle", "buildSystem == 'GRADLE_GROOVY'", "dmn-project/gradle-groovy/settings.gradle.jte"));
+        entries.add(entry("build.gradle.kts", "buildSystem == 'GRADLE_KOTLIN'", "dmn-project/gradle-kotlin/build.gradle.kts.jte"));
+        entries.add(entry("settings.gradle.kts", "buildSystem == 'GRADLE_KOTLIN'", "dmn-project/gradle-kotlin/settings.gradle.kts.jte"));
+        entries.add(entry("src/main/java/{package}/Application.java", null, "dmn-project/Application.java.jte"));
+        entries.add(entry("src/main/resources/skeleton-decision.dmn", null, "dmn-project/skeleton-decision.dmn.jte"));
+        entries.add(entry("src/main/resources/application.properties", null, "dmn-project/application.properties.jte"));
+        entries.add(entry("src/test/java/{package}/DecisionIT.java", null, "dmn-project/DecisionIT.java.jte"));
+        entries.add(entry("README.md", null, "common/README.md.jte"));
+        entries.add(entry("renovate.json", "dependencyUpdater == 'RENOVATE'", "common/renovate.json.jte"));
+        entries.add(entry(".github/dependabot.yml", "dependencyUpdater == 'DEPENDABOT'", "common/dependabot.yml.jte"));
+        entries.add(entry(".github/workflows/ci.yml", "githubActions == true", "common/ci.yml.jte"));
+        entries.add(entry("docker-compose.yml", "dockerCompose == true", "common/docker-compose.yml.jte"));
+        return entries;
     }
 
     private static List<TemplateManifestEntry> processApplicationManifest() {

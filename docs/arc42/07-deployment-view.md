@@ -64,13 +64,12 @@ Layer extraction maximizes Docker build cache efficiency — dependency layers (
 ```mermaid
 flowchart LR
     PR["PR / push to main"] --> BJ["build-java\nmvn verify"]
-    PR --> TM["test-matrix\n6 parallel jobs\n(2 types × 3 build systems)"]
+    PR --> TM["test-matrix\n9 parallel jobs\n(3 types × 3 build systems)"]
+    PR --> AM["affected-matrix\ntemplate PRs only:\ndetect affected combinations"]
     PR --> CC["contract-check\nvalidate clients vs openapi.yaml\n⚠️ warning level"]
     PR --> LW["lint-web\nESLint + Vitest + axe-core"]
 
-    TAG["on tag (release)"] --> BJ2["build-java"]
-    TAG --> DP["docker-publish\npush eclipse-temurin:25 image\nto docker.io/operaton/operaton-starter"]
-    TAG --> NP["npm-publish\noperaton-starter-mcp → npm\noperaton-starter → npm"]
+    TAG["on tag v*.*.* (release)"] --> RL["release.yml\nJReleaser full-release\n→ GitHub Release\n→ Docker Hub\n→ Maven Central\n→ npm"]
 ```
 
 ### CI Jobs Detail
@@ -81,11 +80,16 @@ flowchart LR
 - Hard block on failure
 
 **`test-matrix`** (`ci.yml`)
-- 6 parallel shell jobs: `PROCESS_APPLICATION × MAVEN`, `PROCESS_APPLICATION × GRADLE_GROOVY`, `PROCESS_APPLICATION × GRADLE_KOTLIN`, `PROCESS_ARCHIVE × MAVEN`, `PROCESS_ARCHIVE × GRADLE_GROOVY`, `PROCESS_ARCHIVE × GRADLE_KOTLIN`
+- 9 parallel shell jobs: 3 project types × 3 build systems (`PROCESS_APPLICATION`, `PROCESS_ARCHIVE`, `DMN_PROJECT` × `MAVEN`, `GRADLE_GROOVY`, `GRADLE_KOTLIN`)
 - Each job: call `POST /api/v1/generate` → extract ZIP → `cd` into project → run build command
-- Smoke test: `mvn spring-boot:run` (or Gradle equivalent) → wait for `GET /actuator/health` to return 200 within 60s
+- Smoke test for `PROCESS_APPLICATION` and `DMN_PROJECT`: start app → wait for `GET /actuator/health` to return 200 within 60s
 - Pinned Java version (matches generated project Java floor)
 - Hard block on failure
+
+**`affected-matrix`** (`affected-matrix.yml`, template PRs only)
+- Triggers only on PRs that touch `starter-templates/src/main/jte/**`
+- Runs `affected-combinations.sh` to map changed template paths to affected project-type × build-system combinations
+- Validates only the affected combinations (not all 9) — keeps PR feedback fast when changing a single template
 
 **`contract-check`** (`ci.yml`)
 - Regenerates OpenAPI clients → diffs against committed versions
@@ -98,14 +102,10 @@ flowchart LR
 - axe-core accessibility audit (WCAG 2.1 AA, hard block)
 - Covers `starter-web`, `starter-mcp`, `starter-cli`
 
-**`docker-publish`** (`release.yml`, on tag)
-- Builds production Docker image
-- Pushes to `docker.io/operaton/operaton-starter:${tag}` and `:latest`
-- 30-second smoke test: `docker run --network none` + health check
-
-**`npm-publish`** (`release.yml`, on tag)
-- Publishes `operaton-starter-mcp` to npm
-- Publishes `operaton-starter` (CLI) to npm
+**`release.yml`** (on tag `v*.*.*`)
+- JReleaser `full-release`: creates GitHub Release with conventional-commits changelog, pushes Docker image to Docker Hub, publishes to Maven Central (with GPG-signed artifacts), publishes npm packages
+- Pre-steps: `mvn verify -Prelease` (activates source/javadoc/GPG/Central plugin), Docker image build, npm pack
+- Replaces former separate `docker-publish` and `npm-publish` jobs
 
 ## Self-Hosted Deployment
 
@@ -114,20 +114,22 @@ Klaus persona deployment pattern:
 ```bash
 docker run -d \
   -p 8080:8080 \
-  -e DEFAULT_GROUP_ID=com.bank \
-  -e MAVEN_REGISTRY=https://nexus.bank.internal/repository/maven-public \
+  -e STARTER_DEFAULTS_GROUP_ID=com.bank \
+  -e STARTER_DEFAULTS_MAVEN_REGISTRY=https://nexus.bank.internal/repository/maven-public \
   -e STARTER_DEFAULTS_OPERATON_VERSION=1.0.0 \
   docker.io/operaton/operaton-starter:latest
 ```
 
 **Environment variables:**
 
-| Variable | Scope | Description |
-|----------|-------|-------------|
-| `DEFAULT_GROUP_ID` | Self-hosted | Pre-fills Group ID field in web UI and metadata defaults |
-| `MAVEN_REGISTRY` | Self-hosted | Maven repository URL injected into generated `pom.xml` / `build.gradle` |
-| `STARTER_DEFAULTS_OPERATON_VERSION` | Self-hosted only | Pins Operaton version; public instance uses version baked at build time |
-| `CORS_ALLOWED_ORIGINS` | Self-hosted | Additional CORS origins (default: `start.operaton.org`, `localhost`) |
+| Variable | Description |
+|----------|-------------|
+| `STARTER_DEFAULTS_GROUP_ID` | Pre-fills Group ID field in web UI and metadata defaults |
+| `STARTER_DEFAULTS_MAVEN_REGISTRY` | Maven repository URL injected into generated `pom.xml` / `build.gradle` |
+| `STARTER_DEFAULTS_OPERATON_VERSION` | Pins Operaton version; public instance uses version baked at build time |
+| `STARTER_CORS_ALLOWED_ORIGINS` | Comma-separated additional CORS origins |
+
+Old-form names (`DEFAULT_GROUP_ID`, `MAVEN_REGISTRY`, `CORS_ALLOWED_ORIGINS`) are supported as fallbacks for backwards compatibility.
 
 **Key property:** The Docker image starts with zero external network calls. All configuration is via environment variables.
 
@@ -135,20 +137,21 @@ docker run -d \
 
 `docker-compose.dev.yml` at project root (distinct from `docker-compose.yml` generated inside project archives):
 
-```yaml
-services:
-  backend:
-    build:
-      context: .
-      target: builder
-    ports:
-      - "8080:8080"
-    environment:
-      - SPRING_PROFILES_ACTIVE=dev
+```bash
+# Build the fat JAR first
+./mvnw verify -pl starter-templates,starter-server -am
+
+# Start the backend container
+docker compose -f docker-compose.dev.yml up
 ```
 
-Allows `starter-web` frontend developers to run the backend without a full Maven build:
+Allows `starter-web` frontend developers to run the backend locally:
 ```bash
-docker compose -f docker-compose.dev.yml up backend
-npm run dev  # starter-web Vite dev server proxies API to localhost:8080
+cd starter-web && npm run dev  # Vite dev server proxies /api/** to localhost:8080
 ```
+
+**MCP self-hosting:** To connect `operaton-starter-mcp` to a local instance, set `OPERATON_STARTER_URL` in the AI assistant MCP config:
+```json
+{ "env": { "OPERATON_STARTER_URL": "http://localhost:8080" } }
+```
+See [`docs/release.md`](../release.md) for full release procedure. See root [`README.md`](../../README.md#self-hosting-with-mcp) for AI assistant MCP config examples.

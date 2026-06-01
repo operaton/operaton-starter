@@ -2,7 +2,7 @@
 stepsCompleted: [1, 2, 3, 4, 5, 6, 7, 8]
 lastStep: 8
 status: 'complete'
-completedAt: '2026-03-27'
+completedAt: '2026-05-31'
 inputDocuments: ['_bmad-output/planning-artifacts/prd.md']
 workflowType: 'architecture'
 project_name: 'operaton-starter'
@@ -82,7 +82,15 @@ _This document builds collaboratively through step-by-step discovery. Sections a
 | `personaHint` | Contextual positioning (e.g. "Ideal for Camunda 7 migrators") |
 | `templateManifest` | Flat list of `{ path, condition, templateId }` enabling client-side file tree preview |
 
-No hardcoded option lists in any channel. Gallery content (including `personaHint`) is metadata-driven from day one.
+Each `buildSystems` entry contains:
+
+| Field | Purpose |
+|-------|---------|
+| `id` | Primary build system identifier (`maven`, `gradle`) |
+| `displayName` | Rendered in the first-level build system selector |
+| `dslOptions` | Array of `{ id, displayName }` sub-choices; empty array when no DSL choice applies (Maven); non-empty triggers a mandatory second-level selector in all channels |
+
+No hardcoded option lists in any channel. Gallery content (including `personaHint`) is metadata-driven from day one. No `globalOptions.javaVersions` — generated projects target Java 21 with no picker.
 
 ### System Context Diagram
 
@@ -348,22 +356,60 @@ operaton-starter/          ← Maven parent POM (multi-module)
     }
   ],
   "buildSystems": [
-    { "id": "string", "displayName": "string" }
-  ],
-  "globalOptions": {
-    "javaVersions": {
-      "options": [17, 21, 25],
-      "default": 17
+    {
+      "id": "string",
+      "displayName": "string",
+      "dslOptions": [
+        { "id": "string", "displayName": "string" }
+      ]
     }
-  }
+  ]
 }
+```
+
+`dslOptions` is an empty array for build systems with no DSL sub-choice (Maven). When `dslOptions` is non-empty the UI must present the sub-option and require a selection before generation; the selected `dslOption.id` is combined with the `buildSystem.id` to resolve the internal `BuildSystem` enum value (e.g. `gradle` + `kotlin` → `GRADLE_KOTLIN`).
+
+**`buildSystems` wire values (MVP):**
+```json
+[
+  { "id": "maven",  "displayName": "Maven",  "dslOptions": [] },
+  { "id": "gradle", "displayName": "Gradle", "dslOptions": [
+      { "id": "groovy", "displayName": "Groovy DSL" },
+      { "id": "kotlin", "displayName": "Kotlin DSL" }
+    ]
+  }
+]
+```
+
+**`globalOptions` removed** — no Java version picker (NFR13: Java 21+ minimum, no user choice).
 ```
 
 ### Frontend Architecture
 
 - **Framework** — Vue 3.5.x + Vite; TypeScript throughout
-- **Routing** — Vue Router; two primary routes: gallery (`/`) and configuration form (`/configure`)
+- **Routing** — Vue Router; two primary routes: gallery (`/`) and configuration form (`/configure?type={projectTypeId}`); project type is always carried as a URL query param — never as router state or component prop — so the URL is shareable, bookmarkable, and survives page refresh
 - **State management** — none (no Pinia); form state is local component state; URL query params for shareable config links
+
+**Two-page navigation contract (FR45):**
+
+- `GalleryView` renders project type cards; selecting a card navigates to `/configure?type={id}` via `router.push`
+- `ConfigureView` reads `?type` from `useRoute().query.type` on mount; if absent or unrecognised, redirects to `/`
+- The project type is displayed as a read-only header element on `ConfigureView` — not an `<input>` or `<select>`; it is never re-presented as an editable field on this page
+- A "← Back to gallery" link navigates to `/` without carrying any form state; project type resets when the user picks a new card
+
+**Conditional option rendering rule (FR46) — hide, never disable:**
+
+Options that do not apply to the current project type are removed from the DOM entirely (`v-if`, not `v-bind:disabled`). A disabled field is still perceived as a choice; a hidden field does not exist. The visible option set is a pure function of the current `projectTypeId`.
+
+**Conditional option matrix:**
+
+| Option | Shown for | Hidden for |
+|--------|-----------|------------|
+| Deployment target selector (Tomcat / Wildfly) | `process-archive` | all others |
+| Docker Compose toggle | `process-application` | `process-archive` and all others |
+| DSL sub-option (Groovy / Kotlin) | when `buildSystem === 'gradle'` (build-system-conditional, not project-type-conditional) | when `buildSystem === 'maven'` |
+
+**Rule:** the conditional matrix is derived from `metadata.projectTypes[selected].templateManifest` conditions and the `buildSystems[selected].dslOptions` array — both sourced from the metadata endpoint. No option visibility logic is hardcoded in components; components read from metadata and render accordingly. Adding a new project type or option requires only a metadata change, not a component change.
 - **Styling** — Tailwind CSS with custom theme configuration mapping operaton.org design tokens (colors, typography, spacing extracted from `github.com/operaton/operaton.org` Jekyll source before implementation begins); Tailwind config also exports tokens as CSS custom properties for non-utility custom CSS
 - **Preview rendering** — pure function of `metadata.projectTypes[selected].templateManifest` + current form state; no server round-trip; target ≤200ms update after any input change
 - **Testing** — Vitest for unit tests; axe-core in CI for WCAG 2.1 AA accessibility validation
@@ -371,8 +417,10 @@ operaton-starter/          ← Maven parent POM (multi-module)
 
 ### Infrastructure & Deployment
 
-- **Docker base image** — `eclipse-temurin:25-jre-alpine`; server runtime Java 25
-- **Generated project Java** — default Java 17; picker offers 17 / 21 / 25; all three validated in CI matrix
+- **Docker base image** — multi-stage build: Maven build stage (`maven:3-eclipse-temurin-25`) produces the JAR; final runtime stage uses `eclipse-temurin:25-jre-alpine` + Node.js Active LTS (installed via `apk add nodejs npm` or copied from a `node:lts-alpine` stage); single image bundles both the JVM application and the MCP server process
+- **Process supervision** — `s6-overlay` (or equivalent lightweight init) manages both the Spring Boot JVM process and the `node starter-mcp/dist/index.js` MCP server process; if either process exits, the container exits (no zombie processes, clean Docker restart semantics)
+- **MCP base URL wiring** — the bundled MCP server process defaults to `http://localhost:{SERVER_PORT}/` (loopback, no external network hop); `OPERATON_STARTER_BASE_URL` env var overrides to point at a remote instance (enabling the standalone MCP package use case unchanged)
+- **Generated project Java** — Java 21 minimum; no version picker (see NFR13 update); all combinations validated in CI matrix against Java 21
 - **Docker registry** — `docker.io/operaton/operaton-starter`; published on every tagged release
 - **Environment configuration** — all runtime config via environment variables; no file-based config at runtime
 - **Logging** — structured JSON via Logback + `logstash-logback-encoder`; compatible with standard log aggregators
@@ -383,16 +431,91 @@ operaton-starter/          ← Maven parent POM (multi-module)
 ```mermaid
 flowchart LR
     PR["PR / push to main"] --> BJ["build-java\nmvn verify"]
-    PR --> TM["test-matrix\n6 parallel jobs\n(2 types × 3 build systems)"]
+    PR --> TM["test-matrix\n6 parallel jobs\n(2 types × 3 build systems)\nunit tests only"]
     PR --> CC["contract-check\nvalidate clients vs openapi.yaml\n⚠️ warning level"]
     PR --> LW["lint-web\nESLint + Vitest"]
+    PR --> TD["template-diff\n(only when jte/** changed)\ncompute affected combinations\n→ dynamic matrix"]
+    TD --> TDM["N parallel jobs\ngenerate → build → start\naffected combos only"]
 
-    TAG["on tag (release)"] --> BJ2["build-java"]
-    TAG --> DP["docker-publish\npush eclipse-temurin:25 image\nto docker.io/operaton/operaton-starter"]
-    TAG --> NP["npm-publish\noperaton-starter-mcp → npm"]
+    TAG["on tag vX.Y.Z"] --> BLD["build-java\nmvn verify\nproduce JARs + Docker image"]
+    BLD --> JR["JReleaser\n.github/workflows/release.yml"]
+    JR --> GHR["GitHub Release\nchangelog from conventional commits"]
+    JR --> MCN["Maven Central\nvia Sonatype OSSRH"]
+    JR --> DHB["Docker Hub\noperaton/operaton-starter:X.Y.Z + latest"]
+    JR --> NPM["npm registry\noperaton-starter-mcp@X.Y.Z"]
 ```
 
-**Pre-publish prerequisite:** `org.operaton.dev` groupId must be claimed at `central.sonatype.com` before first Maven Central publish.
+**Template-diff workflow — `.github/workflows/template-validation.yml`:**
+
+- Triggered on PRs that touch `starter-templates/src/main/jte/**` or `starter-templates/src/main/java/**`; skipped entirely on PRs that touch neither path
+- **Step 1 — compute-matrix job:** uses `git diff --name-only origin/main...HEAD` to list changed files; a shell script maps each path to its affected combination(s) using the rules below; outputs a JSON matrix consumed by the next job via `$GITHUB_OUTPUT`
+- **Step 2 — validate job (dynamic matrix):** each matrix entry runs: (a) `POST /api/v1/generate` against a locally-started `starter-server` instance, (b) extracts the ZIP, (c) runs `mvn verify` or `./gradlew build` on the generated project, (d) runs the generated project's start command and asserts the health endpoint returns 200; all four steps must pass — any failure fails the PR check
+- This workflow is a **required status check** (merge gate); the `test-matrix` job remains a separate required check
+
+**Template path → combination mapping rules:**
+
+| Changed path pattern | Affected combinations |
+|---|---|
+| `jte/process-application/maven/**` | `PROCESS_APPLICATION × MAVEN` |
+| `jte/process-application/gradle-groovy/**` | `PROCESS_APPLICATION × GRADLE_GROOVY` |
+| `jte/process-application/gradle-kotlin/**` | `PROCESS_APPLICATION × GRADLE_KOTLIN` |
+| `jte/process-archive/maven/**` | `PROCESS_ARCHIVE × MAVEN` |
+| `jte/process-archive/gradle-groovy/**` | `PROCESS_ARCHIVE × GRADLE_GROOVY` |
+| `jte/process-archive/gradle-kotlin/**` | `PROCESS_ARCHIVE × GRADLE_KOTLIN` |
+| `jte/common/**` | all 6 combinations |
+| `src/main/java/**` (engine code) | all 6 combinations |
+
+The mapping script lives at `.github/scripts/compute-template-matrix.sh`; it is the authoritative source for this mapping and is tested independently. When `common/` or engine code changes, the dynamic matrix is identical to the full 6-combination `test-matrix` — both workflows run in parallel.
+
+**Release workflow — `.github/workflows/release.yml`:**
+
+- Triggered by push of a tag matching `v*.*.*`
+- Build step: `mvn verify` — produces JARs, sources, javadoc JARs; builds Docker image
+- JReleaser step: reads `jreleaser.yml` at project root; coordinates all publish targets in a single run following the pattern established in `operaton/operaton`
+- Changelog generated from conventional commits since the previous tag; written to the GitHub Release body
+- All four distribution targets (GitHub Release, Maven Central, Docker Hub, npm) are coordinated by a single JReleaser invocation — partial-failure behaviour: JReleaser marks failed distributors and the job fails; no partial publish silence
+
+**JReleaser configuration — `jreleaser.yml` (project root):**
+
+```
+project:
+  version: resolved from tag (vX.Y.Z → X.Y.Z)
+  java.version: 21
+
+signing:
+  active: ALWAYS
+  armored: true          ← JReleaser signs artifacts; no Maven GPG plugin needed
+
+release:
+  github:
+    changelog:
+      formatted: ALWAYS
+      preset: conventional-commits
+
+distributions:
+  starter-server:       ← Maven Central (starter-server, starter-templates, starter-archetypes)
+  operaton-starter:     ← Docker Hub (docker.io/operaton/operaton-starter)
+  operaton-starter-mcp: ← npm (operaton-starter-mcp)
+```
+
+**Required GitHub Actions secrets (all must be set before first release):**
+
+| Secret | Used by |
+|--------|---------|
+| `DOCKER_USERNAME` | Docker Hub push |
+| `DOCKER_PASSWORD` | Docker Hub push |
+| `MAVEN_CENTRAL_USERNAME` | Sonatype OSSRH staging |
+| `MAVEN_CENTRAL_TOKEN` | Sonatype OSSRH staging |
+| `NPM_TOKEN` | npm publish |
+| `GPG_PRIVATE_KEY` | JAR signing (Maven Central requirement) |
+| `GPG_PASSPHRASE` | JAR signing |
+| `JRELEASER_GITHUB_TOKEN` | GitHub Release creation (can reuse `GITHUB_TOKEN` if permissions allow) |
+
+**Pre-publish prerequisites:**
+- `org.operaton.dev` groupId claimed at `central.sonatype.com` before first Maven Central publish
+- GPG key registered with a public keyserver (`keys.openpgp.org` or `keyserver.ubuntu.com`)
+- Docker Hub repository `operaton/operaton-starter` created under the `operaton` org
+- npm package name `operaton-starter-mcp` claimed (publish a `0.0.1-alpha` if needed to reserve)
 
 ### Decision Impact Analysis
 
@@ -606,6 +729,9 @@ void templateModuleHasNoSpringDependencies() {
 - ❌ Hand-editing `src/generated/` files
 - ❌ Exposing stack traces in API error responses
 - ❌ Defining parallel domain model classes outside `starter-templates`
+- ❌ Rendering inapplicable options as `disabled` — use `v-if` to hide them entirely
+- ❌ Passing project type as router state or component prop — always use `?type=` query param
+- ❌ Hardcoding option visibility logic in components — derive from metadata
 
 ## Project Structure & Boundaries
 > arc42 Sections 5 & 7: Building Block View & Deployment View
@@ -616,8 +742,9 @@ void templateModuleHasNoSpringDependencies() {
 operaton-starter/
 ├── pom.xml                          ← Maven parent POM (6 modules)
 ├── openapi.yaml                     ← API contract source of truth (referenced by all modules)
-├── Dockerfile                       ← starter-server image (eclipse-temurin:25-jre-alpine)
+├── Dockerfile                       ← multi-stage: Maven build → eclipse-temurin:25-jre-alpine + Node.js LTS; s6-overlay supervises JVM + MCP processes
 ├── docker-compose.dev.yml           ← local development environment
+├── jreleaser.yml                    ← JReleaser config: GitHub Release + Maven Central + Docker Hub + npm
 ├── renovate.json                    ← automated Operaton/dependency version bumps
 ├── .editorconfig
 ├── .gitignore
@@ -626,7 +753,10 @@ operaton-starter/
 ├── .github/
 │   └── workflows/
 │       ├── ci.yml                   ← build-java + test-matrix + contract-check + lint-web
-│       └── release.yml              ← docker-publish + npm-publish (on tag)
+│       ├── template-validation.yml  ← PR gate: compute affected combos → generate → build → start (NFR21)
+│       ├── release.yml              ← on tag v*.*.*: mvn verify → JReleaser (signs artifacts + GitHub Release + Maven Central + Docker Hub + npm)
+│       └── scripts/
+│           └── compute-template-matrix.sh  ← maps changed jte/** paths to affected type×build combinations
 │
 ├── docs/
 │   └── arc42/
@@ -884,7 +1014,68 @@ openapi.yaml (project root)
   → starter-cli:    openapi-generator (npm) → src/generated/
 ```
 
-## Architecture Validation Results
+## Submodule Documentation Architecture
+> NFR22: each submodule README is independently sufficient — a contributor builds and exercises the module using only its README
+
+### Required Section Structure (all submodules)
+
+Every submodule README must contain these sections in this order:
+
+| Section | Content |
+|---------|---------|
+| **Role** | One paragraph: what this module does and where it sits in the system (reference the system context diagram conceptually, not by path) |
+| **Prerequisites** | Exact tool versions required to work on this module in isolation (e.g. Java 21+, Maven 3.9+, Node.js Active LTS) — not the full monorepo stack unless needed |
+| **Build in isolation** | The exact command to build this module standalone without the parent POM or sibling modules; must produce a passing build |
+| **Run / use locally** | Step-by-step: how to start or exercise the module locally; for libraries, how to call the public API; for services, how to start and hit an endpoint |
+| **Usage example** | At least one concrete, copy-pasteable example (curl command, Java snippet, npm invocation) that produces observable output |
+
+### Per-Submodule Spec
+
+**`starter-templates/README.md`**
+- Role: pure-Java generation engine; domain model owner; no Spring dependency
+- Prerequisites: Java 21+, Maven 3.9+
+- Build in isolation: `mvn verify` from `starter-templates/` — runs unit tests including `ZeroSpringDependencyTest` and `GenerationEngineTest` parameterized suite
+- Run / use locally: show how to call `GenerationEngine.generate(ProjectConfig)` directly in a test or main method
+- Usage example: Java snippet constructing a `ProjectConfig` and calling `generate()`, asserting the returned `byte[]` is a valid ZIP
+
+**`starter-server/README.md`**
+- Role: Spring Boot HTTP facade; exposes `POST /api/v1/generate`, `GET /api/v1/metadata`, `GET /api/v1/docs`
+- Prerequisites: Java 21+, Maven 3.9+; note that `starter-templates` must be built first (`mvn install` from root or `starter-templates/`)
+- Build in isolation: `mvn verify` from `starter-server/` (after `starter-templates` is installed)
+- Run / use locally: `mvn spring-boot:run`; show how to verify with `curl http://localhost:8080/actuator/health`
+- Usage example: complete `curl` command for `POST /api/v1/generate` with a minimal JSON body, saving the response as `project.zip`
+
+**`starter-archetypes/README.md`**
+- Role: `GenerationClient` interface + `RestGenerationClient` MVP wrapper; enables `mvn archetype:generate` to call the REST API
+- Prerequisites: Java 21+, Maven 3.9+; a running `starter-server` instance for integration use
+- Build in isolation: `mvn verify` from `starter-archetypes/`
+- Run / use locally: show the `mvn archetype:generate` invocation that calls the local server via `RestGenerationClient`
+- Usage example: full `mvn archetype:generate -DarchetypeGroupId=... -DserverUrl=http://localhost:8080` command
+
+**`starter-web/README.md`**
+- Role: Vue 3 SPA; gallery and configuration form; consumes `/api/v1/metadata` and `/api/v1/generate`
+- Prerequisites: Node.js Active LTS, npm 10+; note that a running `starter-server` is needed for the API (or use the proxy config)
+- Build in isolation: `npm ci && npm run build` from `starter-web/`; `npm run dev` for local development with Vite proxy to `localhost:8080`
+- Run / use locally: `npm run dev` — show the Vite proxy config that forwards `/api` to the backend
+- Usage example: screenshot-equivalent description of gallery → configure → download flow, plus `npm run test:unit` to run Vitest suite
+
+**`starter-mcp/README.md`**
+- Role: `operaton-starter-mcp` npm package; exposes `generate_project` MCP tool for AI assistants
+- Prerequisites: Node.js Active LTS, npm 10+
+- Build in isolation: `npm ci && npm run build` from `starter-mcp/`
+- Run / use locally: show how to register the package with Claude Code (`claude mcp add`) pointing at a local or remote `starter-server` via `OPERATON_STARTER_BASE_URL`
+- Usage example: MCP tool invocation JSON (`{"name":"generate_project","arguments":{...}}`) and the expected ZIP response
+
+### Documentation Consistency Rules
+
+**All agents writing submodule READMEs MUST:**
+- Use exact commands, not paraphrases — every command must be copy-pasteable and correct
+- State the prerequisite version floor explicitly (not "install Java" — "Java 21+")
+- Reference sibling modules by name, not by relative path
+- Include the `OPERATON_STARTER_BASE_URL` env var wherever a module connects to the server
+- Not duplicate content from the root `README.md` — cross-reference it instead
+
+
 > arc42 Section 11 (partial): Risks & Technical Debt
 
 ### Coherence Validation ✅

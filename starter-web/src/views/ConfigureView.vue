@@ -10,7 +10,15 @@ import ActionPanel from '@/components/ActionPanel.vue'
 
 const route = useRoute()
 const { data: metadata, error: metadataError } = useMetadata()
-const { form, errors, isValid, initFromQuery } = useProjectForm()
+const {
+  form,
+  errors,
+  isValid,
+  initFromQuery,
+  isProjectTypeFromQuery,
+  buildSystemCategory,
+  gradleDsl,
+} = useProjectForm()
 const { isGenerating, error: generateError, generate } = useGenerate()
 
 const successMsg = ref<string | null>(null)
@@ -44,6 +52,14 @@ watch(
 // Selected project type manifest
 const selectedTypeManifest = computed(() => {
   return metadata.value?.projectTypes.find((pt) => pt.id === form.projectType)?.templateManifest ?? []
+})
+
+// Display name for read-only project type banner
+const projectTypeDisplayName = computed(() => {
+  return (
+    metadata.value?.projectTypes.find((pt) => pt.id === form.projectType)?.displayName ??
+    form.projectType
+  )
 })
 
 async function handleGenerate() {
@@ -149,8 +165,21 @@ const helpText: Record<string, string> = {
           <fieldset class="bg-neutral-0 border border-neutral-200 rounded-s p-5 mb-4">
             <legend class="text-xs font-semibold text-neutral-500 uppercase tracking-wide px-1">Build Options</legend>
 
-            <!-- Project Type -->
-            <div class="mb-4">
+            <!-- Project Type: read-only banner when arriving from gallery or shareable link -->
+            <div v-if="isProjectTypeFromQuery" class="mb-4">
+              <div class="flex items-center justify-between bg-primary/5 border border-primary/20 rounded-s px-4 py-3">
+                <div>
+                  <span class="text-xs font-semibold text-neutral-500 uppercase tracking-wide block mb-0.5">Project type</span>
+                  <span class="text-sm font-semibold text-primary">{{ projectTypeDisplayName }}</span>
+                </div>
+                <RouterLink to="/" class="text-xs text-neutral-400 hover:text-primary transition-colors whitespace-nowrap ml-4">
+                  ← Change
+                </RouterLink>
+              </div>
+            </div>
+
+            <!-- Project Type: editable selector (Practitioner direct-access path) -->
+            <div v-else class="mb-4">
               <div class="flex items-center gap-1 mb-2">
                 <span class="text-sm font-medium text-neutral-900">Project Type</span>
                 <button type="button" class="w-4 h-4 rounded-full bg-neutral-200 text-neutral-500 text-xs inline-flex items-center justify-center hover:bg-primary hover:text-white transition-colors"
@@ -187,7 +216,7 @@ const helpText: Record<string, string> = {
               <p v-if="errors.deploymentTarget" role="alert" class="text-xs text-red-600 mt-1">{{ errors.deploymentTarget }}</p>
             </div>
 
-            <!-- Build System -->
+            <!-- Build System — two-step: Maven vs Gradle, then Gradle DSL (FR10) -->
             <div class="mb-4">
               <div class="flex items-center gap-1 mb-2">
                 <span class="text-sm font-medium text-neutral-900">Build System</span>
@@ -195,13 +224,31 @@ const helpText: Record<string, string> = {
                         :aria-label="'Help: Build System'" :aria-expanded="helpOpen.buildSystem" @click="toggleHelp('buildSystem')">?</button>
               </div>
               <div v-show="helpOpen.buildSystem" role="note" class="text-xs text-neutral-500 bg-neutral-50 p-2 rounded mb-2">{{ helpText.buildSystem }}</div>
-              <div class="space-y-2" role="radiogroup" aria-label="Build System">
-                <label v-for="bs in (metadata?.buildSystems ?? [])" :key="bs.id"
-                       class="flex items-center gap-2 text-sm cursor-pointer">
-                  <input type="radio" :value="bs.id" v-model="form.buildSystem" class="accent-primary" />
-                  {{ bs.displayName }}
+              <!-- Step 1: Maven vs Gradle -->
+              <div class="space-y-2 mb-3" role="radiogroup" aria-label="Build Tool">
+                <label class="flex items-center gap-2 text-sm cursor-pointer">
+                  <input type="radio" value="maven" v-model="buildSystemCategory" class="accent-primary"
+                         @change="gradleDsl = null" />
+                  Maven
+                </label>
+                <label class="flex items-center gap-2 text-sm cursor-pointer">
+                  <input type="radio" value="gradle" v-model="buildSystemCategory" class="accent-primary" />
+                  Gradle
                 </label>
               </div>
+              <!-- Step 2: Gradle DSL (only shown when Gradle selected) -->
+              <div v-if="buildSystemCategory === 'gradle'" class="ml-5 space-y-2" role="radiogroup" aria-label="Gradle DSL">
+                <p class="text-xs text-neutral-500 mb-1">Choose DSL:</p>
+                <label class="flex items-center gap-2 text-sm cursor-pointer">
+                  <input type="radio" value="GRADLE_GROOVY" v-model="gradleDsl" class="accent-primary" />
+                  Groovy DSL
+                </label>
+                <label class="flex items-center gap-2 text-sm cursor-pointer">
+                  <input type="radio" value="GRADLE_KOTLIN" v-model="gradleDsl" class="accent-primary" />
+                  Kotlin DSL
+                </label>
+              </div>
+              <p v-if="errors.buildSystem" role="alert" class="text-xs text-red-600 mt-1">{{ errors.buildSystem }}</p>
             </div>
 
             <!-- Java Version -->
@@ -226,8 +273,8 @@ const helpText: Record<string, string> = {
           <fieldset class="bg-neutral-0 border border-neutral-200 rounded-s p-5 mb-4">
             <legend class="text-xs font-semibold text-neutral-500 uppercase tracking-wide px-1">Extras</legend>
 
-            <!-- GitHub Actions -->
-            <div class="mb-3">
+            <!-- GitHub Actions CI/CD (hidden for PROCESS_ARCHIVE — not applicable) -->
+            <div v-if="form.projectType !== 'PROCESS_ARCHIVE'" class="mb-3">
               <label class="flex items-center gap-2 cursor-pointer">
                 <input type="checkbox" v-model="form.githubActions" class="accent-primary w-4 h-4" />
                 <span class="text-sm text-neutral-900">GitHub Actions CI/CD</span>

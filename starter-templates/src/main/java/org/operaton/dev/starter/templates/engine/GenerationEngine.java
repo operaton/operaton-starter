@@ -57,6 +57,8 @@ public class GenerationEngine {
         try (var zos = new ZipOutputStream(baos)) {
             if (config.projectType() == ProjectType.PROCESS_APPLICATION) {
                 generateProcessApplication(config, zos);
+            } else if (config.projectType() == ProjectType.DMN_PROJECT) {
+                generateDmnProject(config, zos);
             } else {
                 generateProcessArchive(config, zos);
             }
@@ -112,6 +114,50 @@ public class GenerationEngine {
         addTemplateEntry(zos,
                 "src/test/java/" + pkgPath + "/ProcessIT.java",
                 "process-application/ProcessIT.java.jte", config);
+    }
+
+    private void generateDmnProject(ProjectConfig config, ZipOutputStream zos) throws IOException {
+        // Build files
+        switch (config.buildSystem()) {
+            case MAVEN -> {
+                addTemplateEntry(zos, "pom.xml",
+                        "dmn-project/maven/pom.xml.jte", config);
+            }
+            case GRADLE_GROOVY -> {
+                addTemplateEntry(zos, "build.gradle",
+                        "dmn-project/gradle-groovy/build.gradle.jte", config);
+                addTemplateEntry(zos, "settings.gradle",
+                        "dmn-project/gradle-groovy/settings.gradle.jte", config);
+                addGradleWrapper(zos);
+            }
+            case GRADLE_KOTLIN -> {
+                addTemplateEntry(zos, "build.gradle.kts",
+                        "dmn-project/gradle-kotlin/build.gradle.kts.jte", config);
+                addTemplateEntry(zos, "settings.gradle.kts",
+                        "dmn-project/gradle-kotlin/settings.gradle.kts.jte", config);
+                addGradleWrapper(zos);
+            }
+        }
+
+        String pkgPath = config.packagePath();
+
+        // Java sources
+        addTemplateEntry(zos,
+                "src/main/java/" + pkgPath + "/Application.java",
+                "dmn-project/Application.java.jte", config);
+
+        // Resources
+        addTemplateEntry(zos,
+                "src/main/resources/skeleton-decision.dmn",
+                "dmn-project/skeleton-decision.dmn.jte", config);
+        addTemplateEntry(zos,
+                "src/main/resources/application.properties",
+                "dmn-project/application.properties.jte", config);
+
+        // Test
+        addTemplateEntry(zos,
+                "src/test/java/" + pkgPath + "/DecisionIT.java",
+                "dmn-project/DecisionIT.java.jte", config);
     }
 
     private void generateProcessArchive(ProjectConfig config, ZipOutputStream zos) throws IOException {

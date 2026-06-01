@@ -1,0 +1,167 @@
+name: Affected Matrix
+
+# Runs on PRs that modify JTE generation templates.
+# Detects which project-type × build-system combinations are affected and
+# validates only those — keeping template PR feedback fast.
+# This workflow is ADDITIVE to the full test-matrix in ci.yml.
+
+on:
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "starter-templates/src/main/jte/**"
+
+jobs:
+  detect:
+    name: Detect Affected Combinations
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.compute.outputs.matrix }}
+      has-combinations: ${{ steps.compute.outputs.has-combinations }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Compute affected matrix
+        id: compute
+        run: |
+          bash .github/scripts/affected-combinations.sh "origin/${{ github.base_ref }}" > /tmp/matrix.json
+          cat /tmp/matrix.json
+          matrix=$(cat /tmp/matrix.json)
+          echo "matrix=${matrix}" >> "$GITHUB_OUTPUT"
+          if [ "$matrix" = "[]" ]; then
+            echo "has-combinations=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "has-combinations=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Log result
+        run: |
+          echo "has-combinations: ${{ steps.compute.outputs.has-combinations }}"
+          echo "matrix: ${{ steps.compute.outputs.matrix }}"
+
+  validate:
+    name: Validate (${{ matrix.projectType }} × ${{ matrix.buildSystem }})
+    runs-on: ubuntu-latest
+    needs: detect
+    if: needs.detect.outputs.has-combinations == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.detect.outputs.matrix) }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Build server JAR (skip tests for speed)
+        run: mvn package -pl starter-server -am --batch-mode -DskipTests -q
+
+      - name: Start server in background
+        run: |
+          java -jar starter-server/target/starter-server-*.jar &
+          echo "SERVER_PID=$!" >> "$GITHUB_ENV"
+
+      - name: Wait for server health
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:8080/actuator/health | grep -q '"UP"'; then
+              echo "Server is up"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Server did not start within 60 seconds"
+          exit 1
+
+      - name: Generate project via API
+        run: |
+          DEPLOYMENT_TARGET=""
+          if [ "${{ matrix.projectType }}" = "PROCESS_ARCHIVE" ]; then
+            DEPLOYMENT_TARGET='"deploymentTarget":"TOMCAT",'
+          fi
+
+          curl --fail --silent --show-error \
+            -X POST http://localhost:8080/api/v1/generate \
+            -H 'Content-Type: application/json' \
+            -H 'Accept: application/zip' \
+            -d "{
+              \"projectType\":\"${{ matrix.projectType }}\",
+              \"buildSystem\":\"${{ matrix.buildSystem }}\",
+              \"groupId\":\"com.example\",
+              \"artifactId\":\"matrix-test\",
+              \"projectName\":\"Matrix Test\",
+              \"javaVersion\":21,
+              ${DEPLOYMENT_TARGET}
+              \"dependencyUpdater\":\"RENOVATE\",
+              \"dockerCompose\":false,
+              \"githubActions\":false
+            }" \
+            --output generated.zip
+
+          test -s generated.zip
+          file generated.zip | grep -q 'Zip archive data'
+          echo "Generated ZIP: $(wc -c < generated.zip) bytes"
+
+      - name: Extract generated project
+        run: |
+          mkdir -p generated-project
+          unzip -q generated.zip -d generated-project
+          ls generated-project/
+
+      - name: Set up Gradle permissions (if Gradle build)
+        if: matrix.buildSystem != 'MAVEN'
+        run: chmod +x generated-project/gradlew
+
+      - name: Build generated project (Maven)
+        if: matrix.buildSystem == 'MAVEN'
+        run: mvn verify --batch-mode -q
+        working-directory: generated-project
+
+      - name: Build generated project (Gradle Groovy)
+        if: matrix.buildSystem == 'GRADLE_GROOVY'
+        run: ./gradlew build --no-daemon -q
+        working-directory: generated-project
+
+      - name: Build generated project (Gradle Kotlin)
+        if: matrix.buildSystem == 'GRADLE_KOTLIN'
+        run: ./gradlew build --no-daemon -q
+        working-directory: generated-project
+
+      - name: Start generated app and check health (Process Application only)
+        if: matrix.projectType == 'PROCESS_APPLICATION'
+        run: |
+          # Stop the starter server first to free port 8080
+          kill "$SERVER_PID" || true
+          sleep 2
+
+          if [ "${{ matrix.build-system }}" = "maven" ]; then
+            mvn spring-boot:run --batch-mode -q &
+          else
+            ./gradlew bootRun --no-daemon -q &
+          fi
+          APP_PID=$!
+
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:8080/actuator/health | grep -q '"UP"'; then
+              echo "Generated application health check passed"
+              kill $APP_PID || true
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Generated application did not start within 60 seconds"
+          kill $APP_PID || true
+          exit 1
+        working-directory: generated-project
+
+      - name: Stop server
+        if: always()
+        run: kill "$SERVER_PID" || true

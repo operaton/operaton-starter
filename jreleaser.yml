@@ -1,0 +1,74 @@
+project:
+  name: operaton-starter
+  description: Operaton project starter — generates ready-to-run Operaton process projects
+  longDescription: |
+    operaton-starter generates ready-to-run Operaton BPM process projects via a web UI, REST API,
+    CLI, and MCP tool. Supports Maven, Gradle (Groovy DSL), and Gradle (Kotlin DSL) build systems.
+  links:
+    homepage: https://github.com/operaton/operaton-starter
+  authors:
+    - Operaton Contributors
+  license: Apache-2.0
+  inceptionYear: "2024"
+
+release:
+  github:
+    owner: operaton
+    name: operaton-starter
+    changelog:
+      formatted: ALWAYS
+      preset: conventional-commits
+      contributors:
+        format: '- {{contributorName}}{{#contributorUsernameAsLink}} ({{.}}){{/contributorUsernameAsLink}}'
+      labelers:
+        - label: feature
+          title: 'feat'
+        - label: fix
+          title: 'fix'
+        - label: docs
+          title: 'docs'
+        - label: chore
+          title: 'chore'
+      categories:
+        - title: '🚀 Features'
+          labels:
+            - feature
+        - title: '🐛 Bug Fixes'
+          labels:
+            - fix
+        - title: '📝 Documentation'
+          labels:
+            - docs
+        - title: '🔧 Maintenance'
+          labels:
+            - chore
+
+signing:
+  active: ALWAYS
+  armored: true
+
+distributions:
+  operaton-starter-mcp:
+    type: NPM
+    artifacts:
+      - path: starter-mcp/operaton-starter-mcp-{{projectVersion}}.tgz
+
+  operaton-starter:
+    type: NPM
+    artifacts:
+      - path: starter-cli/operaton-starter-{{projectVersion}}.tgz
+
+  operaton-starter-docker:
+    type: DOCKER
+    docker:
+      active: ALWAYS
+      registries:
+        - serverName: DEFAULT
+          username: '{{env.DOCKERHUB_USERNAME}}'
+      imageNames:
+        - 'operaton/operaton-starter:{{projectVersion}}'
+        - 'operaton/operaton-starter:latest'
+
+announce:
+  # Announcement channels (configure as needed)
+  active: NEVER

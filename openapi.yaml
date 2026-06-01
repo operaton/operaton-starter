@@ -28,7 +28,7 @@ paths:
           in: query
           schema:
             type: string
-            enum: [PROCESS_APPLICATION, PROCESS_ARCHIVE]
+            enum: [PROCESS_APPLICATION, PROCESS_ARCHIVE, DMN_PROJECT]
             default: PROCESS_APPLICATION
         - name: buildSystem
           in: query
@@ -184,7 +184,7 @@ components:
       properties:
         projectType:
           type: string
-          enum: [PROCESS_APPLICATION, PROCESS_ARCHIVE]
+          enum: [PROCESS_APPLICATION, PROCESS_ARCHIVE, DMN_PROJECT]
           description: Type of Operaton project to generate
         buildSystem:
           type: string

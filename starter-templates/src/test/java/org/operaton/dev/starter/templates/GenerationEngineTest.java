@@ -34,6 +34,10 @@ class GenerationEngineTest {
             args.add(Arguments.of(
                     ProjectType.PROCESS_APPLICATION, buildSystem, null
             ));
+            // DMN Project combinations
+            args.add(Arguments.of(
+                    ProjectType.DMN_PROJECT, buildSystem, null
+            ));
             // Process Archive combinations (need deploymentTarget)
             for (var deploymentTarget : DeploymentTarget.values()) {
                 args.add(Arguments.of(

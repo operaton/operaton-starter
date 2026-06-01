@@ -1,9 +1,13 @@
 # BMAD and agent directories
 _bmad/
 .agent/
+.agents/
 .claude/
 .gemini/skills/
+.github/agents/
 .github/skills/
+review*.md
+validation-report.*
 
 # Build artifacts
 target/

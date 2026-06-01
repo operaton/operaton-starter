@@ -154,3 +154,35 @@
 - Acceptable for a free, open-source tool — not a security boundary, just a courtesy limit
 - Self-hosted single-instance deployments get exact rate limiting
 - `Retry-After` header indicates seconds until next request is allowed
+
+---
+
+## ADR-11: JReleaser as Single Release Coordinator
+
+**Status:** Accepted
+
+**Context:** The release process spans three registries (Docker Hub, Maven Central, npm) plus a GitHub Release. Before JReleaser, `ci.yml` had separate `docker-publish` and `npm-publish` jobs triggered on tags. Maven Central publication with GPG-signed artifacts and Sonatype Central Portal upload was not automated.
+
+**Decision:** JReleaser (`jreleaser.yml` at project root, `release.yml` GitHub Actions workflow) coordinates all release steps from a single `full-release` invocation. The Maven `release` profile activates source, javadoc, GPG signing, and `central-publishing-maven-plugin`. Conventional-commits changelog is generated automatically. The previous separate `docker-publish` and `npm-publish` jobs are removed from `ci.yml`.
+
+**Consequences:**
+- Release is triggered by a single `git tag v*.*.* && git push origin v*.*.*` — no manual registry steps
+- `ci.yml` no longer contains any publish logic — CI and release are fully separated
+- Changelog generation uses `feat:`, `fix:`, `chore:` prefixes per conventional commits
+- ARCH-14 prerequisite: `org.operaton.dev` namespace must be claimed at `central.sonatype.com` before the first Maven Central publish
+
+---
+
+## ADR-12: Gallery-to-Form Context Handoff via Query Param and Conditional Rendering
+
+**Status:** Accepted
+
+**Context:** Users arriving from the project gallery have already selected a project type. Showing the project type again as an editable field is redundant and potentially confusing. Additionally, different project types require different configuration options (e.g., `deploymentTarget` is only relevant for `PROCESS_ARCHIVE`; `githubActions` is irrelevant for `PROCESS_ARCHIVE`).
+
+**Decision:** `useProjectForm.ts` detects gallery arrival by checking for a `?projectType=...` query param (`isProjectTypeFromQuery` ref). `ConfigureView` uses this to conditionally render either a read-only banner (gallery/shareable-link path) or an editable selector (direct navigation). All inapplicable options use `v-if` (DOM removal, not CSS hide) per FR46. The two-step build system selection (`buildSystemCategory` → `gradleDsl` → `form.buildSystem`) is implemented via intermediate reactive refs synced by a watcher.
+
+**Consequences:**
+- Form is focused: gallery users never see irrelevant options
+- Shareable links with `?projectType=...` behave identically to gallery arrival (FR45, FR48)
+- `v-if` (not `v-show`) ensures no hidden form elements are accessible to screen readers
+- Two-step build system state is separately testable from the final `form.buildSystem` value

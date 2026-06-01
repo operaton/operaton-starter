@@ -1,4 +1,4 @@
-import { reactive, computed, watch } from 'vue'
+import { reactive, ref, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import type { ProjectConfig } from '@/generated/types'
 
@@ -14,7 +14,7 @@ const DEFAULTS: ProjectConfig = {
   githubActions: true
 }
 
-const PROJECT_TYPES = ['PROCESS_APPLICATION', 'PROCESS_ARCHIVE'] as const
+const PROJECT_TYPES = ['PROCESS_APPLICATION', 'PROCESS_ARCHIVE', 'DMN_PROJECT'] as const
 const BUILD_SYSTEMS = ['MAVEN', 'GRADLE_GROOVY', 'GRADLE_KOTLIN'] as const
 const JAVA_VERSIONS = [17, 21, 25] as const
 const DEPLOYMENT_TARGETS = ['TOMCAT', 'STANDALONE_ENGINE'] as const
@@ -40,6 +40,39 @@ export function useProjectForm() {
   const route = useRoute()
 
   const form = reactive<ProjectConfig>({ ...DEFAULTS })
+  const lastArchiveDeploymentTarget = ref<ProjectConfig['deploymentTarget']>()
+  const lastNonArchiveGithubActions = ref(DEFAULTS.githubActions)
+
+  // Two-step build system selection (FR10)
+  // 'maven' | 'gradle' — the top-level category choice
+  const buildSystemCategory = ref<'maven' | 'gradle'>(
+    DEFAULTS.buildSystem === 'MAVEN' ? 'maven' : 'gradle'
+  )
+  // The Gradle DSL sub-option (only relevant when buildSystemCategory === 'gradle')
+  const gradleDsl = ref<'GRADLE_GROOVY' | 'GRADLE_KOTLIN' | null>(
+    DEFAULTS.buildSystem === 'GRADLE_GROOVY'
+      ? 'GRADLE_GROOVY'
+      : DEFAULTS.buildSystem === 'GRADLE_KOTLIN'
+        ? 'GRADLE_KOTLIN'
+        : null
+  )
+
+  // Sync two-step state → form.buildSystem
+  watch(
+    [buildSystemCategory, gradleDsl],
+    ([category, dsl]) => {
+      if (category === 'maven') {
+        form.buildSystem = 'MAVEN'
+      } else if (dsl) {
+        form.buildSystem = dsl
+      }
+      // If gradle selected but no DSL yet, form.buildSystem stays stale until DSL is chosen
+    },
+    { immediate: false }
+  )
+
+  // Whether the project type was provided via query param (gallery arrival or shareable link)
+  const isProjectTypeFromQuery = ref(false)
 
   function isOneOf<T extends readonly string[]>(value: string, options: T): value is T[number] {
     return options.includes(value as T[number])
@@ -55,13 +88,49 @@ export function useProjectForm() {
     return query
   }
 
+  watch(
+    () => form.projectType,
+    (projectType, previousProjectType) => {
+      if (projectType === 'PROCESS_ARCHIVE') {
+        if (previousProjectType !== 'PROCESS_ARCHIVE') {
+          lastNonArchiveGithubActions.value = form.githubActions
+        }
+        form.githubActions = false
+        if (!form.deploymentTarget && lastArchiveDeploymentTarget.value) {
+          form.deploymentTarget = lastArchiveDeploymentTarget.value
+        }
+        return
+      }
+
+      if (form.deploymentTarget) {
+        lastArchiveDeploymentTarget.value = form.deploymentTarget
+        delete form.deploymentTarget
+      }
+
+      form.githubActions = lastNonArchiveGithubActions.value
+    },
+    { immediate: true }
+  )
+
   // Initialize from URL query params
   function initFromQuery(query: Record<string, string>) {
     if (query.projectType && isOneOf(query.projectType, PROJECT_TYPES)) {
       form.projectType = query.projectType
+      isProjectTypeFromQuery.value = true
     }
     if (query.buildSystem && isOneOf(query.buildSystem, BUILD_SYSTEMS)) {
       form.buildSystem = query.buildSystem
+      // Sync two-step state from loaded buildSystem
+      if (query.buildSystem === 'MAVEN') {
+        buildSystemCategory.value = 'maven'
+        gradleDsl.value = null
+      } else if (query.buildSystem === 'GRADLE_GROOVY') {
+        buildSystemCategory.value = 'gradle'
+        gradleDsl.value = 'GRADLE_GROOVY'
+      } else if (query.buildSystem === 'GRADLE_KOTLIN') {
+        buildSystemCategory.value = 'gradle'
+        gradleDsl.value = 'GRADLE_KOTLIN'
+      }
     }
     if (query.groupId && GROUP_ID_RE.test(query.groupId)) {
       form.groupId = query.groupId
@@ -91,7 +160,9 @@ export function useProjectForm() {
       form.githubActions = query.githubActions === 'true'
     }
 
-    if (form.projectType !== 'PROCESS_ARCHIVE') {
+    if (form.projectType === 'PROCESS_ARCHIVE') {
+      form.githubActions = false
+    } else {
       delete form.deploymentTarget
     }
   }
@@ -116,6 +187,9 @@ export function useProjectForm() {
     }
     if (!isOneOf(form.buildSystem, BUILD_SYSTEMS)) {
       e.buildSystem = 'Select a supported build system'
+    }
+    if (buildSystemCategory.value === 'gradle' && !gradleDsl.value) {
+      e.buildSystem = 'Select a Gradle DSL (Groovy or Kotlin)'
     }
     if (!JAVA_VERSIONS.includes(form.javaVersion as (typeof JAVA_VERSIONS)[number])) {
       e.javaVersion = 'Select Java 17, 21, or 25'
@@ -142,5 +216,16 @@ export function useProjectForm() {
     { deep: true }
   )
 
-  return { form, errors, isValid, shareableUrl, initFromQuery, router, route }
+  return {
+    form,
+    errors,
+    isValid,
+    shareableUrl,
+    initFromQuery,
+    router,
+    route,
+    isProjectTypeFromQuery,
+    buildSystemCategory,
+    gradleDsl,
+  }
 }

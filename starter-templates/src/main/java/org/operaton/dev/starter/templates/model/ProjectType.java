@@ -15,5 +15,11 @@ public enum ProjectType {
      * Deployable archive for a shared Operaton engine (Tomcat or Standalone).
      * Generates processes.xml, BPMN, and packaging config. No embedded engine.
      */
-    PROCESS_ARCHIVE
+    PROCESS_ARCHIVE,
+
+    /**
+     * Spring Boot application focused on DMN decision evaluation.
+     * Generates a skeleton DMN decision table and an integration test that evaluates it.
+     */
+    DMN_PROJECT
 }

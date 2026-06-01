@@ -1,5 +1,5 @@
 export interface ProjectConfig {
-  projectType: 'PROCESS_APPLICATION' | 'PROCESS_ARCHIVE'
+  projectType: 'PROCESS_APPLICATION' | 'PROCESS_ARCHIVE' | 'DMN_PROJECT'
   buildSystem: 'MAVEN' | 'GRADLE_GROOVY' | 'GRADLE_KOTLIN'
   groupId: string
   artifactId: string

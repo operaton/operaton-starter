@@ -39,8 +39,9 @@ public class ProjectConfigMapper {
     private ProjectType mapProjectType(org.operaton.dev.starter.server.model.ProjectConfig.ProjectTypeEnum dto) {
         if (dto == null) return ProjectType.PROCESS_APPLICATION;
         return switch (dto) {
-            case APPLICATION -> ProjectType.PROCESS_APPLICATION;
-            case ARCHIVE -> ProjectType.PROCESS_ARCHIVE;
+            case PROCESS_APPLICATION -> ProjectType.PROCESS_APPLICATION;
+            case PROCESS_ARCHIVE -> ProjectType.PROCESS_ARCHIVE;
+            case DMN_PROJECT -> ProjectType.DMN_PROJECT;
         };
     }
 
