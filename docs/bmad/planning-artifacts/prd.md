@@ -2,6 +2,7 @@
 stepsCompleted: ['step-01-init', 'step-02-discovery', 'step-02b-vision', 'step-02c-executive-summary', 'step-03-success', 'step-04-journeys', 'step-05-domain', 'step-06-innovation', 'step-07-project-type', 'step-08-scoping', 'step-09-functional', 'step-10-nonfunctional', 'step-11-polish', 'step-12-complete']
 workflowStatus: complete
 completedAt: '2026-03-27'
+updatedAt: '2026-05-29'
 inputDocuments: ['_bmad-output/brainstorming/brainstorming-session-2026-03-25-1.md']
 workflowType: 'prd'
 classification:
@@ -54,7 +55,7 @@ The forward-looking differentiator is the **MCP module** — it exposes the gene
 
 - **Practitioner flow:** A Practitioner arriving at `start.operaton.org` with a clear project type in mind completes configuration and downloads a ZIP within 30 seconds.
 - **Explorer flow:** An Explorer using the gallery selects a project type, reviews the live preview, and downloads a project without needing to consult external documentation.
-- **First-run success:** Every generated project compiles, tests pass, and the application starts with `mvn spring-boot:run` (or Gradle equivalent) without any manual modification. This is a hard quality guarantee, not a target.
+- **First-run success:** Every generated project compiles, tests pass, and the application starts with `./mvnw spring-boot:run` (or `./gradlew bootRun`) without any manual modification. This is a hard quality guarantee, not a target.
 - **CI success:** Generated projects with the GitHub Actions skeleton pass CI on first push — green checkmark before the developer writes a single line of their own code.
 - **curl success:** A developer who has never visited `start.operaton.org` can generate a valid project using only a documented `curl` command copied from the README or docs.
 
@@ -448,10 +449,11 @@ Project types are phased by adoption value, not technical complexity. Process Ap
 ### Generated Project Quality
 
 - **FR33:** Every generated project includes a README with project-specific next-step instructions tailored to the selected project type and build system; all URLs and commands in the README (Cockpit URL, troubleshooting port instructions, docker-compose launch steps) reflect the actual project configuration (e.g., server port, Docker Compose enabled/disabled)
+- **FR45:** Every generated project includes the appropriate build tool wrapper — Maven wrapper (`mvnw`, `mvnw.cmd`, `.mvn/wrapper/maven-wrapper.properties`) for Maven projects, Gradle wrapper (`gradlew`, `gradlew.bat`, `gradle/wrapper/gradle-wrapper.{jar,properties}`) for Gradle projects — enabling the project to be built without a globally installed Maven or Gradle installation
 - **FR34:** Every generated project includes a configured dependency update file (Dependabot or Renovate) ready to use without modification
 - **FR35:** Generated Process Application projects include a GitHub Actions CI/CD workflow that passes on first push
 - **FR36:** Generated projects with Docker Compose enabled include a `docker-compose.yml` that starts the application and a multi-stage `Dockerfile` (Maven build stage + runtime image) for containerised builds
-- **FR44:** Generated Process Application projects include a `JavaDelegate` implementation stub wired to the skeleton BPMN service task and a JUnit test that deploys and executes the skeleton process end-to-end without modification
+- **FR44:** Generated Process Application projects include a `JavaDelegate` implementation stub wired to the skeleton BPMN service task and a JUnit integration test (`ProcessIT`) that deploys and executes the skeleton process end-to-end without modification; the test uses `MockExpressionManager` so that the `${skeletonDelegate}` BPMN expression resolves to the stub during testing
 
 ### Self-Hosting & Operations
 
@@ -503,7 +505,7 @@ Project types are phased by adoption value, not technical complexity. Process Ap
 ### Compatibility
 
 - **NFR13:** Generated Process Application projects target Java 21+ and use the Spring Boot version specified in the current Operaton BOM
-- **NFR14:** Generated projects using Gradle target Gradle 8+
+- **NFR14:** Generated projects using Gradle target Gradle 8+; the bundled Gradle wrapper targets the current pinned Gradle version (currently 8.14)
 - **NFR15:** The `operaton-starter-mcp` npm package supports all Node.js Active LTS versions
 - **NFR16:** Browser support for the web UI covers the latest 2 major versions of Chrome, Firefox, Safari, and Edge
 - **NFR20:** The web UI visual design is consistent with the `operaton.org` and `docs.operaton.org` design system — colors, typography, and component patterns signal the same product family
