@@ -5,7 +5,7 @@ baseline_commit: 48f7c1c
 # Story 4.9: File Content Pane in File Structure Preview
 
 ## Status
-review
+done
 
 ## Story
 
@@ -109,6 +109,22 @@ All 5 tasks complete. 48/48 Vitest tests pass (10 fileTreeBuilder + 8 FileConten
 - `starter-web/src/utils/__tests__/fileTreeBuilder.spec.ts` — added 3 tests for entry references on leaf nodes
 - `starter-web/src/components/__tests__/FileContentPane.spec.ts` — new (8 tests)
 - `starter-web/src/components/__tests__/FileTreePreview.spec.ts` — new (6 tests)
+
+### Review Findings
+
+- [x] [Review][Decision] AC6 — Added highlight.js syntax highlighting (core + xml/java/yaml/groovy/kotlin/properties/plaintext); resolved as patch, applied
+- [x] [Review][Patch] Clipboard `writeText` has no error handling — wrapped in try/catch; shows "Failed!" state on error [starter-web/src/components/FileContentPane.vue]
+- [x] [Review][Patch] `selectedFile` stale after manifest/config prop change — added `watch(props.manifest)` to reset selection [starter-web/src/components/FileTreePreview.vue]
+- [x] [Review][Patch] AC10: Copy button hidden when `previewContent` is null — button now always rendered, disabled when no content [starter-web/src/components/FileContentPane.vue]
+- [x] [Review][Patch] AC2: empty-string `previewContent` not treated as missing — changed `?? null` to `|| null` (falsy check) [starter-web/src/components/FileContentPane.vue]
+- [x] [Review][Defer] No request-level caching of `previewContent` loads — performance opt, out of story scope [starter-server MetadataController.java] — deferred, pre-existing
+- [x] [Review][Defer] Integration test assertion too weak — checks for substring presence only, not entry correctness [ApiControllerTest.java] — deferred, pre-existing
+- [x] [Review][Defer] `aria-selected` absent on directory `<li>` elements — accessibility refinement, pre-existing tree pattern [FileTreeNode.vue] — deferred, pre-existing
+- [x] [Review][Defer] Arrow key navigation not implemented on file tree — pre-existing gap; story only required Tab+Enter per FR22 [FileTreeNode.vue] — deferred, pre-existing
+- [x] [Review][Defer] `aria-expanded` always `true` for directories regardless of children — pre-existing tree issue [FileTreeNode.vue] — deferred, pre-existing
+- [x] [Review][Defer] Large previewContent no server-side size cap — overflow-auto present in pane; opt for future story [MetadataController.java / FileContentPane.vue] — deferred, pre-existing
+- [x] [Review][Defer] Copy button rapid-click timeout not debounced — minor UX, not a bug [FileContentPane.vue] — deferred, pre-existing
+- [x] [Review][Defer] Long filenames truncated with no tooltip — minor UX [FileContentPane.vue] — deferred, pre-existing
 
 ## Change Log
 

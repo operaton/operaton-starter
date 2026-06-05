@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import type { ProjectConfig, TemplateManifestEntry } from '@/generated/types'
 import { buildFileTree, type TreeNode } from '@/utils/fileTreeBuilder'
 import FileTreeNode from './FileTreeNode.vue'
@@ -16,6 +16,8 @@ const selectedFile = ref<TreeNode | null>(null)
 function handleSelect(node: TreeNode) {
   selectedFile.value = node
 }
+
+watch(() => props.manifest, () => { selectedFile.value = null })
 </script>
 
 <template>

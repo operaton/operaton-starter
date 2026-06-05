@@ -43,10 +43,11 @@ describe('FileContentPane', () => {
     expect(wrapper.find('button').text()).toBe('Copy')
   })
 
-  it('does not render Copy button when previewContent is null', () => {
+  it('renders Copy button disabled when previewContent is null (AC10)', () => {
     const node = makeNode({ entry: { path: 'f.bin', templateId: 'f.jte', previewContent: null } })
     const wrapper = mount(FileContentPane, { props: { node } })
-    expect(wrapper.find('button').exists()).toBe(false)
+    expect(wrapper.find('button').exists()).toBe(true)
+    expect(wrapper.find('button').attributes('disabled')).toBeDefined()
   })
 
   it('renders nothing when node is null', () => {

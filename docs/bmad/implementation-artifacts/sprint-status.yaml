@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-03-28
-last_updated: 2026-06-03
+last_updated: 2026-06-05  # updated by code-review workflow
 project: operaton-starter
 project_key: NOKEY
 tracking_system: file-system
@@ -96,7 +96,7 @@ development_status:
   4-6-download-ide-deep-links-shareable-config-urls: done
   4-7-keyboard-navigation-wcag-2-1-aa-accessibility: done
   4-8-conditional-form-rendering-gallery-to-form-context-handoff: done
-  4-9-file-content-pane-in-file-structure-preview: review
+  4-9-file-content-pane-in-file-structure-preview: done
   4-10-web-ui-favicon: done
 
   epic-4-retrospective: optional
@@ -133,3 +133,16 @@ development_status:
   7-3-release-credentials-secrets-documentation: done
 
   epic-7-retrospective: optional
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Epic 8: Use Case Examples — Self-Contained Generated Projects
+  # ─────────────────────────────────────────────────────────────────────────
+  epic-8: in-progress
+
+  8-1-uc-01-leave-request-hr-approval-workflow: backlog
+  8-2-uc-02-loan-application-dmn-decision-service-tasks: backlog
+  8-3-uc-03-incident-management-timer-boundary-escalation: backlog
+  8-4-uc-04-order-fulfillment-service-task-orchestration: backlog
+  8-5-use-case-example-gallery-cards: backlog
+
+  epic-8-retrospective: optional
