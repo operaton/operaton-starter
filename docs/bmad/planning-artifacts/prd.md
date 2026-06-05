@@ -3,6 +3,7 @@ stepsCompleted: ['step-01-init', 'step-02-discovery', 'step-02b-vision', 'step-0
 workflowStatus: complete
 completedAt: '2026-03-27'
 updatedAt: '2026-06-05'
+updateNotes: 'Postgres as default datasource for all use cases; H2 fallback profile; admin user auto-creation; chmod+x instructions; BPMN images in README; bootstrap data docs; one-dependency constraint lifted'
 inputDocuments: ['_bmad-output/brainstorming/brainstorming-session-2026-03-25-1.md']
 workflowType: 'prd'
 classification:
@@ -434,57 +435,64 @@ Project types are phased by adoption value, not technical complexity. Process Ap
 
 ### Use Case Examples
 
-Use case examples are pre-configured Process Application projects available through all generation channels (web UI gallery, REST API, CLI, MCP). Each example is identified by a stable `useCaseId` (e.g., `leave-request`, `loan-application`) that is discoverable via `GET /api/v1/metadata` and passable to `POST /api/v1/generate`; the server resolves the `useCaseId` to a fixed parameter bundle and generates the project using the same engine as any other request — no separate generation path exists. Each is **self-contained and out-of-the-box runnable**: `docker compose up -d` (if applicable) followed by `./mvnw spring-boot:run` produces a working, explorable application with no manual configuration. MVP examples each have at most one external system dependency; this constraint applies to current MVP examples and will be re-evaluated per example at post-MVP planning. Operaton's built-in Tasklist is the human task UI for all examples; no custom frontend is generated.
+Use case examples are pre-configured Process Application projects available through all generation channels (web UI gallery, REST API, CLI, MCP). Each example is identified by a stable `useCaseId` (e.g., `leave-request`, `loan-application`) that is discoverable via `GET /api/v1/metadata` and passable to `POST /api/v1/generate`; the server resolves the `useCaseId` to a fixed parameter bundle and generates the project using the same engine as any other request — no separate generation path exists. Each is **self-contained and out-of-the-box runnable**: `docker compose up -d` followed by `./mvnw spring-boot:run` produces a working, explorable application with no manual configuration. All examples use PostgreSQL started via Docker Compose as the default datasource; examples that also stub external APIs include WireMock as a second service in the same compose stack — a single `docker compose up -d` starts everything. Operaton's built-in Tasklist is the human task UI for all examples; no custom frontend is generated.
 
 **Design principles shared across all examples:**
 - User roles and groups are seeded via `data.sql` at startup — not application startup code — making the user set declarative and visible
 - User names are human (e.g., `alice`, `bob`) rather than generic (`user1`, `admin`); passwords match the username for discoverability
-- The generated README uses character-narrated onboarding: it names the pre-seeded users and walks the developer through the Tasklist as those characters, so the first-run experience feels directed rather than exploratory
+- An Operaton admin user is always created at startup if it does not already exist — the startup sequence checks for the admin account and creates it on first boot so the developer never encounters an empty Cockpit login with no credentials
+- The generated README uses character-narrated onboarding: it names the pre-seeded users, walks the developer through the Tasklist as those characters so the first-run experience feels directed rather than exploratory, and includes a "Bootstrap Data" section explaining how to apply or re-apply `data.sql` and what each seed entry provides
+- The generated README includes an embedded or linked image of the BPMN model for the use case, so the developer can orient themselves visually before launching the app
+- On Mac and Linux the build wrapper scripts (`mvnw`, `gradlew`) must be made executable before first use; the README includes a one-line `chmod +x mvnw` (or `chmod +x gradlew`) instruction immediately before the first run command
 - Each example's integration test suite includes an assertion that the process definition is deployed and the engine is reachable before exercising any business-logic assertions — this catches silent BPMN deployment failures caused by incorrect classpath paths
 - Examples that use timer events include a test-profile mechanism ensuring timers fire within seconds during `mvn test`, without relying on wall-clock sleep; the test build must activate this profile (e.g. via Maven Surefire configuration or `@ActiveProfiles`) so the override is guaranteed to apply
+- All examples use **PostgreSQL as the default datasource**, started via Docker Compose; switching to the embedded H2 database requires only a Spring profile change (`--spring.profiles.active=h2`) and zero code changes — the `application-h2.properties` profile file is included in every generated example and the README documents the switch with a single command
 
 **MVP use case examples (4):**
 
 | ID | Name | External (Docker) | Key BPMN concept | User roles |
 |----|------|-------------------|-----------------|------------|
-| UC-01 | Leave Request | None | User tasks, candidate groups | `alice` (employee), `bob` (manager), `carol` (HR) |
-| UC-02 | Loan Application | WireMock | DMN decision + service tasks | `jack` (underwriter), `kate` (applicant) |
-| UC-03 | Incident Management | WireMock | Timer boundary event + escalation | `henry` (first-line), `iris` (second-line) |
-| UC-04 | Order Fulfillment | WireMock | Service tasks + conditional routing | `dave` (warehouse) |
+| UC-01 | Leave Request | Postgres | User tasks, candidate groups | `alice` (employee), `bob` (manager), `carol` (HR) |
+| UC-02 | Loan Application | Postgres + WireMock | DMN decision + service tasks | `jack` (underwriter), `kate` (applicant) |
+| UC-03 | Incident Management | Postgres + WireMock | Timer boundary event + escalation | `henry` (first-line), `iris` (second-line) |
+| UC-04 | Order Fulfillment | Postgres + WireMock | Service tasks + conditional routing | `dave` (warehouse) |
 
 **UC-01 — Leave Request**
 - BPMN: `Start(employee submits) → UserTask(manager reviews) → Gateway → [approved] UserTask(HR records) → End / [rejected] UserTask(employee notified) → End`
-- No external system. Embedded H2 database configured to persist for the full application-context lifetime (no data loss on hot-reload)
+- Default datasource: PostgreSQL via Docker Compose; H2 fallback available via `--spring.profiles.active=h2`
 - Teaches: embedded Operaton, Tasklist, candidate groups, BPMN happy/rejection paths
 - Post-start: `bob/bob` logs into Tasklist at `http://localhost:8080/operaton/app/tasklist` and finds one waiting task
 
 **UC-02 — Loan Application**
 - BPMN: `Start → ServiceTask(credit score check [REST]) → BusinessRuleTask(DMN: risk assessment) → Gateway → [low risk] auto-approve / [medium risk] UserTask(underwriter review) / [high risk] ServiceTask(auto-reject)`
 - DMN file: `risk-assessment.dmn` (inputs: `creditScore`, `loanAmount` → output: `riskLevel`: low/medium/high); hit policy `FIRST`
+- Default datasource: PostgreSQL via Docker Compose (alongside WireMock); H2 fallback via `--spring.profiles.active=h2`
 - External: WireMock stubs credit-score API; stubs committed in `src/main/resources/wiremock/mappings/`
 - Teaches: DMN business rules alongside BPMN, service task HTTP integration, decision-driven branching
 - DMN engine support is required; the generated project must explicitly declare this dependency (it is not guaranteed by transitive resolution from the base Operaton starter)
 
 **UC-03 — Incident Management**
 - BPMN: `Start(incident reported) → UserTask(first-line triage) [BoundaryTimerEvent PT1H → escalate] → Gateway → [resolved] ServiceTask(close [REST]) → End / [timer] UserTask(second-line engineer) → ServiceTask(post-mortem notify [REST]) → End`
+- Default datasource: PostgreSQL via Docker Compose (alongside WireMock); H2 fallback via `--spring.profiles.active=h2`
 - External: WireMock stubs close-ticket and notify APIs
 - Teaches: boundary timer events, SLA escalation, test-profile-controlled time advancement without wall-clock sleep
 - Timer constraint: the generated project must include a test-profile mechanism that shortens the boundary timer for testing; the test build must guarantee this profile is active during `mvn test`; `ClockUtil` is used to advance the engine's internal clock; `ClockUtil.reset()` must be called after each timer-dependent test to prevent cross-test pollution
 
 **UC-04 — Order Fulfillment**
 - BPMN: `Start(order placed) → ServiceTask(validate inventory [REST]) → Gateway → [in stock] ServiceTask(charge payment [REST]) → UserTask(pack & ship) → ServiceTask(notify customer [REST]) → End / [out of stock] ServiceTask(notify backorder [REST]) → End`
-- External: WireMock stubs inventory, payment, and notification APIs; H2 persistence
+- Default datasource: PostgreSQL via Docker Compose (alongside WireMock); H2 fallback via `--spring.profiles.active=h2`
+- External: WireMock stubs inventory, payment, and notification APIs
 - Teaches: multi-step service task orchestration, conditional routing on external API results, mixed service/human task process
 - WireMock startup: test must wait for `/__admin/mappings` health check before first service task invocation
 
-**Post-MVP use case examples** (deferred because the external dependency requires more onboarding friction than WireMock and is lower-frequency as a teaching goal for the initial Explorer audience; these will be planned and scoped individually):
+**Post-MVP use case examples** (deferred because the external dependency requires more onboarding friction than the MVP stack and is lower-frequency as a teaching goal for the initial Explorer audience; these will be planned and scoped individually):
 - `document-approval` — multi-level review with MinIO file archive (3 user roles, MinIO Docker service; deferred: file storage is infrastructure, not process logic — Explorer audience learns Operaton, not MinIO)
-- `order-fulfillment-db` — order fulfillment with PostgreSQL persistence (deferred: production datasource configuration is a Day 2 concern; H2 is sufficient for the Explorer's first session)
 
-- **FR68:** Each MVP use case example generates a project that satisfies the self-containment invariant: `docker compose up -d` (if applicable) followed by `./mvnw spring-boot:run` starts successfully with no manual configuration; all included JUnit tests pass; each example's integration test suite must include an assertion verifying that the process definition is deployed and the engine is reachable before any business-logic assertions execute
-- **FR69:** Each MVP use case example seeds its user roles and groups via `data.sql` at startup; username and password are identical for each user (e.g., `alice/alice`); roles map to BPMN `candidateGroups` expressions in the process definition
-- **FR70:** Each MVP use case example that requires an external system includes a `docker-compose.yml` with exactly one external service; the compose file includes a health check on the external service and a `depends_on: condition: service_healthy` directive; the Spring Boot app runs on the host, not in Docker; examples with no external dependency (UC-01) require no Docker Compose file
-- **FR71:** Each MVP use case example includes a character-narrated "Getting Started in 5 Minutes" README section that names the pre-seeded users, describes the process scenario in plain language, and guides the developer through the Tasklist step-by-step as the named characters — not as abstract "User 1 / User 2" roles
+- **FR68:** Each MVP use case example generates a project that satisfies the self-containment invariant: `docker compose up -d` followed by `./mvnw spring-boot:run` starts successfully with no manual configuration; all included JUnit tests pass; each example's integration test suite must include an assertion verifying that the process definition is deployed and the engine is reachable before any business-logic assertions execute
+- **FR69:** Each MVP use case example seeds its user roles and groups via `data.sql` at startup; username and password are identical for each user (e.g., `alice/alice`); roles map to BPMN `candidateGroups` expressions in the process definition; an Operaton admin user is created at startup if it does not already exist — this is handled in the startup sequence so the developer always has admin access to Cockpit without manual setup
+- **FR70:** Every MVP use case example includes a `docker-compose.yml` that starts a PostgreSQL service as the default datasource; examples that also stub external APIs include WireMock as a second service in the same compose stack; all services include health checks and the Spring Boot app depends on them with `condition: service_healthy`; the Spring Boot app runs on the host, not in Docker
+- **FR71:** Each MVP use case example includes a character-narrated "Getting Started in 5 Minutes" README section that: names the pre-seeded users and walks the developer through the Tasklist as those characters; includes a "Bootstrap Data" section describing how to apply or re-apply `data.sql` and what each seed entry (users, groups, admin account) provides; includes an image of the BPMN process model so the developer can orient themselves visually before launching the app; and includes a `chmod +x mvnw` (or `chmod +x gradlew`) instruction on Mac/Linux immediately before the first run command
+- **FR74:** Every MVP use case example includes an `application-h2.properties` Spring profile file that switches the datasource to embedded H2 with no other code changes; the README documents the switch as a single command (`./mvnw spring-boot:run --spring.profiles.active=h2`) and notes it as a fallback for environments where Docker is unavailable; the H2 profile is also the active profile used during `mvn test` to avoid requiring Docker in CI
 - **FR72:** WireMock stub mapping files for examples that use WireMock are committed in `src/main/resources/wiremock/mappings/` and mounted into the WireMock container via a bind-mount in `docker-compose.yml`; no stubs are configured in Java code; the WireMock container image version is pinned to a specific minor version in the template — upgrading the pinned version is an explicit decision, not an automatic pull
 - **FR73:** Use case examples are discoverable and generatable via all channels, not just the web UI gallery; `GET /api/v1/metadata` returns the list of available use case examples with their `useCaseId`, display name, description, capability tags, and pre-filled parameter bundle; `POST /api/v1/generate` accepts an optional `useCaseId` parameter which resolves to a fixed parameter bundle on the server and generates the project using the standard engine — no separate generation path exists for use case examples
 
@@ -508,12 +516,13 @@ Use case examples are pre-configured Process Application projects available thro
 
 ### Generated Project Quality
 
-- **FR33:** Every generated project includes a README with project-specific next-step instructions tailored to the selected project type and build system; all URLs and commands in the README (Cockpit URL, troubleshooting port instructions, docker-compose launch steps) reflect the actual project configuration (e.g., server port, Docker Compose enabled/disabled)
+- **FR33:** Every generated project includes a README with project-specific next-step instructions tailored to the selected project type and build system; all URLs and commands in the README (Cockpit URL, troubleshooting port instructions, docker-compose launch steps) reflect the actual project configuration (e.g., server port, Docker Compose enabled/disabled); the README includes a `chmod +x mvnw` (or `chmod +x gradlew`) instruction for Mac/Linux users immediately before the first run command
 - **FR45:** Every generated project includes the appropriate build tool wrapper — Maven wrapper (`mvnw`, `mvnw.cmd`, `.mvn/wrapper/maven-wrapper.properties`) for Maven projects, Gradle wrapper (`gradlew`, `gradlew.bat`, `gradle/wrapper/gradle-wrapper.{jar,properties}`) for Gradle projects — enabling the project to be built without a globally installed Maven or Gradle installation
 - **FR34:** When a developer opts in to Dependency Updates (FR13), the generated project includes a configured dependency update file (Dependabot or Renovate, per their sub-option selection) ready to use without modification; projects generated without this option enabled do not include a dependency update file
 - **FR35:** Generated Process Application projects include a GitHub Actions CI/CD workflow that passes on first push
 - **FR36:** Generated projects with Docker Compose enabled include a `docker-compose.yml` that starts the application and a multi-stage `Dockerfile` (Maven build stage + runtime image) for containerised builds
 - **FR44:** Generated projects include complete, runnable delegate implementations — not stub placeholders — wired to the BPMN service tasks; each delegate performs a meaningful operation representative of the project type (e.g. a Process Application delegate logs execution context and sets an output variable; a DMN project includes an evaluator delegate that invokes a decision table); a JUnit test deploys and executes the full process end-to-end without modification
+- **FR75:** Generated Spring Boot Process Application projects include the Operaton `banner.txt` at `src/main/resources/banner.txt`; the file is sourced from the upstream `operaton/operaton` Spring Boot Starter and displays the Operaton ASCII logo alongside the resolved Spring Boot version, Operaton version, and Operaton Spring Boot Starter version on every application startup; no additional configuration is required — Spring Boot's banner mechanism picks it up automatically from the classpath
 - **FR58:** Generated projects have an elaborated, well-separated file structure appropriate to the project type: domain logic, process resources, configuration, and tests are placed in distinct packages and source directories; no application logic lives in a default/root package; the structure is a reference example a developer can extend directly, not a flat minimal scaffold
 - **FR59:** Every generated project compiles, all included tests pass, and the application starts without errors on first run — the CI test matrix verifies all supported project-type × build-system combinations on every change to the generation templates
 
