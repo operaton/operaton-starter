@@ -254,6 +254,14 @@ components:
           type: string
           description: Identifier of the JTE template that generates this file
           example: process-application/Application.java.jte
+        previewContent:
+          type: string
+          nullable: true
+          description: |
+            Representative content of the file for display in the web UI file preview pane.
+            This is the static template source — it does not reflect the current form state.
+            Null for binary files or files where preview is not meaningful.
+          example: "package ${groupId};\n\nimport org.springframework.boot.SpringApplication;\n..."
 
     ProblemDetail:
       type: object

@@ -2,10 +2,16 @@ package org.operaton.dev.starter.server.api;
 
 import org.operaton.dev.starter.server.config.StarterProperties;
 import org.operaton.dev.starter.server.model.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,10 +23,14 @@ import java.util.List;
 @RestController
 public class MetadataController {
 
-    private final StarterProperties properties;
+    private static final Logger log = LoggerFactory.getLogger(MetadataController.class);
 
-    public MetadataController(StarterProperties properties) {
+    private final StarterProperties properties;
+    private final ResourceLoader resourceLoader;
+
+    public MetadataController(StarterProperties properties, ResourceLoader resourceLoader) {
         this.properties = properties;
+        this.resourceLoader = resourceLoader;
     }
 
     @GetMapping(value = "/api/v1/metadata", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -41,7 +51,7 @@ public class MetadataController {
         return metadata;
     }
 
-    private static ProjectTypeInfo buildProcessApplication() {
+    private ProjectTypeInfo buildProcessApplication() {
         return new ProjectTypeInfo(
                 "PROCESS_APPLICATION",
                 "Process Application",
@@ -52,7 +62,7 @@ public class MetadataController {
         );
     }
 
-    private static ProjectTypeInfo buildDmnProject() {
+    private ProjectTypeInfo buildDmnProject() {
         return new ProjectTypeInfo(
                 "DMN_PROJECT",
                 "DMN Decision Project",
@@ -63,7 +73,7 @@ public class MetadataController {
         );
     }
 
-    private static ProjectTypeInfo buildProcessArchive() {
+    private ProjectTypeInfo buildProcessArchive() {
         return new ProjectTypeInfo(
                 "PROCESS_ARCHIVE",
                 "Process Archive",
@@ -74,7 +84,7 @@ public class MetadataController {
         );
     }
 
-    private static List<TemplateManifestEntry> dmnProjectManifest() {
+    private List<TemplateManifestEntry> dmnProjectManifest() {
         List<TemplateManifestEntry> entries = new ArrayList<>();
         entries.add(entry("pom.xml", "buildSystem == 'MAVEN'", "dmn-project/maven/pom.xml.jte"));
         entries.add(entry("build.gradle", "buildSystem == 'GRADLE_GROOVY'", "dmn-project/gradle-groovy/build.gradle.jte"));
@@ -93,7 +103,7 @@ public class MetadataController {
         return entries;
     }
 
-    private static List<TemplateManifestEntry> processApplicationManifest() {
+    private List<TemplateManifestEntry> processApplicationManifest() {
         List<TemplateManifestEntry> entries = new ArrayList<>();
         entries.add(entry("pom.xml", "buildSystem == 'MAVEN'", "process-application/maven/pom.xml.jte"));
         entries.add(entry("build.gradle", "buildSystem == 'GRADLE_GROOVY'", "process-application/gradle-groovy/build.gradle.jte"));
@@ -113,7 +123,7 @@ public class MetadataController {
         return entries;
     }
 
-    private static List<TemplateManifestEntry> processArchiveManifest() {
+    private List<TemplateManifestEntry> processArchiveManifest() {
         List<TemplateManifestEntry> entries = new ArrayList<>();
         entries.add(entry("pom.xml", "buildSystem == 'MAVEN'", "process-archive/maven/pom.xml.jte"));
         entries.add(entry("build.gradle", "buildSystem == 'GRADLE_GROOVY'", "process-archive/gradle-groovy/build.gradle.jte"));
@@ -130,7 +140,7 @@ public class MetadataController {
         return entries;
     }
 
-    private static GlobalOptions buildGlobalOptions() {
+    private static GlobalOptions buildGlobalOptions() {  // intentionally static — no instance state needed
         var javaVersions = new GlobalOptionsJavaVersions();
         javaVersions.setOptions(List.of(17, 21, 25));
         javaVersions.setDefault(17);
@@ -139,11 +149,25 @@ public class MetadataController {
         return globalOptions;
     }
 
-    private static TemplateManifestEntry entry(String path, String condition, String templateId) {
+    private TemplateManifestEntry entry(String path, String condition, String templateId) {
         var e = new TemplateManifestEntry(path, templateId);
         if (condition != null) {
             e.condition(condition);
         }
+        String preview = loadPreviewContent(templateId);
+        if (preview != null) {
+            e.previewContent(preview);
+        }
         return e;
+    }
+
+    private String loadPreviewContent(String templateId) {
+        try {
+            Resource resource = resourceLoader.getResource("classpath:jte-sources/" + templateId);
+            return resource.getContentAsString(StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            log.warn("Template preview not found for {}: {}", templateId, e.getMessage());
+            return null;
+        }
     }
 }

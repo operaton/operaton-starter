@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-03-28
-last_updated: 2026-06-01
+last_updated: 2026-06-03
 project: operaton-starter
 project_key: NOKEY
 tracking_system: file-system
@@ -57,7 +57,7 @@ development_status:
   # ─────────────────────────────────────────────────────────────────────────
   # Epic 2: Core Generation Engine
   # ─────────────────────────────────────────────────────────────────────────
-  epic-2: in-progress
+  epic-2: done
 
   2-1-jte-spike-validate-template-engine-zero-spring-constraint: done
   2-2-domain-model-project-configuration: done
@@ -67,6 +67,7 @@ development_status:
   2-6-generated-project-extras-readme-ci-docker-compose-dependabot-renovate: done
   2-7-ci-test-matrix-validate-all-6-combinations: done
   2-8-smart-ci-matrix-affected-combinations-only-validation: done
+  2-9-build-tool-wrappers: done
 
   epic-2-retrospective: optional
 
@@ -95,6 +96,8 @@ development_status:
   4-6-download-ide-deep-links-shareable-config-urls: done
   4-7-keyboard-navigation-wcag-2-1-aa-accessibility: done
   4-8-conditional-form-rendering-gallery-to-form-context-handoff: done
+  4-9-file-content-pane-in-file-structure-preview: review
+  4-10-web-ui-favicon: done
 
   epic-4-retrospective: optional
 
@@ -111,7 +114,7 @@ development_status:
   # ─────────────────────────────────────────────────────────────────────────
   # Epic 6: Self-Hosting & Production Operations
   # ─────────────────────────────────────────────────────────────────────────
-  epic-6: in-progress
+  epic-6: done
 
   6-1-docker-image-build-configure-publish: done
   6-2-environment-variable-configuration-self-hosting-validation: done
@@ -123,7 +126,7 @@ development_status:
   # ─────────────────────────────────────────────────────────────────────────
   # Epic 7: Release & Distribution
   # ─────────────────────────────────────────────────────────────────────────
-  epic-7: in-progress
+  epic-7: done
 
   7-1-jreleaser-release-workflow: done
   7-2-artifact-publishing-docker-hub-maven-central-npm: done

@@ -1,7 +1,7 @@
 ---
 name: operaton-starter
 status: final
-updated: 2026-05-31
+updated: 2026-06-01
 sources:
   - imports/ux-design-specification.md
   - imports/ux-color-themes.html
@@ -37,7 +37,9 @@ Key composables:
 | Surface | Route | Reached from | Purpose |
 |---------|-------|-------------|---------|
 | Gallery | `/` | Direct URL, header nav | Persona-aware landing; browse project types; entry for Explorers and Practitioners |
-| Configure | `/configure` | Gallery card "Configure →" CTA; hero "Configure Now →" CTA; shared URL | Full form + live file tree preview; generate & download |
+| Configure | `/configure` | Gallery card "Configure →" CTA; hero "Configure Now →" CTA; shared URL | Full form + live interactive file tree preview + file content pane; generate & download |
+
+**Project type on ConfigureView:** The project type is always pre-determined before reaching `/configure` (via gallery card, hero CTA, or shared URL `?projectType=` param). It is displayed as **read-only context** at the top of the form — not an editable field. If no `projectType` param is present, the default is shown as read-only context. Changing the project type requires returning to the gallery.
 
 ### Route architecture
 
@@ -104,17 +106,26 @@ The product speaks like a capable tool, not a marketing page. Short, directive, 
 
 Labels are sentence-case, above the input, never floating. Every field label includes a `[?]` help icon that reveals inline help on click.
 
-| Field | Label | Example placeholder / default |
-|-------|-------|-------------------------------|
-| groupId | "Group ID" | `com.example` |
-| artifactId | "Artifact ID" | `my-process-app` |
-| projectName | "Project Name" | `My Process App` |
-| projectType | "Project Type" | `PROCESS_APPLICATION` (pre-selected) |
-| buildSystem | "Build System" | `MAVEN` |
-| javaVersion | "Java Version" | `17` |
-| dependencyUpdater | "Dependency Updates" | `RENOVATE` |
-| dockerCompose | "Docker Compose" | unchecked |
-| githubActions | "GitHub Actions" | checked |
+| Field | Label | Type | Example / default |
+|-------|-------|------|-------------------|
+| projectType | "Project Type" | read-only badge | `Process Application` (contextual, not editable) |
+| groupId | "Group ID" | text input | `com.example` |
+| artifactId | "Artifact ID" | text input | `my-process-app` |
+| projectName | "Project Name" | text input | `My Process App` |
+| buildSystem | "Build System" | radio (Maven / Gradle) | `Maven` |
+| buildSystem.gradleDsl | "Gradle DSL" | radio sub-option (Groovy / Kotlin) | revealed only when Gradle selected; no default pre-selected |
+| deploymentTarget | "Target Runtime" | select | revealed only for Process Archive; MVP options: Tomcat, Wildfly |
+| dependencyUpdates | "Dependency Updates" | checkbox (opt-in, off by default) | unchecked |
+| dependencyUpdates.flavour | "Dependency Updater" | radio sub-option (Dependabot / Renovate) | revealed only when checkbox checked |
+| dockerCompose | "Docker Compose" | checkbox (opt-in, off by default); hidden for Process Archive | unchecked |
+| githubActions | "GitHub Actions" | checkbox (opt-in, off by default) | unchecked |
+
+**Conditional visibility rules:**
+- `buildSystem.gradleDsl` sub-option: shown only when Gradle is selected; hidden (not disabled) when Maven is selected.
+- `deploymentTarget`: shown only for Process Archive project type; hidden for Process Application.
+- `dependencyUpdates.flavour` sub-option: shown only when the Dependency Updates checkbox is checked; hidden when unchecked.
+- `dockerCompose`: shown only for project types that support containerised embedded deployment (Process Application); hidden for Process Archive.
+- All Extras options (Dependency Updates, Docker Compose, GitHub Actions) default to off; developer must explicitly enable each.
 
 ### Inline help pattern
 
@@ -149,8 +160,30 @@ All visual properties (colors, radii, spacing, shadows) are in DESIGN.md. This s
 - Condition evaluation: simple equality parser (`field == 'value'`) — no `eval()`, no server round-trip.
 - Identity interpolation: `artifactId`, `groupId`, `projectName` are substituted into file paths where the manifest uses them.
 - Preview updates are **instant** (no debounce, no animation — the `aria-live="polite"` region announces changes to screen readers naturally).
-- File tree rendered as a plain `<ul>`/`<li>` nested list with `aria-label="Project file structure"` on the root `<ul>`. Not `role="tree"` — this is a **display-only** structure with no interactive expand/collapse behavior. Monospace font (`{typography.code}`), styled via `{components.file-tree-preview}`.
+- File tree rendered as a plain `<ul>`/`<li>` nested list with `aria-label="Project file structure"` on the root `<ul>`. Styled via `{components.file-tree-preview}`. Monospace font (`{typography.code}`).
+- **Each file item is interactive** — `<button>` element (not anchor) that triggers file content display in the adjacent `<FileContentPane>`. The currently-selected item receives `aria-selected="true"` and the selected visual treatment (`{components.file-tree-preview.item-selected-*}`). Keyboard: `Tab` focuses the first item; `Arrow Up`/`Arrow Down` navigate; `Enter` or `Space` selects.
 - `aria-live="polite"` is on the `<section>` wrapper, but the announcement is debounced: a separate `role="status"` element announces a summary ("File tree updated") 600ms after the last change. The visual tree updates instantly; only the status announcement is debounced, preventing screen reader verbosity on each keystroke.
+- When the file tree updates due to form state changes, the selected item is retained if it still exists in the new tree; otherwise selection clears and the `<FileContentPane>` shows an empty/placeholder state.
+
+### `<FileContentPane>`
+
+- Adjacent to `<FileTreePreview>` in the right (preview) panel, taking up the remaining height above `<ActionPanel>`.
+- Rendered as `<section aria-label="File content preview">`.
+- Shows the filename as a small label (`{components.file-content-pane.filename-foreground}`) above a scrollable monospace content area.
+- Content is `TemplateManifestEntry.previewContent` — **static representative template source**, not dynamically generated from current form state. A note (visually subtle, e.g. below the pane) states: "Preview shows template structure — actual content reflects your configuration after download."
+- When no file is selected (initial state): shows a placeholder prompt "← Select a file to preview its content" centred in the pane.
+- No generation or server round-trip is required to show content.
+- `role="region"` with `aria-live="polite"` — announces filename when selection changes.
+
+### `<ConditionalSubOption>` (behavioral pattern)
+
+Applies to: `buildSystem.gradleDsl`, `deploymentTarget`, `dependencyUpdates.flavour`.
+
+- The sub-option container is hidden (`display: none` / `v-if`) when the parent condition is false; rendered and visible when true.
+- Reveal animation: `max-height` 200ms ease-out — same as help accordion. `prefers-reduced-motion` suppresses animation.
+- Visual treatment: `{components.conditional-sub-option}` — left-border indent communicates hierarchy.
+- When a sub-option is hidden (parent unchecked / wrong type selected), its value is not included in `formState` for URL serialisation or generation — the field is absent, not empty.
+- Screen reader: the parent control's label does not reference the sub-option; the sub-option has its own `<label>` that is announced when it becomes focusable.
 
 ### `<HelpIcon>`
 
@@ -176,7 +209,8 @@ All visual properties (colors, radii, spacing, shadows) are in DESIGN.md. This s
 
 ### `<ActionPanel>` (within ConfigureView)
 
-- Located in the right (preview) panel, below `<FileTreePreview>`.
+- Located in the right (preview) panel, below `<FileContentPane>` and `<FileTreePreview>`.
+- Right panel layout (top to bottom): `<FileTreePreview>` + `<FileContentPane>` (side-by-side or stacked depending on available height) → `<ActionPanel>`.
 - Contains three sub-sections:
   1. **IDE Deep Links**: "Open in IntelliJ IDEA" (`{components.button-secondary}`) + "Open in VS Code" (`{components.button-secondary}`).
   2. **Shareable URL**: "Copy Link" (`{components.button-secondary}`) — copies the computed `shareableUrl` to clipboard.
@@ -193,9 +227,12 @@ All visual properties (colors, radii, spacing, shadows) are in DESIGN.md. This s
 | **Error** (API / network) | `<ErrorBanner>` at top; skeleton replaced with error state | `<ErrorBanner>` at top; form remains interactive |
 | **Success** (download complete) | — | Transient success message "Downloaded {artifactId}.zip" near action panel |
 | **Empty** (no project types from API) | `<ErrorBanner>` — treated as an API error state | — |
-| **First-visit** | Gallery loads with defaults; hero section visible | Form pre-filled with defaults; project type from query param if present |
+| **First-visit** | Gallery loads with defaults; hero section visible | Form pre-filled with defaults; project type shown as read-only context from query param or default |
 | **Invalid query param** (e.g., `?projectType=NONEXISTENT`) | — | Form silently falls back to defaults; no error shown (silent ignore is intentional — unknown params are discarded by `initFromQuery`) |
 | **Empty project types** (API 200 but empty array) | `<ErrorBanner>` — treated same as API error state; no empty-gallery UI | — |
+| **File selected** (file tree item clicked) | — | `<FileContentPane>` shows `TemplateManifestEntry.previewContent` for the selected file |
+| **File tree updated** (form change invalidates selection) | — | If selected file still exists: content pane retains it; if removed from tree: pane resets to placeholder |
+| **Conditional sub-option revealed** (e.g., Gradle selected) | — | Sub-option slides into view; parent form layout reflows smoothly |
 
 ---
 
@@ -205,11 +242,11 @@ All visual properties (colors, radii, spacing, shadows) are in DESIGN.md. This s
 
 | Key | Action |
 |-----|--------|
-| `Tab` | Next focusable element — in Configure two-column layout: form fields first (left), then preview panel actions (right), top-to-bottom within each column |
+| `Tab` | Next focusable element — in Configure two-column layout: form fields first (left), then file tree items (right), then action panel buttons (right); top-to-bottom within each column |
 | `Shift+Tab` | Previous focusable element (reverse of Tab order above) |
-| `Enter` | Activate focused button or card |
-| `Space` | Toggle checkbox / activate button |
-| `Arrow keys` | Navigate within radio button groups |
+| `Enter` | Activate focused button, card, or file tree item (show content) |
+| `Space` | Toggle checkbox / activate button / select file tree item |
+| `Arrow Up` / `Arrow Down` | Navigate within radio button groups **or** within file tree items when tree has focus |
 | `Escape` | Close open accordion or help panel |
 
 ### Form interaction rules
@@ -260,13 +297,16 @@ Standard: **WCAG 2.1 AA**.
 |-----------|---------|
 | Gallery card grid | `<ul role="list">` container; each card is `<li>` (no interactive role on container) |
 | Gallery card CTA | `<a href="/configure?projectType={id}" aria-label="{displayName} — Configure">` — sole focusable element per card |
-| File tree | `<ul aria-label="Project file structure">` nested plain list — display only, no `role="tree"` |
+| File tree | `<ul aria-label="Project file structure">` nested list; each file item is a `<button>` with `aria-selected="{bool}"` on its `<li>` wrapper |
 | Live preview wrapper | `<section aria-live="polite">` + debounced `<div role="status">` for keystroke announcements |
+| File content pane | `<section aria-label="File content preview" aria-live="polite">` — announces filename when selection changes |
 | Error banner | `role="alert"`, `aria-live="assertive"` |
 | Loading container | `aria-busy="true"` |
 | Help accordion button | `aria-expanded="{bool}"`, `aria-controls="{contentId}"` |
 | Help panel content | Plain `<div>` — no role (accordion button handles announcement) |
 | Radio groups | `<fieldset>` + `<legend>` |
+| Conditional sub-options | Parent control does not reference sub-option in its label; sub-option has its own `<label>`; container uses `v-if` (not `display:none`/`aria-hidden`) — removed from DOM when hidden |
+| Project type read-only display | `<span>` or `<div>` with visible label; not a form control; no `aria-*` form attributes needed |
 | Validation errors (field) | `aria-describedby` linking `<input>` to error `<span id="{field}-error">` — announced when field is focused |
 | API / network errors | `role="alert"` + `aria-live="assertive"` on `<ErrorBanner>` only |
 

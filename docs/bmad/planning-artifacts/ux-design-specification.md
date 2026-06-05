@@ -365,7 +365,8 @@ Header height: 64px fixed. Matches operaton.org header height.
 ┌─────────────────────────────────────────────────────┐
 │ HERO: "Start your Operaton project"                 │
 │       Subtitle: one sentence explaining the tool    │
-│       Two CTAs: [Browse Projects] [Configure Now →] │
+│       CTAs: [Configure Now →] [Browse Use Cases ↓]  │
+│             [Project Types ↓]                       │
 ├─────────────────────────────────────────────────────┤
 │ PROJECT TYPES HEADING: "Choose a project type"      │
 │                                                     │
@@ -380,8 +381,22 @@ Header height: 64px fixed. Matches operaton.org header height.
 │  │                  │  │                  │        │
 │  │ [Configure →]    │  │ [Configure →]    │        │
 │  └──────────────────┘  └──────────────────┘        │
+├─────────────────────────────────────────────────────┤
+│ USE CASES HEADING: "Start from a use case"          │
+│ Subtitle: Pre-configured templates for common       │
+│           business processes                        │
+│                                                     │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐         │
+│  │ USE CASE │  │ USE CASE │  │ USE CASE │         │
+│  │ [icon]   │  │ [icon]   │  │ [icon]   │         │
+│  │ Title    │  │ Title    │  │ Title    │         │
+│  │ Desc...  │  │ Desc...  │  │ Desc...  │         │
+│  │ [tag]    │  │ [tag]    │  │ [tag]    │         │
+│  └──────────┘  └──────────┘  └──────────┘         │
 └─────────────────────────────────────────────────────┘
 ```
+
+**Section order:** Project Types always precedes Use Cases. This ensures developers first understand the available project types (the primary choice), then see curated use-case examples as inspiration.
 
 - Grid: `grid-cols-1 md:grid-cols-2 lg:grid-cols-3` (scales with more project types)
 - Cards: `rounded-s border border-neutral-200 p-6 hover:shadow-md hover:border-primary transition-all`

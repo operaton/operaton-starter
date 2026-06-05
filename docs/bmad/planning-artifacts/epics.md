@@ -2,8 +2,8 @@
 stepsCompleted: ['step-01-validate-prerequisites', 'step-02-design-epics', 'step-03-create-stories', 'step-04-final-validation']
 workflowStatus: complete
 completedAt: '2026-03-27'
-updatedAt: '2026-05-31'
-updateReason: 'Targeted update: added FR45-FR53, NFR21-NFR22, updated FR10 (two-step build selection); added Epic 7 Release & Distribution; added Story 4.8, Story 2.8, Story 6.3, Story 6.4'
+updatedAt: '2026-06-03'
+updateReason: 'Targeted update: synced FR inventory with PRD changes — added FR56-FR61, updated FR2/FR5/FR13/FR44 definitions, removed FR21 (IDE deep-link, delivered but removed from PRD), updated coverage map and epic FR lists'
 inputDocuments:
   - 'docs/bmad/planning-artifacts/prd.md'
   - 'docs/bmad/planning-artifacts/architecture.md'
@@ -21,10 +21,10 @@ This document provides the complete epic and story breakdown for operaton-starte
 ### Functional Requirements
 
 FR1: The system can generate a project archive for any supported project type × build system combination
-FR2: The system generates projects that compile and pass their included tests without manual modification
+FR2: The system generates projects that compile and pass their included tests without manual modification; generated projects are complete, working examples — not minimal scaffolds — with meaningful process logic, valid BPMN diagrams, and implemented delegates that a developer can run, study, and extend
 FR3: The system always generates projects targeting the current stable Operaton release (no user-selectable version)
 FR4: The system propagates developer identity (Group ID, Artifact ID, project name) consistently across all generated files — Java package names, BPMN process IDs, Spring application name
-FR5: The system generates a skeleton BPMN process file for applicable project types
+FR5: The system generates a BPMN process file for applicable project types; the BPMN file contains a complete, graphically valid diagram — all flow elements include `BPMNShape` and `BPMNEdge` layout data so the process renders correctly in any BPMN-aware tool without manual repositioning
 FR6: The system generates a `processes.xml` deployment descriptor for Process Archive projects, pre-configured with the selected deployment target
 FR7: The system generates deployment-target-appropriate artifact configuration (WAR/JAR) for Process Archive projects
 FR8: The generation engine is a single shared implementation invoked by all channels — web UI, REST API, CLI, and MCP module; no per-channel generation logic
@@ -32,15 +32,16 @@ FR9: A developer can select a project type (MVP: Process Application, Process Ar
 FR10: A developer selects a build system in two steps: first choosing between Maven and Gradle; if Gradle is chosen, a DSL sub-option (Groovy or Kotlin) becomes visible and must be selected before generation; the DSL sub-option is hidden when Maven is selected
 FR11: A developer can specify Group ID, Artifact ID, and project name as project identity
 FR12: A developer can select a deployment target for Process Archive projects
-FR13: A developer can choose between Dependabot and Renovate for dependency update configuration
-FR14: A developer can opt in to Docker Compose file generation
+FR13: Dependency update configuration is an opt-in Extras option (unchecked by default); when a developer checks it, a sub-option for flavour (Dependabot or Renovate) becomes visible and must be selected before generation; the sub-option is hidden when the Dependency Updates option is unchecked
+FR14: A developer can opt in to Docker Compose file generation; this option is only presented for project types that support containerised embedded deployment (Process Application); it is not shown for Process Archive projects
 FR15: A developer can opt in to GitHub Actions CI/CD skeleton generation
+FR56: All Extras options (Dependency Updates, Docker Compose, GitHub Actions) are unchecked/off by default; a developer must explicitly enable each one
 FR16: A developer can share a project configuration as a URL that restores and pre-fills the configuration form when opened
 FR17: A developer can configure a project and download a ZIP archive through a browser
+FR60: The web UI serves a `favicon.ico` derived from the Operaton logo so that browser tabs and bookmarks display the Operaton brand mark; no 404 error is emitted for `/favicon.ico` requests
 FR18: A developer can browse available project types as a visual gallery with capability descriptions
-FR19: A developer can see a live file tree preview of the project to be generated, updated as configuration options change
+FR19: A developer can see a live file tree preview of the project to be generated, updated as configuration options change; the preview is interactive — selecting a file shows its content
 FR20: A developer can access inline contextual help for any configuration option without leaving the page
-FR21: A developer can open a generated project directly in IntelliJ IDEA or VS Code from the web UI
 FR22: A developer can complete the full configuration and download flow without using a mouse
 FR23: The web UI populates all configuration options and gallery content from the REST API metadata endpoint
 FR24: An API consumer can generate and download a project archive via `POST /api/v1/generate` with `Accept: application/zip`
@@ -63,7 +64,8 @@ FR40: A developer can access the tool through two distinct entry points: a direc
 FR41: A developer can access an explanation distinguishing between available project types to inform their selection
 FR42: The CLI and `operaton-starter-mcp` client code are generated from the OpenAPI specification; no hand-written client code exists independently of the API contract
 FR43: The web UI renders the project file tree preview from template manifests in the metadata response, without a per-change server round-trip
-FR44: Generated Process Application projects include a `JavaDelegate` implementation stub wired to the skeleton BPMN service task and a JUnit test that deploys and executes the skeleton process end-to-end without modification
+FR57: When a developer clicks a file in the File Structure Preview, the file's representative content is shown in a content pane adjacent to the file tree; the content pane updates when a different file is selected; no download or generation step is required to see the content; the content is served as static template source included in the metadata response (`TemplateManifestEntry.previewContent`) — it is representative of the template structure and does not dynamically reflect the current form state; this preserves the no-server-round-trip invariant from FR43
+FR44: Generated projects include complete, runnable delegate implementations — not stub placeholders — wired to the BPMN service tasks; each delegate performs a meaningful operation representative of the project type; a JUnit test deploys and executes the full process end-to-end without modification
 FR45: When a developer reaches the configuration details page via the gallery or a direct project-type entry point, the project type is pre-set from that selection and displayed as read-only context — it is not re-presented as an editable field on the details page
 FR46: Configuration options on the details page are conditionally rendered based on the selected project type; options that do not apply to the current project type are hidden entirely (not shown as disabled); the visible option set updates if the developer navigates back and changes the project type selection
 FR47: The repository contains a `Dockerfile` for building the Operaton Starter application image
@@ -73,6 +75,9 @@ FR50: The Docker image is published to Docker Hub as `operaton/operaton-starter`
 FR51: Maven artifacts (generation engine, archetypes, server) are published to Maven Central on every release via the standard Sonatype OSSRH publication flow coordinated by JReleaser
 FR52: The `operaton-starter-mcp` npm package is published to the public npm registry (`npmjs.com`) on every release, version-aligned with the overall project release tag
 FR53: The repository documentation specifies all credentials that must be configured as GitHub Actions secrets for the release workflow to succeed: Docker Hub credentials (`DOCKER_USERNAME`, `DOCKER_PASSWORD`), Maven Central/Sonatype credentials (`MAVEN_CENTRAL_USERNAME`, `MAVEN_CENTRAL_TOKEN`), npm publish token (`NPM_TOKEN`), and the GitHub token required by JReleaser for GitHub Release creation
+FR58: Generated projects have an elaborated, well-separated file structure appropriate to the project type: domain logic, process resources, configuration, and tests are placed in distinct packages and source directories; no application logic lives in a default/root package; the structure is a reference example a developer can extend directly, not a flat minimal scaffold
+FR59: Every generated project compiles, all included tests pass, and the application starts without errors on first run — the CI test matrix verifies all supported project-type × build-system combinations on every change to the generation templates
+FR61: Every generated project includes the appropriate build tool wrapper — Maven wrapper (`mvnw`, `mvnw.cmd`, `.mvn/wrapper/maven-wrapper.properties`) for Maven projects, Gradle wrapper (`gradlew`, `gradlew.bat`, `gradle/wrapper/gradle-wrapper.{jar,properties}`) for Gradle projects — enabling the project to be built without a globally installed Maven or Gradle installation
 
 ### NonFunctional Requirements
 
@@ -157,7 +162,7 @@ FR17: Epic 4 — Browser-based ZIP download
 FR18: Epic 4 — Visual project gallery
 FR19: Epic 4 — Live file tree preview
 FR20: Epic 4 — Inline contextual help
-FR21: Epic 4 — IDE deep-link (IntelliJ, VS Code)
+FR21: Epic 4 — IDE deep-link (IntelliJ, VS Code) [delivered in Story 4.6; removed from PRD after delivery]
 FR22: Epic 4 — Keyboard-complete flow
 FR23: Epic 4 — Web UI driven from metadata endpoint
 FR24: Epic 3 — `POST /api/v1/generate`
@@ -180,7 +185,7 @@ FR40: Epic 4 — Two entry points: form + gallery
 FR41: Epic 4 — Project type disambiguation explanation
 FR42: Epic 5 — CLI + MCP clients generated from OpenAPI spec
 FR43: Epic 4 — Client-side preview from template manifests
-FR44: Epic 2 — JavaDelegate stub + end-to-end JUnit test
+FR44: Epic 2 — Complete runnable delegate implementations + end-to-end JUnit test
 FR45: Epic 4 — Project type pre-set as read-only context when arriving from gallery
 FR46: Epic 4 — Conditional rendering of config options per project type (hidden, not disabled)
 FR47: Epic 6 — Dockerfile in repository (already covered in Story 6.1)
@@ -192,6 +197,12 @@ FR52: Epic 7 — npm publishing for operaton-starter-mcp on release
 FR53: Epic 7 — GitHub Actions secrets documentation
 NFR21: Epic 2 — Smart CI matrix: affected-combinations-only validation on template PRs
 NFR22: Epic 6 — Submodule READMEs for all five modules
+FR56: Epic 4 — All Extras options unchecked/off by default (Story 4.8)
+FR57: Epic 4 — File content pane shown when clicking file in File Structure Preview (Story 4.5)
+FR58: Epic 2 — Elaborated, well-separated file structure in generated projects
+FR59: Epic 2 — Every generated project compiles/tests pass/starts; CI validates all combinations (Stories 2.7, 2.8)
+FR60: Epic 4 — Web UI serves favicon.ico derived from Operaton logo
+FR61: Epic 2 — Generated projects include build tool wrapper (mvnw / gradlew)
 
 ## Epic List
 
@@ -202,8 +213,8 @@ The monorepo is bootstrapped, the OpenAPI spec and metadata schema are defined a
 **NFRs:** NFR4
 
 ### Epic 2: Core Generation Engine
-Any developer can invoke the pure-Java generation engine and receive a valid, compiling, immediately runnable Operaton project archive for any project type × build system combination — with correct identity propagation, skeleton BPMN, all generated project extras, and a full CI validation matrix.
-**FRs covered:** FR1–15, FR33–36, FR44
+Any developer can invoke the pure-Java generation engine and receive a valid, compiling, immediately runnable Operaton project archive for any project type × build system combination — with correct identity propagation, complete BPMN, all generated project extras, build tool wrappers, and a full CI validation matrix.
+**FRs covered:** FR1–15, FR33–36, FR44, FR56 (partial), FR58, FR59, FR61
 **ARCH covered:** ARCH-3, ARCH-4, ARCH-12, ARCH-13, ARCH-19
 **NFRs:** NFR1 (partial), NFR13, NFR14, NFR17, NFR21
 
@@ -214,8 +225,8 @@ Any developer with internet access (or a curl command) can generate an Operaton 
 **NFRs:** NFR1, NFR5, NFR7, NFR8, NFR9, NFR10, NFR18
 
 ### Epic 4: Web UI — Browser-Based Project Generation
-Practitioners complete configuration and download a ZIP in under 30 seconds. Explorers discover their project type through a visual gallery. Both enjoy a professional, keyboard-accessible, operaton.org-consistent interface with live preview, IDE deep-links, and shareable config URLs — benchmarked against start.spring.io and code.quarkus.io.
-**FRs covered:** FR16–23, FR40–41, FR43, FR45, FR46
+Practitioners complete configuration and download a ZIP in under 30 seconds. Explorers discover their project type through a visual gallery. Both enjoy a professional, keyboard-accessible, operaton.org-consistent interface with live preview, interactive file content pane, and shareable config URLs — benchmarked against start.spring.io and code.quarkus.io.
+**FRs covered:** FR16–20, FR22–23, FR40–41, FR43, FR45, FR46, FR56, FR57, FR60
 **UX-DRs covered:** UX-DR1 through UX-DR11
 **ARCH covered:** ARCH-8
 **NFRs:** NFR2, NFR3, NFR11, NFR12, NFR16, NFR20

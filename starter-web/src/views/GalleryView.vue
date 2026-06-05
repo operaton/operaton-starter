@@ -176,19 +176,8 @@ function goToConfigure() {
       </div>
     </section>
 
-    <!-- Use Cases Section -->
-    <section ref="useCasesRef" class="py-12 px-6 md:px-8 max-w-content mx-auto border-b border-neutral-200">
-      <div class="mb-8">
-        <h2 class="text-2xl font-semibold text-neutral-900 mb-2">Start from a use case</h2>
-        <p class="text-sm text-neutral-500">Pre-configured templates for common business processes. Pick one and customize from there.</p>
-      </div>
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <UseCaseCard v-for="uc in USE_CASES" :key="uc.title" :use-case="uc" />
-      </div>
-    </section>
-
     <!-- Gallery Section -->
-    <section ref="galleryRef" class="py-12 px-6 md:px-8 max-w-content mx-auto">
+    <section ref="galleryRef" class="py-12 px-6 md:px-8 max-w-content mx-auto border-b border-neutral-200">
       <h2 class="text-2xl font-semibold text-neutral-900 mb-8">Choose a project type</h2>
 
       <ErrorBanner :error="error" />
@@ -205,6 +194,17 @@ function goToConfigure() {
           :key="pt.id"
           :project-type="pt"
         />
+      </div>
+    </section>
+
+    <!-- Use Cases Section -->
+    <section ref="useCasesRef" class="py-12 px-6 md:px-8 max-w-content mx-auto">
+      <div class="mb-8">
+        <h2 class="text-2xl font-semibold text-neutral-900 mb-2">Start from a use case</h2>
+        <p class="text-sm text-neutral-500">Pre-configured templates for common business processes. Pick one and customize from there.</p>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <UseCaseCard v-for="uc in USE_CASES" :key="uc.title" :use-case="uc" />
       </div>
     </section>
   </div>

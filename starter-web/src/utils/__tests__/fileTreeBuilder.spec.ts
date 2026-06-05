@@ -29,6 +29,31 @@ const manifest: TemplateManifestEntry[] = [
 ]
 
 describe('buildFileTree', () => {
+  it('attaches entry reference to leaf nodes', () => {
+    const tree = buildFileTree(manifest, baseConfig)
+    const pomNode = tree.find((n) => n.name === 'pom.xml')
+    expect(pomNode).toBeDefined()
+    expect(pomNode!.isDir).toBe(false)
+    expect(pomNode!.entry).toBeDefined()
+    expect(pomNode!.entry!.templateId).toBe('pom.xml.jte')
+  })
+
+  it('does not attach entry to directory nodes', () => {
+    const tree = buildFileTree(manifest, baseConfig)
+    const srcNode = tree.find((n) => n.name === 'src')
+    expect(srcNode).toBeDefined()
+    expect(srcNode!.isDir).toBe(true)
+    expect(srcNode!.entry).toBeUndefined()
+  })
+
+  it('leaf node entry carries previewContent when present', () => {
+    const manifestWithPreview: TemplateManifestEntry[] = [
+      { path: 'pom.xml', condition: "buildSystem == 'MAVEN'", templateId: 'pom.xml.jte', previewContent: '<project/>' }
+    ]
+    const tree = buildFileTree(manifestWithPreview, baseConfig)
+    expect(tree[0].entry?.previewContent).toBe('<project/>')
+  })
+
   it('includes pom.xml for Maven, excludes build.gradle', () => {
     const tree = buildFileTree(manifest, baseConfig)
     const names = tree.map((n) => n.name)

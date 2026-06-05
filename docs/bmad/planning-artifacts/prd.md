@@ -25,7 +25,7 @@ Operaton Starter is a stateless, open-source project generator hosted at `start.
 
 The tool targets two developer personas: **Practitioners** (Operaton-familiar developers who know what they want to build and demand zero friction) and **Explorers** (BPMN-literate developers new to Operaton, including Camunda 7 migrators, who benefit from guided discovery). Today's Explorer is tomorrow's Practitioner — the quality of the first session directly determines ecosystem retention. Access is available through three first-class channels: a web UI at `start.operaton.org`, the `npx operaton-starter` CLI, and a single `curl` command — all backed by the same REST API (`POST /api/v1/generate`). The web UI serves both personas through a split landing page — a direct configuration form for Practitioners and a visual project gallery for Explorers. An MCP module exposes the same generation API to AI-assisted development workflows. The tool is deployed as a Spring Boot application on the `operaton.org` domain and distributed as a self-hostable Docker image, allowing enterprise teams to run a private instance behind their firewall with org-specific defaults.
 
-Generated projects support Maven or Gradle (Groovy/Kotlin DSL), always target the current stable Operaton release (no version picker), include a pre-configured Dependabot or Renovate configuration, an optionally generated Docker Compose file, a GitHub Actions CI/CD skeleton that passes green on first push, and a personalized README with next-step instructions. Projects are identity-aware — Group ID, Artifact ID, and project name propagate into BPMN process IDs, Java packages, and Spring `application.name`. Generation templates are open-source and community-forkable. No authentication, no user profiles — stateless by design.
+Generated projects support Maven or Gradle (Groovy/Kotlin DSL), always target the current stable Operaton release (no version picker), and include a personalized README with next-step instructions. Optional Extras — Dependency Updates (Dependabot or Renovate), Docker Compose, GitHub Actions CI/CD skeleton — are all off by default and must be explicitly enabled. Projects are identity-aware — Group ID, Artifact ID, and project name propagate into BPMN process IDs, Java packages, and Spring `application.name`. Generation templates are open-source and community-forkable. No authentication, no user profiles — stateless by design.
 
 ### What Makes This Special
 
@@ -94,11 +94,11 @@ Operaton Starter is an open-source infrastructure tool with no authentication or
 
 ### MVP — Minimum Viable Product
 
-Core generation engine supporting **2 project types (Process Application, Process Archive)** across Maven and Gradle (Groovy or Kotlin DSL) — 6 combinations total; Gradle DSL choice is a sub-option that appears only when Gradle is selected. Identity-aware scaffolding, skeleton BPMN with wired JavaDelegate stub, deployment-target selector for Process Archive, zero boilerplate config classes, always-latest Operaton version.
+Core generation engine supporting **2 project types (Process Application, Process Archive)** across Maven and Gradle (Groovy or Kotlin DSL) — 6 combinations total; Gradle DSL choice is a sub-option that appears only when Gradle is selected. Identity-aware scaffolding; each generated project is a **complete, working example** — graphically valid BPMN diagram, implemented delegates (not stubs), elaborated file structure with domain logic and tests in separate packages; deployment-target selector for Process Archive; always-latest Operaton version.
 
-Web UI at `start.operaton.org`: split landing (form + gallery), live project preview panel, capability tags, shareable config links, IDE deep-link (IntelliJ + VS Code), inline "explain this" help.
+Web UI at `start.operaton.org`: split landing (form + gallery), live file tree preview with clickable file content pane, capability tags, shareable config links, inline "explain this" help.
 
-Generated project extras: purposeful README with next-steps, optional Docker Compose, GitHub Actions CI/CD skeleton (green on first push), choice of Dependabot or Renovate config.
+Generated project extras (all off by default): purposeful README with next-steps (always included), optional Docker Compose, optional GitHub Actions CI/CD skeleton (green on first push), optional Dependency Updates (Dependabot or Renovate — flavour selected as a sub-option).
 
 API & ecosystem: REST API (`POST /api/v1/generate`), MCP module, `curl`/`npx operaton-starter` support, open-source generation templates, archetype-as-source-of-truth (web UI and `mvn archetype:generate` share the same engine).
 
@@ -131,19 +131,19 @@ Operaton Starter becomes the **inevitable front door** of the Operaton developer
 
 ### Journey 1: Marcus — The Practitioner (Happy Path)
 
-**Persona:** Marcus is a senior Java developer at a logistics company. His team has been running Operaton in production for eight months. He's been asked to spin up a new process application for a shipment tracking workflow. He knows exactly what he needs: Spring Boot, REST starter, Gradle Kotlin DSL, Renovate.
+**Persona:** Marcus is a senior Java developer at a logistics company. His team has been running Operaton in production for eight months. He's been asked to spin up a new process application for a shipment tracking workflow. He knows exactly what he needs: Spring Boot, Gradle Kotlin DSL, Renovate.
 
 **Opening Scene:** Marcus has a new GitHub repo open in one tab and `start.operaton.org` in another. He's done this before — not with Operaton, but with Spring Initializr and code.quarkus.io. He expects it to work the same way.
 
-**Rising Action:** He lands on the form view. Group ID: `com.acme.logistics`. Artifact: `shipment-tracking`. Project type: Process Application. Build: Gradle Kotlin DSL. He adds the REST starter, enables Renovate, toggles Docker Compose on. The live preview panel updates with every selection — he can see `shipment-tracking.bpmn`, `build.gradle.kts`, `docker-compose.yml`, and `Dockerfile` appearing in the file tree. He clicks the IntelliJ deep-link button.
+**Rising Action:** He lands on the form view. Group ID: `com.acme.logistics`. Artifact: `shipment-tracking`. Project type: Process Application. Build: Gradle Kotlin DSL. He checks Dependency Updates and selects Renovate. He toggles Docker Compose on. The live preview panel updates with every selection — he can see `shipment-tracking.bpmn`, `build.gradle.kts`, `docker-compose.yml`, and `Dockerfile` appearing in the file tree. He clicks Download.
 
-**Climax:** IntelliJ opens with the project already imported, indexed, and ready. `build.gradle.kts` is open. The BPMN file is in `src/main/resources`. There is nothing to configure.
+**Climax:** Marcus unzips the archive into his repo, opens it in IntelliJ. `build.gradle.kts` is open. The BPMN file is in `src/main/resources`. There is nothing to configure.
 
 **Resolution:** Marcus runs `./gradlew bootRun`. The Operaton engine starts. He opens Cockpit at the URL shown in the generated README — the README knows his configured server port (default: 8080), so the link is accurate. The skeleton process is deployed. Total time from landing to running engine: under 3 minutes. He copies the shareable link and sends it to his colleague starting the companion process archive.
 
 **Edge Case — Project Fails to Start:** If Marcus's project fails to start (e.g., port conflict, missing datasource), the generated README contains a "Troubleshooting" section with the most common startup failure modes and their resolutions, including a port-specific instruction that references the actual configured port. The README is the first line of support — it is generated specifically for his stack, not generic boilerplate.
 
-**Capabilities revealed:** form view, build system selection, live preview, IDE deep-link, Docker Compose toggle (includes Dockerfile), Renovate option, shareable config link, identity-aware scaffolding, skeleton BPMN, zero-boilerplate startup, port-aware troubleshooting README.
+**Capabilities revealed:** form view, build system selection, live preview, Extras options (Dependency Updates → Renovate, Docker Compose toggle including Dockerfile), shareable config link, identity-aware scaffolding, skeleton BPMN, zero-boilerplate startup, port-aware troubleshooting README.
 
 ---
 
@@ -219,7 +219,7 @@ Operaton Starter becomes the **inevitable front door** of the Operaton developer
 
 | Journey | Key Capabilities Required |
 |---------|--------------------------|
-| Marcus (Practitioner) | Form view, live preview, IDE deep-link, build system choice, shareable links, skeleton BPMN, troubleshooting README |
+| Marcus (Practitioner) | Form view, live preview, Extras options (Dependency Updates, Docker Compose), build system choice, shareable links, skeleton BPMN, troubleshooting README |
 | Elena (Migrator) | Migration gallery card, `MIGRATION.md`, OpenRewrite integration, inline help, migration README |
 | Thomas (Newcomer) | Gallery, inline help, deployment-target selector, learning README with doc links, `processes.xml` generation |
 | Priya (API Consumer) | REST API, `operaton-starter-mcp` npm package, curl examples, self-hosted Docker, enterprise env-var config |
@@ -273,7 +273,7 @@ The repository spans Java (server, templates, archetypes) and JavaScript (Node.j
 - **Architecture:** Single Page Application (SPA)
 - **Accessibility:** WCAG 2.1 AA compliance; explicit requirement for **keyboard-complete flow** — the full configuration-and-download journey must be completable without a mouse (tab order, visible focus rings, Enter to submit)
 - **Browser support:** Latest 2 versions of Chrome, Firefox, Safari, Edge
-- **Live preview:** Updates ≤200ms after any input change; preview renders **client-side from the metadata payload** — no server round-trip required for preview updates
+- **Live preview:** File tree updates ≤200ms after any configuration change; preview renders **client-side from the metadata payload** — no server round-trip required for preview updates; clicking a file in the tree shows its content inline without triggering generation
 - **Responsive:** Desktop-first; mobile: usable, not optimised
 
 ### REST API
@@ -393,10 +393,10 @@ Project types are phased by adoption value, not technical complexity. Process Ap
 ### Project Generation Engine
 
 - **FR1:** The system can generate a project archive for any supported project type × build system combination
-- **FR2:** The system generates projects that compile and pass their included tests without manual modification
+- **FR2:** The system generates projects that compile and pass their included tests without manual modification; generated projects are complete, working examples — not minimal scaffolds — with meaningful process logic, valid BPMN diagrams, and implemented delegates that a developer can run, study, and extend
 - **FR3:** The system always generates projects targeting the current stable Operaton release (no user-selectable version)
 - **FR4:** The system propagates developer identity (Group ID, Artifact ID, project name) consistently across all generated files — Java package names, BPMN process IDs, Spring application name
-- **FR5:** The system generates a skeleton BPMN process file for applicable project types
+- **FR5:** The system generates a BPMN process file for applicable project types; the BPMN file contains a complete, graphically valid diagram — all flow elements include `BPMNShape` and `BPMNEdge` layout data so the process renders correctly in any BPMN-aware tool without manual repositioning
 - **FR6:** The system generates a `processes.xml` deployment descriptor for Process Archive projects, pre-configured with the selected deployment target
 - **FR7:** The system generates target-platform-appropriate artifact configuration (WAR/JAR) for Process Archive projects, matching the platform selected via FR12
 - **FR8:** The generation engine is a single shared implementation invoked by all channels — web UI, REST API, CLI, and MCP module; no per-channel generation logic
@@ -408,25 +408,27 @@ Project types are phased by adoption value, not technical complexity. Process Ap
 - **FR10:** A developer selects a build system in two steps: first choosing between Maven and Gradle; if Gradle is chosen, a DSL sub-option (Groovy or Kotlin) becomes visible and must be selected before generation; the DSL sub-option is hidden when Maven is selected
 - **FR11:** A developer can specify Group ID, Artifact ID, and project name as project identity
 - **FR12:** A developer can select a target platform for Process Archive projects (MVP platforms: Tomcat, Wildfly; list is extensible); the selected platform determines artifact type (WAR/JAR) and deployment descriptor pre-configuration
-- **FR13:** A developer can choose between Dependabot and Renovate for dependency update configuration
+- **FR13:** Dependency update configuration is an opt-in Extras option (unchecked by default); when a developer checks it, a sub-option for flavour (Dependabot or Renovate) becomes visible and must be selected before generation; the sub-option is hidden when the Dependency Updates option is unchecked
 - **FR14:** A developer can opt in to Docker Compose file generation; this option is only presented for project types that support containerised embedded deployment (Process Application); it is not shown for Process Archive projects
 - **FR15:** A developer can opt in to GitHub Actions CI/CD skeleton generation
+- **FR56:** All Extras options (Dependency Updates, Docker Compose, GitHub Actions) are unchecked/off by default; a developer must explicitly enable each one
 - **FR16:** A developer can share a project configuration as a URL that restores and pre-fills the configuration form when opened
 
 ### Web UI
 
 - **FR17:** A developer can configure a project and download a ZIP archive through a browser
+- **FR60:** The web UI serves a `favicon.ico` derived from the Operaton logo so that browser tabs and bookmarks display the Operaton brand mark; no 404 error is emitted for `/favicon.ico` requests
 - **FR18:** A developer can browse available project types as a visual gallery with capability descriptions
-- **FR19:** A developer can see a live file tree preview of the project to be generated, updated as configuration options change
+- **FR19:** A developer can see a live file tree preview of the project to be generated, updated as configuration options change; the preview is interactive — selecting a file shows its content
 - **FR20:** A developer can access inline contextual help for any configuration option without leaving the page
-- **FR21:** A developer can open a generated project directly in IntelliJ IDEA or VS Code from the web UI
 - **FR22:** A developer can complete the full configuration and download flow without using a mouse
 - **FR23:** The web UI populates all configuration options and gallery content from the REST API metadata endpoint
-- **FR40:** A developer can access the tool through two distinct entry points: a direct configuration form (for developers who know what they want) and a project gallery (for discovery-oriented developers), with both leading to the same generation flow
+- **FR40:** A developer can access the tool through two distinct entry points: a direct configuration form (for developers who know what they want) and a project gallery (for discovery-oriented developers), with both leading to the same generation flow; the gallery landing page (`/`) presents project types first, followed by pre-configured use-case examples — this order ensures developers understand the available project types before seeing curated examples built on top of them
 - **FR41:** A developer can access an explanation distinguishing between available project types to inform their selection
 - **FR45:** When a developer reaches the configuration details page via the gallery or a direct project-type entry point, the project type is pre-set from that selection and displayed as read-only context — it is not re-presented as an editable field on the details page
 - **FR46:** Configuration options on the details page are conditionally rendered based on the selected project type; options that do not apply to the current project type are hidden entirely (not shown as disabled); the visible option set updates if the developer navigates back and changes the project type selection
 - **FR43:** The web UI renders the project file tree preview from template manifests in the metadata response, without a per-change server round-trip
+- **FR57:** When a developer clicks a file in the File Structure Preview, the file's representative content is shown in a content pane adjacent to the file tree; the content pane updates when a different file is selected; no download or generation step is required to see the content; the content is served as static template source included in the metadata response (`TemplateManifestEntry.previewContent`) — it is representative of the template structure and does not dynamically reflect the current form state; this preserves the no-server-round-trip invariant from FR43
 
 ### REST API
 
@@ -450,10 +452,12 @@ Project types are phased by adoption value, not technical complexity. Process Ap
 
 - **FR33:** Every generated project includes a README with project-specific next-step instructions tailored to the selected project type and build system; all URLs and commands in the README (Cockpit URL, troubleshooting port instructions, docker-compose launch steps) reflect the actual project configuration (e.g., server port, Docker Compose enabled/disabled)
 - **FR45:** Every generated project includes the appropriate build tool wrapper — Maven wrapper (`mvnw`, `mvnw.cmd`, `.mvn/wrapper/maven-wrapper.properties`) for Maven projects, Gradle wrapper (`gradlew`, `gradlew.bat`, `gradle/wrapper/gradle-wrapper.{jar,properties}`) for Gradle projects — enabling the project to be built without a globally installed Maven or Gradle installation
-- **FR34:** Every generated project includes a configured dependency update file (Dependabot or Renovate) ready to use without modification
+- **FR34:** When a developer opts in to Dependency Updates (FR13), the generated project includes a configured dependency update file (Dependabot or Renovate, per their sub-option selection) ready to use without modification; projects generated without this option enabled do not include a dependency update file
 - **FR35:** Generated Process Application projects include a GitHub Actions CI/CD workflow that passes on first push
 - **FR36:** Generated projects with Docker Compose enabled include a `docker-compose.yml` that starts the application and a multi-stage `Dockerfile` (Maven build stage + runtime image) for containerised builds
-- **FR44:** Generated Process Application projects include a `JavaDelegate` implementation stub wired to the skeleton BPMN service task and a JUnit integration test (`ProcessIT`) that deploys and executes the skeleton process end-to-end without modification; the test uses `MockExpressionManager` so that the `${skeletonDelegate}` BPMN expression resolves to the stub during testing
+- **FR44:** Generated projects include complete, runnable delegate implementations — not stub placeholders — wired to the BPMN service tasks; each delegate performs a meaningful operation representative of the project type (e.g. a Process Application delegate logs execution context and sets an output variable; a DMN project includes an evaluator delegate that invokes a decision table); a JUnit test deploys and executes the full process end-to-end without modification
+- **FR58:** Generated projects have an elaborated, well-separated file structure appropriate to the project type: domain logic, process resources, configuration, and tests are placed in distinct packages and source directories; no application logic lives in a default/root package; the structure is a reference example a developer can extend directly, not a flat minimal scaffold
+- **FR59:** Every generated project compiles, all included tests pass, and the application starts without errors on first run — the CI test matrix verifies all supported project-type × build-system combinations on every change to the generation templates
 
 ### Self-Hosting & Operations
 

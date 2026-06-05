@@ -2,7 +2,7 @@
 name: operaton-starter
 description: Open-source Operaton project generator at start.operaton.org
 status: final
-updated: 2026-05-31
+updated: 2026-06-01
 sources:
   - imports/ux-design-specification.md
   - imports/ux-color-themes.html
@@ -131,6 +131,23 @@ components:
     radius: '{rounded.s}'
     padding: '1rem'
     font: '{typography.code}'
+    item-hover-background: '{colors.neutral-200}'
+    item-selected-background: '{colors.primary}/10'
+    item-selected-foreground: '{colors.primary}'
+    item-selected-border-left: '2px solid {colors.primary}'
+  file-content-pane:
+    background: '{colors.neutral-50}'
+    border: '1px solid {colors.neutral-200}'
+    radius: '{rounded.s}'
+    padding: '1rem'
+    font: '{typography.code}'
+    filename-foreground: '{colors.neutral-500}'
+    filename-fontSize: 0.75rem
+  conditional-sub-option:
+    background: '{colors.neutral-50}'
+    border-left: '2px solid {colors.neutral-200}'
+    padding-left: '1rem'
+    margin-top: '0.5rem'
 ---
 
 ## Brand & Style
@@ -275,7 +292,15 @@ Container in the right panel of ConfigureView, below the file tree preview. `{co
 
 ### FileTreePreview (`{components.file-tree-preview}`)
 
-Read-only file structure display. `{colors.neutral-50}` background, `{colors.neutral-200}` border, `{rounded.s}` corners, `1rem` padding. Font: `{typography.code}`. Not an interactive widget — display only.
+Interactive file structure display. `{colors.neutral-50}` background, `{colors.neutral-200}` border, `{rounded.s}` corners, `1rem` padding. Font: `{typography.code}`. Items are clickable — hover state uses `{components.file-tree-preview.item-hover-background}`; the selected file item gains a left-border accent (`{components.file-tree-preview.item-selected-border-left}`) and background tint (`{components.file-tree-preview.item-selected-background}`).
+
+### FileContentPane (`{components.file-content-pane}`)
+
+Adjacent content pane that shows the representative source content of the selected file from the file tree. `{colors.neutral-50}` background, `{colors.neutral-200}` border, `{rounded.s}` corners, `1rem` padding. Font: `{typography.code}`. A filename label above the content uses `{components.file-content-pane.filename-foreground}` and `{components.file-content-pane.filename-fontSize}`. Content is static template source (`TemplateManifestEntry.previewContent`) — it does not dynamically reflect the current form state.
+
+### ConditionalSubOption (`{components.conditional-sub-option}`)
+
+Revealed below a parent option when the parent is enabled (e.g., Gradle DSL after Gradle is selected; Dependency Updates flavour after the checkbox is checked). Uses a left-border indent visual (`{components.conditional-sub-option.border-left}`, `{components.conditional-sub-option.padding-left}`) and neutral-50 background to convey hierarchical relationship. Animated reveal: `max-height` transition 200ms ease-out (same as help accordion). Hidden entirely when the parent is unselected.
 
 ## Do's and Don'ts
 

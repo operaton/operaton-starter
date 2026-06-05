@@ -40,6 +40,7 @@ export interface TemplateManifestEntry {
   path: string
   condition?: string | null
   templateId: string
+  previewContent?: string | null
 }
 
 export interface ProblemDetail {

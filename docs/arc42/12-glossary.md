@@ -22,7 +22,7 @@
 | **GenerationEngine** | The single public API in `starter-templates`: `GenerationEngine.generate(ProjectConfig) → byte[]`. The only code that produces project archive ZIPs. All channels invoke this (directly or via REST). |
 | **ProjectConfig** | Java record in `org.operaton.dev.starter.templates.model` that carries all configuration for a generation request. The domain model. Not the same as the generated API DTO. |
 | **MetadataProvider** | Component in `starter-templates` that provides project type descriptors and template manifests. The source of truth for `GET /api/v1/metadata`. |
-| **TemplateManifest** | A flat list of `{ path, condition, templateId }` entries per project type. Enables client-side file tree preview without server round-trips. Part of the `GET /api/v1/metadata` response. |
+| **TemplateManifest** | A flat list of `{ path, condition, templateId, previewContent }` entries per project type. Enables client-side file tree preview and file content preview without server round-trips. Part of the `GET /api/v1/metadata` response. `previewContent` is static representative template source — not dynamically rendered from form state. |
 | **GenerationClient** | Strategy interface in `starter-archetypes`. MVP: `RestGenerationClient` (HTTP). Phase 2: `EmbeddedGenerationClient` (direct in-process call). |
 | **Spec freeze** | The point at which `openapi.yaml` is committed and client generation begins. Post-freeze changes require regenerating all clients. Enforced by CI `contract-check` job. |
 | **Channel** | Any consumer of the generation engine: web UI (`starter-web`), CLI (`starter-cli`), MCP (`starter-mcp`), REST API (direct curl/HTTP), `mvn archetype:generate` (`starter-archetypes`). All channels use the same engine. |

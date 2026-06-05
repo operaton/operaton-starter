@@ -37,6 +37,20 @@ class ApiControllerTest {
     }
 
     @Test
+    void metadata_returns_preview_content_for_template_entries() throws Exception {
+        var response = httpClient.send(
+                HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/api/v1/metadata"))
+                        .header("Accept", "application/json")
+                        .build(),
+                HttpResponse.BodyHandlers.ofString()
+        );
+
+        assertEquals(200, response.statusCode());
+        assertTrue(response.body().contains("\"previewContent\":\""),
+                "Expected metadata to include at least one non-null previewContent on a template entry");
+    }
+
+    @Test
     void generate_endpoint_supports_query_parameters_for_ide_deep_links() throws Exception {
         var response = httpClient.send(
                 HttpRequest.newBuilder(URI.create(

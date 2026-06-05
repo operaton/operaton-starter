@@ -6,21 +6,23 @@ export interface TreeNode {
   path: string
   isDir: boolean
   children?: TreeNode[]
+  entry?: TemplateManifestEntry
 }
 
 /**
  * Builds a tree structure from template manifest entries, evaluating conditions
  * and interpolating identity values (artifactId, groupId).
+ * Leaf nodes carry a reference to their source TemplateManifestEntry for preview lookup.
  */
 export function buildFileTree(
   manifest: TemplateManifestEntry[],
   config: ProjectConfig
 ): TreeNode[] {
-  const visiblePaths = manifest
+  const visibleItems = manifest
     .filter((entry) => evaluateCondition(entry.condition, config))
-    .map((entry) => interpolatePath(entry.path, config))
+    .map((entry) => ({ interpolatedPath: interpolatePath(entry.path, config), entry }))
 
-  return pathsToTree(visiblePaths)
+  return pathsToTree(visibleItems)
 }
 
 function interpolatePath(path: string, config: ProjectConfig): string {
@@ -31,11 +33,13 @@ function interpolatePath(path: string, config: ProjectConfig): string {
     .replace('{groupId}', config.groupId.replace(/\./g, '/'))
 }
 
-function pathsToTree(paths: string[]): TreeNode[] {
+function pathsToTree(
+  items: Array<{ interpolatedPath: string; entry: TemplateManifestEntry }>
+): TreeNode[] {
   const root: TreeNode[] = []
 
-  for (const path of paths) {
-    const parts = path.split('/')
+  for (const item of items) {
+    const parts = item.interpolatedPath.split('/')
     let current = root
 
     for (let i = 0; i < parts.length; i++) {
@@ -48,7 +52,8 @@ function pathsToTree(paths: string[]): TreeNode[] {
           name,
           path: parts.slice(0, i + 1).join('/'),
           isDir: !isLast,
-          children: isLast ? undefined : []
+          children: isLast ? undefined : [],
+          entry: isLast ? item.entry : undefined
         }
         current.push(node)
       }
