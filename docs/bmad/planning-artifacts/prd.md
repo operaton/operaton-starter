@@ -2,7 +2,7 @@
 stepsCompleted: ['step-01-init', 'step-02-discovery', 'step-02b-vision', 'step-02c-executive-summary', 'step-03-success', 'step-04-journeys', 'step-05-domain', 'step-06-innovation', 'step-07-project-type', 'step-08-scoping', 'step-09-functional', 'step-10-nonfunctional', 'step-11-polish', 'step-12-complete']
 workflowStatus: complete
 completedAt: '2026-03-27'
-updatedAt: '2026-05-29'
+updatedAt: '2026-06-05'
 inputDocuments: ['_bmad-output/brainstorming/brainstorming-session-2026-03-25-1.md']
 workflowType: 'prd'
 classification:
@@ -96,7 +96,7 @@ Operaton Starter is an open-source infrastructure tool with no authentication or
 
 Core generation engine supporting **2 project types (Process Application, Process Archive)** across Maven and Gradle (Groovy or Kotlin DSL) — 6 combinations total; Gradle DSL choice is a sub-option that appears only when Gradle is selected. Identity-aware scaffolding; each generated project is a **complete, working example** — graphically valid BPMN diagram, implemented delegates (not stubs), elaborated file structure with domain logic and tests in separate packages; deployment-target selector for Process Archive; always-latest Operaton version.
 
-Web UI at `start.operaton.org`: split landing (form + gallery), live file tree preview with clickable file content pane, capability tags, shareable config links, inline "explain this" help.
+Web UI at `start.operaton.org`: split landing (form + gallery), live file tree preview with clickable file content pane, capability tags, shareable config links, inline "explain this" help. Gallery second section: 4 use case examples (Leave Request, Loan Application, Incident Management, Order Fulfillment) — each self-contained, out-of-the-box runnable, with character-narrated onboarding README.
 
 Generated project extras (all off by default): purposeful README with next-steps (always included), optional Docker Compose, optional GitHub Actions CI/CD skeleton (green on first push), optional Dependency Updates (Dependabot or Renovate — flavour selected as a sub-option).
 
@@ -404,7 +404,7 @@ Project types are phased by adoption value, not technical complexity. Process Ap
 
 ### Project Configuration
 
-- **FR9:** A developer can select a project type (MVP: Process Application, Process Archive)
+- **FR9:** A developer selects a project type (MVP: Process Application, Process Archive) from the gallery/landing page before reaching the configuration details page; project type selection is a prerequisite to configuration, not a field on the configuration form
 - **FR10:** A developer selects a build system in two steps: first choosing between Maven and Gradle; if Gradle is chosen, a DSL sub-option (Groovy or Kotlin) becomes visible and must be selected before generation; the DSL sub-option is hidden when Maven is selected
 - **FR11:** A developer can specify Group ID, Artifact ID, and project name as project identity
 - **FR12:** A developer can select a target platform for Process Archive projects (MVP platforms: Tomcat, Wildfly; list is extensible); the selected platform determines artifact type (WAR/JAR) and deployment descriptor pre-configuration
@@ -421,14 +421,72 @@ Project types are phased by adoption value, not technical complexity. Process Ap
 - **FR18:** A developer can browse available project types as a visual gallery with capability descriptions
 - **FR19:** A developer can see a live file tree preview of the project to be generated, updated as configuration options change; the preview is interactive — selecting a file shows its content
 - **FR20:** A developer can access inline contextual help for any configuration option without leaving the page
+- ~~FR21 — IDE deep-links (IntelliJ IDEA, VS Code): removed. Browser-to-IDE protocol handlers (`idea://`, `vscode://`) require the IDE to be installed and registered as a URL handler, which cannot be guaranteed; the feature is not reliably deliverable across environments and has been explicitly descoped. Download + manual import remains the supported path.~~
 - **FR22:** A developer can complete the full configuration and download flow without using a mouse
 - **FR23:** The web UI populates all configuration options and gallery content from the REST API metadata endpoint
 - **FR40:** A developer can access the tool through two distinct entry points: a direct configuration form (for developers who know what they want) and a project gallery (for discovery-oriented developers), with both leading to the same generation flow; the gallery landing page (`/`) presents project types first, followed by pre-configured use-case examples — this order ensures developers understand the available project types before seeing curated examples built on top of them
+- **FR67:** The gallery displays a curated set of use case examples as a second section below the project types; each example card shows a title, one-sentence description, and capability tags; clicking a card pre-fills the configuration form and navigates to the details page; the four MVP use case examples are defined in the section below
 - **FR41:** A developer can access an explanation distinguishing between available project types to inform their selection
-- **FR45:** When a developer reaches the configuration details page via the gallery or a direct project-type entry point, the project type is pre-set from that selection and displayed as read-only context — it is not re-presented as an editable field on the details page
-- **FR46:** Configuration options on the details page are conditionally rendered based on the selected project type; options that do not apply to the current project type are hidden entirely (not shown as disabled); the visible option set updates if the developer navigates back and changes the project type selection
+- **FR45:** The configuration details page requires a project type to be present in the route/navigation state; if a developer navigates directly to the details page without a project type (e.g., via bookmarked URL with no project type param), they are redirected to the gallery to make a selection first; once on the details page, the project type is displayed as read-only context (e.g., a header or badge) and is not an editable field — there is no project type selector on the details page
+- **FR46:** Configuration options on the details page are conditionally rendered based on the project type carried in from the gallery; options that do not apply to the selected project type are hidden entirely (not shown as disabled); to use a different project type, the developer returns to the gallery and selects again — the details page never exposes a project type control
 - **FR43:** The web UI renders the project file tree preview from template manifests in the metadata response, without a per-change server round-trip
-- **FR57:** When a developer clicks a file in the File Structure Preview, the file's representative content is shown in a content pane adjacent to the file tree; the content pane updates when a different file is selected; no download or generation step is required to see the content; the content is served as static template source included in the metadata response (`TemplateManifestEntry.previewContent`) — it is representative of the template structure and does not dynamically reflect the current form state; this preserves the no-server-round-trip invariant from FR43
+- **FR57:** When a developer clicks a file in the File Structure Preview, the file's representative content is shown in a content pane adjacent to the file tree; the content pane updates when a different file is selected and whenever any configuration value changes; no download or generation step is required to see the content; the content pane renders the actual content derived from the current form state — template placeholders in `TemplateManifestEntry.previewContent` are substituted client-side with the current configuration values (Group ID, Artifact ID, project name, build system, selected extras, etc.) so the developer sees exactly what the generated file will contain for their configuration; this substitution is performed in the browser without a server round-trip, preserving the no-server-round-trip invariant from FR43; `TemplateManifestEntry.previewContent` contains named placeholders (e.g., `{{groupId}}`, `{{artifactId}}`) that the client replaces with the live form values on every change
+
+### Use Case Examples
+
+Use case examples are pre-configured Process Application projects available through all generation channels (web UI gallery, REST API, CLI, MCP). Each example is identified by a stable `useCaseId` (e.g., `leave-request`, `loan-application`) that is discoverable via `GET /api/v1/metadata` and passable to `POST /api/v1/generate`; the server resolves the `useCaseId` to a fixed parameter bundle and generates the project using the same engine as any other request — no separate generation path exists. Each is **self-contained and out-of-the-box runnable**: `docker compose up -d` (if applicable) followed by `./mvnw spring-boot:run` produces a working, explorable application with no manual configuration. MVP examples each have at most one external system dependency; this constraint applies to current MVP examples and will be re-evaluated per example at post-MVP planning. Operaton's built-in Tasklist is the human task UI for all examples; no custom frontend is generated.
+
+**Design principles shared across all examples:**
+- User roles and groups are seeded via `data.sql` at startup — not application startup code — making the user set declarative and visible
+- User names are human (e.g., `alice`, `bob`) rather than generic (`user1`, `admin`); passwords match the username for discoverability
+- The generated README uses character-narrated onboarding: it names the pre-seeded users and walks the developer through the Tasklist as those characters, so the first-run experience feels directed rather than exploratory
+- Each example's integration test suite includes an assertion that the process definition is deployed and the engine is reachable before exercising any business-logic assertions — this catches silent BPMN deployment failures caused by incorrect classpath paths
+- Examples that use timer events include a test-profile mechanism ensuring timers fire within seconds during `mvn test`, without relying on wall-clock sleep; the test build must activate this profile (e.g. via Maven Surefire configuration or `@ActiveProfiles`) so the override is guaranteed to apply
+
+**MVP use case examples (4):**
+
+| ID | Name | External (Docker) | Key BPMN concept | User roles |
+|----|------|-------------------|-----------------|------------|
+| UC-01 | Leave Request | None | User tasks, candidate groups | `alice` (employee), `bob` (manager), `carol` (HR) |
+| UC-02 | Loan Application | WireMock | DMN decision + service tasks | `jack` (underwriter), `kate` (applicant) |
+| UC-03 | Incident Management | WireMock | Timer boundary event + escalation | `henry` (first-line), `iris` (second-line) |
+| UC-04 | Order Fulfillment | WireMock | Service tasks + conditional routing | `dave` (warehouse) |
+
+**UC-01 — Leave Request**
+- BPMN: `Start(employee submits) → UserTask(manager reviews) → Gateway → [approved] UserTask(HR records) → End / [rejected] UserTask(employee notified) → End`
+- No external system. Embedded H2 database configured to persist for the full application-context lifetime (no data loss on hot-reload)
+- Teaches: embedded Operaton, Tasklist, candidate groups, BPMN happy/rejection paths
+- Post-start: `bob/bob` logs into Tasklist at `http://localhost:8080/operaton/app/tasklist` and finds one waiting task
+
+**UC-02 — Loan Application**
+- BPMN: `Start → ServiceTask(credit score check [REST]) → BusinessRuleTask(DMN: risk assessment) → Gateway → [low risk] auto-approve / [medium risk] UserTask(underwriter review) / [high risk] ServiceTask(auto-reject)`
+- DMN file: `risk-assessment.dmn` (inputs: `creditScore`, `loanAmount` → output: `riskLevel`: low/medium/high); hit policy `FIRST`
+- External: WireMock stubs credit-score API; stubs committed in `src/main/resources/wiremock/mappings/`
+- Teaches: DMN business rules alongside BPMN, service task HTTP integration, decision-driven branching
+- DMN engine support is required; the generated project must explicitly declare this dependency (it is not guaranteed by transitive resolution from the base Operaton starter)
+
+**UC-03 — Incident Management**
+- BPMN: `Start(incident reported) → UserTask(first-line triage) [BoundaryTimerEvent PT1H → escalate] → Gateway → [resolved] ServiceTask(close [REST]) → End / [timer] UserTask(second-line engineer) → ServiceTask(post-mortem notify [REST]) → End`
+- External: WireMock stubs close-ticket and notify APIs
+- Teaches: boundary timer events, SLA escalation, test-profile-controlled time advancement without wall-clock sleep
+- Timer constraint: the generated project must include a test-profile mechanism that shortens the boundary timer for testing; the test build must guarantee this profile is active during `mvn test`; `ClockUtil` is used to advance the engine's internal clock; `ClockUtil.reset()` must be called after each timer-dependent test to prevent cross-test pollution
+
+**UC-04 — Order Fulfillment**
+- BPMN: `Start(order placed) → ServiceTask(validate inventory [REST]) → Gateway → [in stock] ServiceTask(charge payment [REST]) → UserTask(pack & ship) → ServiceTask(notify customer [REST]) → End / [out of stock] ServiceTask(notify backorder [REST]) → End`
+- External: WireMock stubs inventory, payment, and notification APIs; H2 persistence
+- Teaches: multi-step service task orchestration, conditional routing on external API results, mixed service/human task process
+- WireMock startup: test must wait for `/__admin/mappings` health check before first service task invocation
+
+**Post-MVP use case examples** (deferred because the external dependency requires more onboarding friction than WireMock and is lower-frequency as a teaching goal for the initial Explorer audience; these will be planned and scoped individually):
+- `document-approval` — multi-level review with MinIO file archive (3 user roles, MinIO Docker service; deferred: file storage is infrastructure, not process logic — Explorer audience learns Operaton, not MinIO)
+- `order-fulfillment-db` — order fulfillment with PostgreSQL persistence (deferred: production datasource configuration is a Day 2 concern; H2 is sufficient for the Explorer's first session)
+
+- **FR68:** Each MVP use case example generates a project that satisfies the self-containment invariant: `docker compose up -d` (if applicable) followed by `./mvnw spring-boot:run` starts successfully with no manual configuration; all included JUnit tests pass; each example's integration test suite must include an assertion verifying that the process definition is deployed and the engine is reachable before any business-logic assertions execute
+- **FR69:** Each MVP use case example seeds its user roles and groups via `data.sql` at startup; username and password are identical for each user (e.g., `alice/alice`); roles map to BPMN `candidateGroups` expressions in the process definition
+- **FR70:** Each MVP use case example that requires an external system includes a `docker-compose.yml` with exactly one external service; the compose file includes a health check on the external service and a `depends_on: condition: service_healthy` directive; the Spring Boot app runs on the host, not in Docker; examples with no external dependency (UC-01) require no Docker Compose file
+- **FR71:** Each MVP use case example includes a character-narrated "Getting Started in 5 Minutes" README section that names the pre-seeded users, describes the process scenario in plain language, and guides the developer through the Tasklist step-by-step as the named characters — not as abstract "User 1 / User 2" roles
+- **FR72:** WireMock stub mapping files for examples that use WireMock are committed in `src/main/resources/wiremock/mappings/` and mounted into the WireMock container via a bind-mount in `docker-compose.yml`; no stubs are configured in Java code; the WireMock container image version is pinned to a specific minor version in the template — upgrading the pinned version is an explicit decision, not an automatic pull
+- **FR73:** Use case examples are discoverable and generatable via all channels, not just the web UI gallery; `GET /api/v1/metadata` returns the list of available use case examples with their `useCaseId`, display name, description, capability tags, and pre-filled parameter bundle; `POST /api/v1/generate` accepts an optional `useCaseId` parameter which resolves to a fixed parameter bundle on the server and generates the project using the standard engine — no separate generation path exists for use case examples
 
 ### REST API
 

@@ -2,8 +2,8 @@
 stepsCompleted: ['step-01-validate-prerequisites', 'step-02-design-epics', 'step-03-create-stories', 'step-04-final-validation']
 workflowStatus: complete
 completedAt: '2026-03-27'
-updatedAt: '2026-06-03'
-updateReason: 'Targeted update: synced FR inventory with PRD changes — added FR56-FR61, updated FR2/FR5/FR13/FR44 definitions, removed FR21 (IDE deep-link, delivered but removed from PRD), updated coverage map and epic FR lists'
+updatedAt: '2026-06-05'
+updateReason: 'Added Epic 8: Use Case Examples — 4 MVP examples (Leave Request, Loan Application, Incident Management, Order Fulfillment); added FR67–72, UX-DR12; updated Epic 4 summary and FR coverage map'
 inputDocuments:
   - 'docs/bmad/planning-artifacts/prd.md'
   - 'docs/bmad/planning-artifacts/architecture.md'
@@ -78,6 +78,13 @@ FR53: The repository documentation specifies all credentials that must be config
 FR58: Generated projects have an elaborated, well-separated file structure appropriate to the project type: domain logic, process resources, configuration, and tests are placed in distinct packages and source directories; no application logic lives in a default/root package; the structure is a reference example a developer can extend directly, not a flat minimal scaffold
 FR59: Every generated project compiles, all included tests pass, and the application starts without errors on first run — the CI test matrix verifies all supported project-type × build-system combinations on every change to the generation templates
 FR61: Every generated project includes the appropriate build tool wrapper — Maven wrapper (`mvnw`, `mvnw.cmd`, `.mvn/wrapper/maven-wrapper.properties`) for Maven projects, Gradle wrapper (`gradlew`, `gradlew.bat`, `gradle/wrapper/gradle-wrapper.{jar,properties}`) for Gradle projects — enabling the project to be built without a globally installed Maven or Gradle installation
+FR67: The gallery displays a curated set of use case examples as a second section below the project types; each example card shows a title, one-sentence description, and capability tags; clicking a card pre-fills the configuration form and navigates to the details page; the four MVP use case examples are: Leave Request, Loan Application, Incident Management, Order Fulfillment
+FR68: Each MVP use case example generates a project that satisfies the self-containment invariant: `docker compose up -d` (if applicable) followed by `./mvnw spring-boot:run` starts successfully with no manual configuration; all included JUnit tests pass; the first test assertion verifies the process definition deployed
+FR69: Each MVP use case example seeds its user roles and groups via `data.sql` at startup; username and password are identical for each user (e.g., `alice/alice`); roles map to BPMN `candidateGroups` expressions in the process definition
+FR70: Each MVP use case example that requires an external system includes a `docker-compose.yml` with exactly one external service; health check + `depends_on: condition: service_healthy`; Spring Boot app runs on the host
+FR71: Each MVP use case example includes a character-narrated "Getting Started in 5 Minutes" README section that names the pre-seeded users and guides the developer through Tasklist step-by-step as those characters
+FR72: WireMock stub mapping files for examples that use WireMock are committed in `src/main/resources/wiremock/mappings/` and mounted via bind-mount in `docker-compose.yml`; no stubs configured in Java code; WireMock container image version pinned to specific minor version in template
+FR73: Use case examples discoverable and generatable via all channels; `GET /api/v1/metadata` returns useCaseId list with display name, description, tags, and parameter bundle; `POST /api/v1/generate` accepts optional `useCaseId` resolving to a fixed parameter bundle — no separate generation path
 
 ### NonFunctional Requirements
 
@@ -133,12 +140,12 @@ UX-DR2: The project gallery displays visual cards for each project type with cap
 UX-DR3: Every configuration option on the form has inline contextual help accessible without leaving the page — including "?" icons that expand explanatory text distinguishing project types (covers FR20, FR41)
 UX-DR4: The live file tree preview renders client-side from template manifests in the metadata response and updates within 200ms of any configuration change, with no server round-trip per change (covers FR19, FR43, NFR2)
 UX-DR5: The full configuration and download flow is keyboard-complete — every element focusable via Tab, all actions triggerable via keyboard, with visible focus rings throughout (covers FR22, NFR12)
-UX-DR6: IDE deep-link buttons in the web UI open the generated project directly in IntelliJ IDEA or VS Code (covers FR21)
 UX-DR7: The web UI generates and displays a shareable URL encoding the current configuration that restores and pre-fills the form when opened (covers FR16)
 UX-DR8: The web UI visual design matches the operaton.org and docs.operaton.org design system — colors, typography, and spacing extracted as Tailwind design tokens from the operaton.org Jekyll source (covers NFR20, ARCH-8)
 UX-DR9: Browser support covers the latest 2 major versions of Chrome, Firefox, Safari, and Edge (covers NFR16)
 UX-DR10: The web UI meets WCAG 2.1 Level AA, validated by axe-core in CI on every PR (covers NFR11)
 UX-DR11: The web UI visual design is professional, polished, and delightful — clean and purposeful without being bloated; every element earns its place; the experience should feel like a joy to use, not just functional
+UX-DR12: The gallery's use case example cards (section 2) visually distinguish themselves from project type cards (section 1); each card carries a title, one-sentence scenario description, and capability tags (e.g., `multi-role`, `docker-compose`, `DMN`, `timer`); clicking a card navigates to the details page with form pre-filled for that example (covers FR67)
 
 ### FR Coverage Map
 
@@ -162,7 +169,7 @@ FR17: Epic 4 — Browser-based ZIP download
 FR18: Epic 4 — Visual project gallery
 FR19: Epic 4 — Live file tree preview
 FR20: Epic 4 — Inline contextual help
-FR21: Epic 4 — IDE deep-link (IntelliJ, VS Code) [delivered in Story 4.6; removed from PRD after delivery]
+FR21: removed — IDE deep-links (IntelliJ IDEA, VS Code) explicitly descoped; browser-to-IDE protocol handlers not reliably deliverable across environments
 FR22: Epic 4 — Keyboard-complete flow
 FR23: Epic 4 — Web UI driven from metadata endpoint
 FR24: Epic 3 — `POST /api/v1/generate`
@@ -203,6 +210,13 @@ FR58: Epic 2 — Elaborated, well-separated file structure in generated projects
 FR59: Epic 2 — Every generated project compiles/tests pass/starts; CI validates all combinations (Stories 2.7, 2.8)
 FR60: Epic 4 — Web UI serves favicon.ico derived from Operaton logo
 FR61: Epic 2 — Generated projects include build tool wrapper (mvnw / gradlew)
+FR67: Epic 4 — Gallery use case examples section (Leave Request, Loan Application, Incident Management, Order Fulfillment cards)
+FR68: Epic 8 — Self-containment invariant for all use case example generated projects
+FR69: Epic 8 — data.sql user/group seeding in use case example generated projects
+FR70: Epic 8 — Single-service Docker Compose with health checks per use case example
+FR71: Epic 8 — Character-narrated README onboarding in use case example generated projects
+FR72: Epic 8 — WireMock stubs as committed files (mappings/) in use case examples; pinned container version
+FR73: Epic 3 + Epic 8 — useCaseId in metadata response and as optional param in POST /api/v1/generate
 
 ## Epic List
 
@@ -219,15 +233,15 @@ Any developer can invoke the pure-Java generation engine and receive a valid, co
 **NFRs:** NFR1 (partial), NFR13, NFR14, NFR17, NFR21
 
 ### Epic 3: REST API — Programmatic Project Generation
-Any developer with internet access (or a curl command) can generate an Operaton project via `POST /api/v1/generate`, inspect all configuration options via the metadata endpoint, and read the OpenAPI spec — making the service usable from any tool, script, or integration.
-**FRs covered:** FR24–27, FR39, FR42 (partial — OpenAPI generator toolchain wired)
+Any developer with internet access (or a curl command) can generate an Operaton project via `POST /api/v1/generate`, inspect all configuration options via the metadata endpoint, and read the OpenAPI spec — making the service usable from any tool, script, or integration. Use case examples are discoverable via metadata and generatable via `useCaseId` parameter on the same endpoint.
+**FRs covered:** FR24–27, FR39, FR42 (partial — OpenAPI generator toolchain wired), FR73 (partial — useCaseId in metadata + generate)
 **ARCH covered:** ARCH-11, ARCH-15, ARCH-16, ARCH-17
 **NFRs:** NFR1, NFR5, NFR7, NFR8, NFR9, NFR10, NFR18
 
 ### Epic 4: Web UI — Browser-Based Project Generation
-Practitioners complete configuration and download a ZIP in under 30 seconds. Explorers discover their project type through a visual gallery. Both enjoy a professional, keyboard-accessible, operaton.org-consistent interface with live preview, interactive file content pane, and shareable config URLs — benchmarked against start.spring.io and code.quarkus.io.
-**FRs covered:** FR16–20, FR22–23, FR40–41, FR43, FR45, FR46, FR56, FR57, FR60
-**UX-DRs covered:** UX-DR1 through UX-DR11
+Practitioners complete configuration and download a ZIP in under 30 seconds. Explorers discover their project type through a visual gallery — including four use case example cards that pre-fill the form for real-world scenarios. Both enjoy a professional, keyboard-accessible, operaton.org-consistent interface with live preview, interactive file content pane, and shareable config URLs — benchmarked against start.spring.io and code.quarkus.io.
+**FRs covered:** FR16–20, FR22–23, FR40–41, FR43, FR45, FR46, FR56, FR57, FR60, FR67
+**UX-DRs covered:** UX-DR1 through UX-DR12
 **ARCH covered:** ARCH-8
 **NFRs:** NFR2, NFR3, NFR11, NFR12, NFR16, NFR20
 
@@ -246,6 +260,11 @@ Platform engineers and enterprise teams run a private Operaton Starter instance 
 Every tagged release automatically publishes to all distribution channels — Docker Hub, Maven Central, and npm — via a single JReleaser-orchestrated GitHub Actions workflow. The release process is fully documented including all required secrets.
 **FRs covered:** FR49–53
 **NFRs:** (none additional)
+
+### Epic 8: Use Case Examples — Self-Contained Generated Projects
+Four self-contained, out-of-the-box runnable use case example projects are available in the gallery and generatable via all channels using a `useCaseId` parameter. Each demonstrates a distinct BPMN concept (user tasks, DMN decisions, timer escalation, service task orchestration), seeds realistic user roles via `data.sql`, and — where an external system is needed — includes a single-service Docker Compose file with health checks. Every example is validated in the CI matrix alongside the core project types.
+**FRs covered:** FR68–73
+**NFRs:** NFR17 (CI validation extended to cover use case examples)
 
 ---
 
@@ -721,6 +740,10 @@ So that I can automate project generation from any HTTP client, script, or integ
 **When** inspected
 **Then** CORS is configured to allow browser requests from `start.operaton.org` and `localhost`; self-hosted instances can override allowed origins via environment variable
 
+**Given** a `POST /api/v1/generate` request that includes an optional `useCaseId` field
+**When** the `useCaseId` matches a known use case example
+**Then** the server resolves the parameter bundle for that use case and uses those values for generation; if `useCaseId` is absent the request body is used as-is; if `useCaseId` is unknown the endpoint returns `400 Bad Request` with a Problem Details body naming the invalid value
+
 **Given** the `docker-compose.dev.yml` at the project root
 **When** expanded in this story to include the backend service
 **Then** a `starter-web` developer can run `docker compose -f docker-compose.dev.yml up` to start the backend API at `http://localhost:8080`; the Vite dev server in `starter-web` proxies API calls to this backend — no Epic 6 work is required for local frontend development to function
@@ -752,6 +775,10 @@ So that I can build clients and previews driven entirely by the API without hard
 **Given** no hardcoded option lists exist in `starter-web`, CLI, or MCP
 **When** those channels need configuration options
 **Then** they fetch from `GET /api/v1/metadata` — the metadata endpoint is the single source of truth for all channels
+
+**Given** the metadata response
+**When** inspected for use case examples
+**Then** it includes a `useCaseExamples[]` array; each entry contains `useCaseId`, `displayName`, `description`, `tags[]`, and a `parameterBundle` (the fixed configuration values to pre-fill); all four MVP examples (UC-01 through UC-04) are present
 
 **Given** the metadata response
 **When** measured
@@ -1043,21 +1070,13 @@ So that I know exactly what files will be generated before I download the ZIP.
 **When** rendered at mobile width (< 768px)
 **Then** it is shown as a `<details>` disclosure element below the form with summary text "File Structure Preview"; it is collapsed by default and expands on click; the file tree is still fully navigable when expanded
 
-### Story 4.6: Download, IDE Deep-Links & Shareable Config URLs
+### Story 4.6: Shareable Config URLs
 
 As a **developer who has configured their project**,
-I want to open the generated project directly in my IDE and share my configuration with teammates as a URL,
-So that I save time on import steps and colleagues can reproduce my exact setup instantly.
+I want to share my configuration with teammates as a URL,
+So that colleagues can reproduce my exact setup instantly.
 
 **Acceptance Criteria:**
-
-**Given** a form with all required fields valid
-**When** the configuration is complete (no prior download required)
-**Then** an IntelliJ IDEA deep-link button and a VS Code deep-link button are shown in an action panel alongside the file tree preview; clicking the IntelliJ button constructs and opens `idea://com.intellij.ide.starter?url={encoded_generate_url}` where `{encoded_generate_url}` is the full `POST /api/v1/generate` URL with form state encoded as query params; clicking the VS Code button opens `vscode://vscjava.vscode-spring-initializr/open?url={encoded_generate_url}` with the same encoding scheme
-
-**Given** an IDE deep-link button is clicked
-**When** the IDE handles the URL scheme
-**Then** the IDE downloads the ZIP from `POST /api/v1/generate` (using the encoded configuration params) and imports the project — no file is required in the browser's Downloads folder; the service remains stateless
 
 **Given** a user has configured the form with non-default values
 **When** they click the "Copy Shareable Link" button in the action panel
@@ -1460,3 +1479,185 @@ So that I can configure the repository secrets once and have confidence the rele
 **Given** the release documentation
 **When** the prerequisite groupId claim (ARCH-14) is not yet complete
 **Then** the documentation explicitly calls it out as a one-time prerequisite with a link to `central.sonatype.com` and instructions for the claim process
+
+---
+
+## Epic 8: Use Case Examples — Self-Contained Generated Projects
+
+Four self-contained, out-of-the-box runnable use case example projects are available in the gallery and generatable via all channels. Each demonstrates a distinct BPMN concept (user tasks, DMN decisions, timer escalation, service task orchestration), seeds realistic user roles via `data.sql`, and — where an external system is needed — includes a single-service Docker Compose file with health checks. Every example is validated in the CI matrix alongside the core project types.
+
+### Story 8.1: UC-01 Leave Request — HR Approval Workflow (FR68–71)
+
+As a **developer new to Operaton**,
+I want a pre-built leave request approval example I can run in under 2 minutes,
+So that I immediately see how Operaton handles multi-role human task workflows using only the built-in Tasklist.
+
+**Acceptance Criteria:**
+
+**Given** the Leave Request example project is generated and extracted
+**When** the developer runs `./mvnw spring-boot:run`
+**Then** the application starts successfully on port 8080 with no manual configuration; no Docker Compose is required; the Operaton Tasklist is accessible at `http://localhost:8080/operaton/app/tasklist`
+
+**Given** the started application
+**When** a process instance is started
+**Then** a task appears in the Tasklist inbox of user `bob` (manager group); no other setup is needed to see the task
+
+**Given** the generated `src/main/resources/data.sql`
+**When** inspected
+**Then** it seeds three users (`alice/alice`, `bob/bob`, `carol/carol`) into Operaton's identity tables and assigns them to groups `employees`, `managers`, and `hr` respectively; BPMN `candidateGroups` attributes match these group names exactly
+
+**Given** the BPMN process `leave-request.bpmn`
+**When** inspected
+**Then** it models: `StartEvent → UserTask(manager reviews)[candidateGroups=managers] → ExclusiveGateway → [approved] UserTask(HR records)[candidateGroups=hr] → EndEvent / [rejected] UserTask(employee notified)[candidateGroups=employees] → EndEvent`; all flow elements include valid `BPMNShape`/`BPMNEdge` layout data
+
+**Given** the Leave Request example project is generated and extracted
+**When** the developer runs `./mvnw spring-boot:run`
+**Then** no Docker Compose file exists in the project root; the example requires no external services
+
+**Given** the JUnit integration test
+**When** executed
+**Then** it includes an assertion verifying the process definition is deployed and the engine is reachable before any business-logic assertions; the test covers both the approval path (alice starts → bob approves → carol records) and the rejection path; all assertions pass without modification; zero active process instances remain after each path completes
+
+**Given** the generated README
+**When** the developer reads the "Getting Started in 5 Minutes" section
+**Then** it names alice and bob by name, describes the leave request scenario in plain language, and gives step-by-step instructions for logging into Tasklist as bob and completing the approval task — without referencing generic "User 1 / User 2" roles
+
+---
+
+### Story 8.2: UC-02 Loan Application — DMN Decision + Service Tasks (FR68–72)
+
+As a **developer evaluating Operaton's decision engine**,
+I want a pre-built loan application example that combines DMN business rules with BPMN service tasks,
+So that I can see decision-driven process branching using a stubbed external credit-score API.
+
+**Acceptance Criteria:**
+
+**Given** the Loan Application example project is generated and extracted
+**When** the developer runs `docker compose up -d && ./mvnw spring-boot:run`
+**Then** the application starts successfully; WireMock is running and serving the credit-score stub; the application connects to WireMock without errors
+
+**Given** the `docker-compose.yml`
+**When** inspected
+**Then** it contains exactly one service (`wiremock/wiremock`) with a pinned minor version (e.g. `3.x.y`, not `3.x` or `latest`); a health check on `/__admin/mappings` is defined; `depends_on` with `condition: service_healthy` is present for any service that depends on WireMock
+
+**Given** `src/main/resources/wiremock/mappings/`
+**When** inspected
+**Then** it contains at least one committed JSON stub file for the credit-score API; the `docker-compose.yml` mounts this directory into the WireMock container via a bind-mount; no WireMock stubs are configured in Java code
+
+**Given** `src/main/resources/dmn/risk-assessment.dmn`
+**When** inspected
+**Then** it defines a decision table with inputs `creditScore` (integer) and `loanAmount` (integer), output `riskLevel` (string: `low`/`medium`/`high`), and hit policy `FIRST`; all three output values are reachable by distinct input combinations
+
+**Given** the BPMN process `loan-application.bpmn`
+**When** inspected
+**Then** it models: `StartEvent → ServiceTask(credit score check) → BusinessRuleTask(risk assessment DMN) → ExclusiveGateway → [low] ServiceTask(auto-approve notify) → EndEvent / [medium] UserTask(underwriter review)[candidateGroups=underwriters] → EndEvent / [high] ServiceTask(auto-reject notify) → EndEvent`
+
+**Given** the JUnit integration test
+**When** executed
+**Then** it covers all three DMN risk paths using parametrized test cases; the DMN table is also tested in isolation via `decisionService.evaluateDecisionByKey("risk-assessment")`; WireMock is started via Testcontainers (not host Docker Compose) so the test runs in CI without Docker Compose support; all assertions pass
+
+**Given** the DMN engine capability
+**When** a developer adds `operaton-engine-dmn` to the project
+**Then** the dependency is explicitly declared in `pom.xml` / `build.gradle`; the build compiles and all DMN tests pass when the `operaton-spring-boot-starter-dmn` (or equivalent) starter is present; the dependency is not silently provided via transitive resolution from another starter
+
+---
+
+### Story 8.3: UC-03 Incident Management — Timer Boundary + Escalation (FR68–72)
+
+As a **developer learning BPMN event handling**,
+I want a pre-built incident management example with a timer boundary event that escalates unresolved tickets,
+So that I can see how Operaton handles SLA enforcement and task escalation out of the box.
+
+**Acceptance Criteria:**
+
+**Given** the Incident Management example project is generated and extracted
+**When** the developer runs `docker compose up -d && ./mvnw spring-boot:run`
+**Then** the application starts successfully; WireMock is available; a process instance can be started
+
+**Given** the BPMN process `incident-management.bpmn`
+**When** inspected
+**Then** it models: `StartEvent → UserTask(first-line triage)[candidateGroups=first-line, BoundaryTimerEvent PT1H → escalate] → ExclusiveGateway → [resolved] ServiceTask(close ticket [REST]) → EndEvent / [timer fired] UserTask(second-line engineer)[candidateGroups=second-line] → ServiceTask(post-mortem notify [REST]) → EndEvent`
+
+**Given** `src/main/resources/application-test.properties`
+**When** inspected
+**Then** it overrides the timer duration to `PT5S` so integration tests do not wait one hour for escalation to fire; the `test` Spring profile is activated automatically during `mvn test` (e.g. via `maven-surefire-plugin` `systemPropertyVariables` or `@ActiveProfiles` on the test class) — a developer must not add any manual configuration to run the test
+
+**Given** the JUnit integration test for the escalation path
+**When** the timer is tested
+**Then** `ClockUtil.setCurrentTime(...)` advances Operaton's internal clock past the timer boundary; `Thread.sleep` is never used for timer advancement; `ClockUtil.reset()` is called in `@AfterEach` to prevent test pollution; the test asserts the task is reassigned to the `second-line` candidate group after escalation
+
+**Given** `managementService.createJobQuery().timers()`
+**When** queried after process start
+**Then** exactly one timer job exists (confirms timer registration); this assertion appears in the test
+
+**Given** the `docker-compose.yml`
+**When** inspected
+**Then** it contains exactly one service (`wiremock/wiremock`) with a pinned minor version (e.g. `3.x.y`, not `3.x` or `latest`); health check and `depends_on: condition: service_healthy` are present
+
+---
+
+### Story 8.4: UC-04 Order Fulfillment — Service Task Orchestration (FR68–72)
+
+As a **developer building service-oriented processes**,
+I want a pre-built order fulfillment example with multiple service tasks calling stubbed REST APIs,
+So that I can see how Operaton orchestrates multi-step external service calls with conditional routing.
+
+**Acceptance Criteria:**
+
+**Given** the Order Fulfillment example project is generated and extracted
+**When** the developer runs `docker compose up -d && ./mvnw spring-boot:run`
+**Then** the application starts; WireMock is serving inventory, payment, and notification stubs; a process instance can be started
+
+**Given** the BPMN process `order-fulfillment.bpmn`
+**When** inspected
+**Then** it models: `StartEvent(order placed) → ServiceTask(validate inventory [REST]) → ExclusiveGateway → [in stock] ServiceTask(charge payment [REST]) → UserTask(pack & ship)[candidateGroups=warehouse] → ServiceTask(notify customer [REST]) → EndEvent(shipped) / [out of stock] ServiceTask(notify backorder [REST]) → EndEvent(backordered)`
+
+**Given** `src/main/resources/wiremock/mappings/`
+**When** inspected
+**Then** it contains committed stub files for inventory (in-stock response), payment (success response), customer notification, and backorder notification; a second inventory stub with an out-of-stock response demonstrates the alternative path; no stubs are defined in Java code
+
+**Given** the JUnit integration test
+**When** executed via Testcontainers
+**Then** it covers both the in-stock path (inventory → payment → human task → notify) and the out-of-stock path (inventory → backorder notify); WireMock container startup uses `waitFor(http("/__admin/mappings"))` before the first service task assertion; all assertions pass
+
+**Given** the `docker-compose.yml`
+**When** inspected
+**Then** it contains exactly one service (`wiremock/wiremock`) with a pinned minor version (e.g. `3.x.y`, not `3.x` or `latest`); the `./wiremock` bind-mount path points to `src/main/resources/wiremock` so stub files are editable without rebuilding; health check and `depends_on` conditions are present
+
+**Given** `data.sql`
+**When** inspected
+**Then** it seeds one user `dave/dave` in group `warehouse`; the warehouse UserTask `candidateGroups` attribute matches exactly
+
+---
+
+### Story 8.5: Use Case Example Gallery Cards (FR67, UX-DR12)
+
+As a **developer browsing the gallery**,
+I want to see use case example cards in the gallery's second section below the project types,
+So that I can recognise a real-world scenario and jump straight to a pre-configured form without manual setup.
+
+**Acceptance Criteria:**
+
+**Given** the gallery landing page (`/`)
+**When** rendered
+**Then** a second section labelled (e.g.) "Use Case Examples" appears below the "Project Types" section; the section contains exactly four cards in MVP: Leave Request, Loan Application, Incident Management, Order Fulfillment
+
+**Given** a use case example card
+**When** inspected visually
+**Then** it displays: a title, a one-sentence scenario description (e.g., "A manager approves employee leave — two roles, one process, zero infrastructure overhead"), and at least two capability tags from the set: `multi-role`, `docker-compose`, `DMN`, `timer`, `service-tasks`, `human-tasks`
+
+**Given** a use case example card that requires Docker Compose
+**When** rendered
+**Then** a `docker-compose` tag is present and visually distinct from functional tags, signalling to the developer that an external service is required
+
+**Given** a developer clicks a use case example card
+**When** navigated
+**Then** the details page (`/configure`) opens with the form pre-filled with the example's default values (project type, artifact ID, extras); the project type is shown as read-only context as per FR45; the `useCaseId` is passed to the generate endpoint so the server resolves the full parameter bundle server-side
+
+**Given** the use case example card content
+**When** driven from the metadata endpoint
+**Then** the card title, description, tags, pre-fill values, and `useCaseId` are returned by `GET /api/v1/metadata` as part of the `useCaseExamples[]` array; no card content is hardcoded in the frontend
+
+**Given** `POST /api/v1/generate` is called with an optional `useCaseId` parameter
+**When** a valid `useCaseId` is provided
+**Then** the server resolves the parameter bundle associated with that use case and uses it for generation; no client-side parameter expansion is required

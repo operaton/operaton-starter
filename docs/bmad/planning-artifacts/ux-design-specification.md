@@ -65,7 +65,7 @@ Keyboard-complete. WCAG 2.1 AA. Every developer, regardless of input method, get
 Landing (/) → Gallery or Direct Form → Configure → Preview Updates Live → Generate & Download
 ```
 
-The gallery card click pre-selects the project type in the form, collapsing two steps into one for Explorers.
+The gallery card click sets the project type and navigates to the configuration details page. Project type is not selectable on the details page — it is carried as a route parameter and displayed read-only.
 
 ---
 
@@ -268,7 +268,7 @@ Focus rings use `--color-primary` (#184AEF) as the outline color, meeting WCAG 2
 /configure (ConfigureView)
   → form + live preview panel side-by-side
   → form state → query params (shareable URL)
-  → Generate & Download / IDE deep-link buttons
+  → Generate & Download button / Shareable URL
 ```
 
 ### State Management (No Vuex/Pinia — composables only)
@@ -423,13 +423,12 @@ Header height: 64px fixed. Matches operaton.org header height.
 │  │ Project Name   [?]  │    │  │  │  └─ ...                │  │
 │  │ My Process App      │    │  └──────────────────────────┘  │
 │  └─────────────────────┘    │                                │
-│                             │  IDE Deep Links                │
-│  Build Options              │  [Open in IntelliJ IDEA]       │
-│  ┌─────────────────────┐    │  [Open in VS Code]             │
-│  │ Project Type   [?]  │    │                                │
-│  │ ○ Process App       │    │  Shareable URL                 │
-│  │ ○ Process Archive   │    │  [Copy Link]                   │
-│  ├─────────────────────┤    │                                │
+│  [Process Application  ×]   │                                │
+│  (read-only badge — set on  │  Shareable URL                 │
+│   gallery page)             │  [Copy Link]                   │
+│                             │                                │
+│  Build Options              │                                │
+│  ┌─────────────────────┐    │                                │
 │  │ Build System   [?]  │    │                                │
 │  │ ○ Maven             │    │                                │
 │  │ ○ Gradle (Groovy)   │    │                                │
@@ -439,12 +438,14 @@ Header height: 64px fixed. Matches operaton.org header height.
 │  │ ○ 17  ○ 21  ○ 25   │    │                                │
 │  └─────────────────────┘    │                                │
 │                             │                                │
-│  Extras                     │                                │
+│  Extras (all off by default)│                                │
 │  ┌─────────────────────┐    │                                │
-│  │ ☑ GitHub Actions[?] │    │                                │
+│  │ ☐ GitHub Actions[?] │    │                                │
 │  │ ☐ Docker Compose[?] │    │                                │
-│  │ Dep. Updates   [?]  │    │                                │
-│  │ ○ Renovate ○ Dep.   │    │                                │
+│  │ ☐ Dep. Updates [?]  │    │                                │
+│  │   (when checked:)   │    │                                │
+│  │   ○ Renovate        │    │                                │
+│  │   ○ Dependabot      │    │                                │
 │  └─────────────────────┘    │                                │
 │                             │                                │
 │  [Generate & Download ↓]    │                                │
@@ -490,7 +491,7 @@ Header height: 64px fixed. Matches operaton.org header height.
 5. Reads persona hint: "Ideal for Camunda 7 migrators..."
 6. Clicks [Configure →] on the card
 7. Navigated to /configure?projectType=PROCESS_APPLICATION
-8. Sees pre-selected project type
+8. Sees project type displayed as read-only context (badge/header) — not an editable field
 9. Reads help text for other fields via [?] icons
 10. Configures and downloads
 ```
@@ -512,17 +513,7 @@ Header height: 64px fixed. Matches operaton.org header height.
 7. Teammate adjusts groupId, downloads
 ```
 
-### Journey 4: IDE Integration
-
-```
-1. Developer configures form
-2. Sees "Open in IntelliJ IDEA" button in preview panel
-3. Clicks button
-4. IDE opens (if installed), fetches ZIP, imports project
-5. No download folder interaction needed
-```
-
-### Journey 5: Keyboard-Only User
+### Journey 4: Keyboard-Only User
 
 ```
 1. Tabs to gallery → enters gallery cards
@@ -667,33 +658,6 @@ Every configuration field uses a consistent help icon pattern:
 </div>
 ```
 
-### IDE Deep-Link Specification
-
-#### IntelliJ IDEA Deep-Link
-
-```
-idea://com.intellij.ide.starter?url={encoded_generate_url}
-```
-
-Where `{encoded_generate_url}` is the full `POST /api/v1/generate` URL with body encoded as query params. IDEA fetches the ZIP and imports via Spring Initializr protocol.
-
-**Implementation:**
-```ts
-function buildIntelliJUrl(baseUrl: string, config: ProjectConfig): string {
-  const generateUrl = `${baseUrl}/api/v1/generate`;
-  const params = new URLSearchParams(Object.entries(config).map(([k, v]) => [k, String(v)]));
-  return `idea://com.intellij.ide.starter?url=${encodeURIComponent(`${generateUrl}?${params}`)}`;
-}
-```
-
-#### VS Code Deep-Link
-
-```
-vscode://vscjava.vscode-spring-initializr/open?url={encoded_generate_url}
-```
-
-Or alternatively, trigger download and open with a documented workflow instruction (VS Code doesn't have native project-import deep-link as of 2026).
-
 ---
 
 ## 11. UX Consistency Patterns
@@ -741,7 +705,7 @@ All form fields follow the same structure:
 | Type | Style | Use |
 |------|-------|-----|
 | Primary | `bg-primary text-white` | Generate & Download, Configure → |
-| Secondary | `border border-primary text-primary` | Copy Link, Open in IDE |
+| Secondary | `border border-primary text-primary` | Copy Link |
 | Ghost | `text-neutral-500 hover:text-primary` | Back, Cancel |
 
 ---
@@ -914,7 +878,7 @@ The web UI uses the OpenAPI-generated TypeScript client from `src/generated/`:
 | UX-DR3: Inline contextual help | `<HelpIcon>` on every field; card [?] expand |
 | UX-DR4: Live preview ≤200ms, client-side | `FileTreePreview` — computed from form state |
 | UX-DR5: Keyboard-complete flow | ARIA map + focus management section |
-| UX-DR6: IDE deep-links | `<ActionPanel>` with IntelliJ + VS Code buttons |
+| UX-DR6: IDE deep-links | removed — feature descoped (see PRD) |
 | UX-DR7: Shareable config URL | `useProjectForm.shareableUrl` + "Copy Link" |
 | UX-DR8: operaton.org design tokens | Section 5 & 6 — Tailwind config with extracted tokens |
 | UX-DR9: Browser support (2 major versions) | Tailwind + Vue 3 baseline |
