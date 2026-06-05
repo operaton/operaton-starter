@@ -3,11 +3,13 @@
 spring.application.name=${config.projectName()}
 server.port=${config.serverPort()}
 
-# H2 in-memory database — no external database needed for this example
-spring.datasource.url=jdbc:h2:mem:operaton;DB_CLOSE_DELAY=-1
-spring.datasource.driver-class-name=org.h2.Driver
-spring.datasource.username=sa
-spring.datasource.password=
+# PostgreSQL database — start with: docker compose up -d
+spring.datasource.url=jdbc:postgresql://localhost:5432/${config.artifactId()}
+spring.datasource.driver-class-name=org.postgresql.Driver
+spring.datasource.username=postgres
+spring.datasource.password=postgres
+
+# H2 fallback: run with --spring.profiles.active=h2 (no Docker needed)
 
 # Load data.sql to seed users, groups, and memberships
 spring.sql.init.mode=always

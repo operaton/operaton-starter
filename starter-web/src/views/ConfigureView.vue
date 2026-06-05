@@ -18,6 +18,7 @@ const {
   isProjectTypeFromQuery,
   buildSystemCategory,
   gradleDsl,
+  router,
 } = useProjectForm()
 const { isGenerating, error: generateError, generate } = useGenerate()
 
@@ -31,8 +32,12 @@ function toggleHelp(field: string) {
   helpOpen.value[field] = !helpOpen.value[field]
 }
 
-// Initialize from query params
+// Initialize from query params; redirect to gallery when no projectType provided (FR45)
 onMounted(() => {
+  if (!route.query.projectType) {
+    router.replace('/')
+    return
+  }
   initFromQuery(route.query as Record<string, string>)
 })
 
@@ -295,15 +300,18 @@ const helpText: Record<string, string> = {
               <div v-show="helpOpen.dockerCompose" role="note" class="text-xs text-neutral-500 bg-neutral-50 p-2 rounded mt-1 ml-6">{{ helpText.dockerCompose }}</div>
             </div>
 
-            <!-- Dependency Updater -->
+            <!-- Dependency Updates: opt-in checkbox + sub-option (FR13, FR56) -->
             <div>
-              <div class="flex items-center gap-1 mb-2">
-                <span class="text-sm font-medium text-neutral-900">Dependency Updates</span>
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" class="accent-primary w-4 h-4"
+                       :checked="!!form.dependencyUpdater"
+                       @change="(e) => { form.dependencyUpdater = (e.target as HTMLInputElement).checked ? 'RENOVATE' : undefined }" />
+                <span class="text-sm text-neutral-900">Dependency Updates</span>
                 <button type="button" class="w-4 h-4 rounded-full bg-neutral-200 text-neutral-500 text-xs inline-flex items-center justify-center hover:bg-primary hover:text-white transition-colors"
-                        :aria-label="'Help: Dependency Updates'" :aria-expanded="helpOpen.dependencyUpdater" @click="toggleHelp('dependencyUpdater')">?</button>
-              </div>
-              <div v-show="helpOpen.dependencyUpdater" role="note" class="text-xs text-neutral-500 bg-neutral-50 p-2 rounded mb-2">{{ helpText.dependencyUpdater }}</div>
-              <div class="flex gap-4" role="radiogroup" aria-label="Dependency Updater">
+                        :aria-label="'Help: Dependency Updates'" :aria-expanded="helpOpen.dependencyUpdater" @click.prevent="toggleHelp('dependencyUpdater')">?</button>
+              </label>
+              <div v-show="helpOpen.dependencyUpdater" role="note" class="text-xs text-neutral-500 bg-neutral-50 p-2 rounded mt-1 ml-6">{{ helpText.dependencyUpdater }}</div>
+              <div v-if="form.dependencyUpdater" class="ml-6 mt-2 flex gap-4" role="radiogroup" aria-label="Dependency Updater">
                 <label class="flex items-center gap-1 text-sm cursor-pointer">
                   <input type="radio" value="RENOVATE" v-model="form.dependencyUpdater" class="accent-primary" />
                   Renovate

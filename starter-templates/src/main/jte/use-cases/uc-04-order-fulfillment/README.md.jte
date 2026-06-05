@@ -4,6 +4,8 @@
 
 A self-contained Operaton BPM example demonstrating multi-service-task orchestration with conditional routing.
 
+![Process Model](docs/process-model.png)
+
 ## The Scenario
 
 When a customer places an order:
@@ -21,20 +23,20 @@ All external calls are stubbed with WireMock — no real services needed.
 
 - Java ${config.javaVersion()}+
 - Maven (or use the included `./mvnw`)
-- Docker (for WireMock)
+- Docker (for Postgres and WireMock)
 
-### 1. Start WireMock
+### 1. Start services
 
 ```bash
 docker compose up -d
 ```
 
-This starts WireMock on port 8089, serving inventory, payment, and notification stubs.
+This starts Postgres on port 5432 and WireMock on port 8089, serving inventory, payment, and notification stubs.
 
 ### 2. Start the Application
 
 ```bash
-./mvnw spring-boot:run
+chmod +x mvnw && ./mvnw spring-boot:run
 ```
 
 The application starts on port ${config.serverPort()}. Open:
@@ -77,8 +79,13 @@ Stubs are in `src/main/resources/wiremock/mappings/`:
 
 Tests use Testcontainers to start WireMock automatically — no Docker Compose needed for CI.
 
+## Bootstrap Data
+
+Dave (warehouse) and the admin user are seeded from `src/main/resources/data.sql` on startup.
+
 ## Users
 
-| Username | Password | Group     | Role               |
-|----------|-----------|-----------|--------------------|
-| dave     | dave      | warehouse | Warehouse operator |
+| Username | Password | Group          | Role               |
+|----------|----------|----------------|--------------------|
+| dave     | dave     | warehouse      | Warehouse operator |
+| admin    | admin    | operaton-admin | Operaton admin     |

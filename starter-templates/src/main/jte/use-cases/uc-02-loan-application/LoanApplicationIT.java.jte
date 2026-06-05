@@ -16,6 +16,7 @@ import org.operaton.bpm.engine.variable.Variables;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.util.TestPropertyValues;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.test.context.ContextConfiguration;
@@ -28,6 +29,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@ActiveProfiles("h2")
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @Testcontainers
 @ContextConfiguration(initializers = LoanApplicationIT.WireMockInitializer.class)

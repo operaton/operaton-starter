@@ -117,6 +117,9 @@ public class GenerationEngine {
                 "src/main/resources/application.properties",
                 templateDir + "application.properties.jte", config);
         addTemplateEntry(zos,
+                "src/main/resources/application-h2.properties",
+                templateDir + "application-h2.properties.jte", config);
+        addTemplateEntry(zos,
                 "src/main/resources/leave-request.bpmn",
                 templateDir + "leave-request.bpmn.jte", config);
         addTemplateEntry(zos,
@@ -127,6 +130,7 @@ public class GenerationEngine {
                 "src/test/java/" + pkgPath + "/LeaveRequestIT.java",
                 templateDir + "LeaveRequestIT.java.jte", config);
 
+        addTemplateEntry(zos, "docker-compose.yml", templateDir + "docker-compose.yml.jte", config);
         addTemplateEntry(zos, "README.md", templateDir + "README.md.jte", config);
     }
 
@@ -150,6 +154,9 @@ public class GenerationEngine {
         addTemplateEntry(zos,
                 "src/main/resources/application.properties",
                 templateDir + "application.properties.jte", config);
+        addTemplateEntry(zos,
+                "src/main/resources/application-h2.properties",
+                templateDir + "application-h2.properties.jte", config);
         addTemplateEntry(zos,
                 "src/main/resources/loan-application.bpmn",
                 templateDir + "loan-application.bpmn.jte", config);
@@ -191,6 +198,9 @@ public class GenerationEngine {
         addTemplateEntry(zos,
                 "src/main/resources/application.properties",
                 templateDir + "application.properties.jte", config);
+        addTemplateEntry(zos,
+                "src/main/resources/application-h2.properties",
+                templateDir + "application-h2.properties.jte", config);
         addTemplateEntry(zos,
                 "src/main/resources/application-test.properties",
                 templateDir + "application-test.properties.jte", config);
@@ -241,6 +251,9 @@ public class GenerationEngine {
         addTemplateEntry(zos,
                 "src/main/resources/application.properties",
                 templateDir + "application.properties.jte", config);
+        addTemplateEntry(zos,
+                "src/main/resources/application-h2.properties",
+                templateDir + "application-h2.properties.jte", config);
         addTemplateEntry(zos,
                 "src/main/resources/order-fulfillment.bpmn",
                 templateDir + "order-fulfillment.bpmn.jte", config);
@@ -317,6 +330,9 @@ public class GenerationEngine {
         addTemplateEntry(zos,
                 "src/test/java/" + pkgPath + "/ProcessIT.java",
                 "process-application/ProcessIT.java.jte", config);
+
+        // Banner
+        addClasspathResource(zos, "src/main/resources/banner.txt", "process-application/banner.txt");
     }
 
     private void generateDmnProject(ProjectConfig config, ZipOutputStream zos) throws IOException {

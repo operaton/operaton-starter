@@ -9,9 +9,9 @@ const DEFAULTS: ProjectConfig = {
   artifactId: 'my-process-app',
   projectName: 'My Process App',
   javaVersion: 17,
-  dependencyUpdater: 'RENOVATE',
+  dependencyUpdater: undefined,
   dockerCompose: false,
-  githubActions: true
+  githubActions: false
 }
 
 const PROJECT_TYPES = ['PROCESS_APPLICATION', 'PROCESS_ARCHIVE', 'DMN_PROJECT'] as const
@@ -41,7 +41,7 @@ export function useProjectForm() {
 
   const form = reactive<ProjectConfig>({ ...DEFAULTS })
   const lastArchiveDeploymentTarget = ref<ProjectConfig['deploymentTarget']>()
-  const lastNonArchiveGithubActions = ref(DEFAULTS.githubActions)
+  const lastNonArchiveGithubActions = ref(DEFAULTS.githubActions ?? false)
 
   // Two-step build system selection (FR10)
   // 'maven' | 'gradle' — the top-level category choice
@@ -93,7 +93,7 @@ export function useProjectForm() {
     (projectType, previousProjectType) => {
       if (projectType === 'PROCESS_ARCHIVE') {
         if (previousProjectType !== 'PROCESS_ARCHIVE') {
-          lastNonArchiveGithubActions.value = form.githubActions
+          lastNonArchiveGithubActions.value = form.githubActions ?? false
         }
         form.githubActions = false
         if (!form.deploymentTarget && lastArchiveDeploymentTarget.value) {

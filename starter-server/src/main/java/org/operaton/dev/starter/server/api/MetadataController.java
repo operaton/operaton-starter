@@ -161,6 +161,7 @@ public class MetadataController {
         entries.add(entry("src/main/resources/{artifactId}.bpmn", null, "process-application/process.bpmn.jte"));
         entries.add(entry("src/main/resources/application.properties", null, "process-application/application.properties.jte"));
         entries.add(entry("src/test/java/{package}/ProcessIT.java", null, "process-application/ProcessIT.java.jte"));
+        entries.add(entry("src/main/resources/banner.txt", null, "process-application/banner.txt"));
         entries.add(entry("README.md", null, "common/README.md.jte"));
         entries.add(entry("renovate.json", "dependencyUpdater == 'RENOVATE'", "common/renovate.json.jte"));
         entries.add(entry(".github/dependabot.yml", "dependencyUpdater == 'DEPENDABOT'", "common/dependabot.yml.jte"));

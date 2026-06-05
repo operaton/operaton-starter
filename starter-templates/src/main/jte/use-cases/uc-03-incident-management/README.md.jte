@@ -4,12 +4,14 @@
 
 A self-contained Operaton BPM example demonstrating timer boundary events and SLA-driven task escalation.
 
+![Process Model](docs/process-model.png)
+
 ## The Scenario
 
-**Frank** handles first-line support. When an incident is reported, he has **1 hour** to resolve it.
+**Henry** reports an incident. **Iris** is the second-line engineer who takes over if the SLA fires. When an incident is reported, the first-line team has **1 hour** to resolve it.
 
-- If **Frank resolves** it in time, the ticket is closed via REST (WireMock-stubbed).
-- If the **SLA timer fires**, the task escalates to **Grace** (second-line engineering) who investigates and sends a post-mortem notification.
+- If the first-line team resolves it in time, the ticket is closed via REST (WireMock-stubbed).
+- If the **SLA timer fires**, the task escalates to **Iris** (second-line engineering) who investigates and sends a post-mortem notification.
 
 ## Getting Started in 5 Minutes
 
@@ -17,20 +19,20 @@ A self-contained Operaton BPM example demonstrating timer boundary events and SL
 
 - Java ${config.javaVersion()}+
 - Maven (or use the included `./mvnw`)
-- Docker (for WireMock)
+- Docker (for Postgres and WireMock)
 
-### 1. Start WireMock
+### 1. Start services
 
 ```bash
 docker compose up -d
 ```
 
-This starts WireMock on port 8089, serving stubs for close-ticket and post-mortem endpoints.
+This starts Postgres on port 5432 and WireMock on port 8089, serving stubs for close-ticket and post-mortem endpoints.
 
 ### 2. Start the Application
 
 ```bash
-./mvnw spring-boot:run
+chmod +x mvnw && ./mvnw spring-boot:run
 ```
 
 The application starts on port ${config.serverPort()}. Open:
@@ -45,13 +47,13 @@ curl -s -X POST http://localhost:${config.serverPort()}/engine-rest/process-defi
   -d '{"variables": {"incidentId": {"value": "INC-001", "type": "String"}}}'
 ```
 
-### 4. Resolve as Frank
+### 4. Resolve as first-line
 
 Log into Tasklist as `frank` / `frank`. The **First-Line Triage** task appears. Complete it with `resolved = true` to close the ticket.
 
 ### 5. Test the Escalation Path
 
-For a quick local demo, restart the app with a shorter SLA such as `--timer.escalation.duration=PT10S`, then wait 10 seconds. Check Cockpit — the task should appear in Grace's `second-line` inbox.
+For a quick local demo, restart the app with a shorter SLA such as `--timer.escalation.duration=PT10S`, then wait 10 seconds. Check Cockpit — the task should appear in Iris's `second-line` inbox.
 
 ## Timer Override for Tests
 
@@ -65,9 +67,13 @@ For a quick local demo, restart the app with a shorter SLA such as `--timer.esca
 
 Tests use Testcontainers to start WireMock automatically — no Docker Compose needed for CI.
 
+## Bootstrap Data
+
+Users frank and iris (and grace) are seeded from `src/main/resources/data.sql` on startup.
+
 ## Users
 
 | Username | Password | Group       | Role                  |
 |----------|----------|-------------|-----------------------|
 | frank    | frank    | first-line  | First-line support    |
-| grace    | grace    | second-line | Second-line engineer  |
+| iris     | iris     | second-line | Second-line engineer  |

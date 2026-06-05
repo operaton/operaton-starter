@@ -3,7 +3,7 @@ stepsCompleted: ['step-01-validate-prerequisites', 'step-02-design-epics', 'step
 workflowStatus: complete
 completedAt: '2026-03-27'
 updatedAt: '2026-06-05'
-updateReason: 'Added Epic 8: Use Case Examples — 4 MVP examples (Leave Request, Loan Application, Incident Management, Order Fulfillment); added FR67–72, UX-DR12; updated Epic 4 summary and FR coverage map'
+updateReason: 'FR74/FR75 added; FR69/FR70/FR71 updated (Postgres default, admin auto-create, H2 fallback, Bootstrap Data, BPMN images, chmod+x); Story 2.3 banner.txt AC; Story 2.6 chmod+x README AC; Epic 8 stories 8.1–8.4 updated; Epic 8 summary updated; FR coverage map updated'
 inputDocuments:
   - 'docs/bmad/planning-artifacts/prd.md'
   - 'docs/bmad/planning-artifacts/architecture.md'
@@ -212,11 +212,13 @@ FR60: Epic 4 — Web UI serves favicon.ico derived from Operaton logo
 FR61: Epic 2 — Generated projects include build tool wrapper (mvnw / gradlew)
 FR67: Epic 4 — Gallery use case examples section (Leave Request, Loan Application, Incident Management, Order Fulfillment cards)
 FR68: Epic 8 — Self-containment invariant for all use case example generated projects
-FR69: Epic 8 — data.sql user/group seeding in use case example generated projects
-FR70: Epic 8 — Single-service Docker Compose with health checks per use case example
-FR71: Epic 8 — Character-narrated README onboarding in use case example generated projects
+FR69: Epic 8 — data.sql user/group seeding + Operaton admin user auto-created at startup
+FR70: Epic 8 — Docker Compose (Postgres always; WireMock examples add it as second service) with health checks
+FR71: Epic 8 — Character-narrated README with Bootstrap Data section, BPMN model image, and chmod+x instruction
 FR72: Epic 8 — WireMock stubs as committed files (mappings/) in use case examples; pinned container version
 FR73: Epic 3 + Epic 8 — useCaseId in metadata response and as optional param in POST /api/v1/generate
+FR74: Epic 8 — H2 fallback profile (`application-h2.properties`) in every use case example; README documents the switch; H2 active during `mvn test`
+FR75: Epic 2 — Operaton `banner.txt` included in generated Spring Boot Process Application projects
 
 ## Epic List
 
@@ -262,8 +264,8 @@ Every tagged release automatically publishes to all distribution channels — Do
 **NFRs:** (none additional)
 
 ### Epic 8: Use Case Examples — Self-Contained Generated Projects
-Four self-contained, out-of-the-box runnable use case example projects are available in the gallery and generatable via all channels using a `useCaseId` parameter. Each demonstrates a distinct BPMN concept (user tasks, DMN decisions, timer escalation, service task orchestration), seeds realistic user roles via `data.sql`, and — where an external system is needed — includes a single-service Docker Compose file with health checks. Every example is validated in the CI matrix alongside the core project types.
-**FRs covered:** FR68–73
+Four self-contained, out-of-the-box runnable use case example projects are available in the gallery and generatable via all channels using a `useCaseId` parameter. Each demonstrates a distinct BPMN concept (user tasks, DMN decisions, timer escalation, service task orchestration), seeds realistic user roles via `data.sql`, auto-creates an Operaton admin user at startup, and uses PostgreSQL via Docker Compose as the default datasource — with H2 available as a zero-code-change fallback profile. WireMock examples include Postgres and WireMock as two services in the same compose stack. Every example's README includes a BPMN model image, Bootstrap Data instructions, and a `chmod +x mvnw` step for Mac/Linux users. Every example is validated in the CI matrix alongside the core project types.
+**FRs covered:** FR68–75
 **NFRs:** NFR17 (CI validation extended to cover use case examples)
 
 ---
@@ -502,6 +504,10 @@ So that I can clone it, run `mvn spring-boot:run`, and have a running Operaton e
 **When** inspected
 **Then** `spring.application.name` matches `projectName`
 
+**Given** the generated Process Application project
+**When** `src/main/resources/banner.txt` is inspected
+**Then** it contains the Operaton ASCII art logo and version placeholders (`${spring-boot.formatted-version}`, `${operaton.bpm.formatted-version}`, `@project.version@`); Spring Boot displays the banner automatically at startup with no additional configuration (FR75)
+
 **Given** the generated `ProcessIT.java`
 **When** the test is run in a project compiled from the generated ZIP
 **Then** it deploys the skeleton BPMN process and executes it end-to-end without manual modification — the test passes on first run
@@ -580,7 +586,7 @@ So that my project is production-ready from the first commit — no boilerplate 
 
 **Given** any generated project
 **When** the ZIP is inspected
-**Then** it contains a `README.md` tailored to the selected `projectType` and `buildSystem` — including the correct run command (`mvn spring-boot:run` or `./gradlew bootRun`), a "What to do next" section with generic contextual doc link placeholders (not hardcoded URLs), and a "Troubleshooting" section naming the three most common startup failure modes: (1) port 8080 already in use, (2) H2 in-memory datasource not configured, (3) Java version mismatch between runtime and compiled bytecode
+**Then** it contains a `README.md` tailored to the selected `projectType` and `buildSystem` — including: the correct run command (`mvn spring-boot:run` or `./gradlew bootRun`); a `chmod +x mvnw` (or `chmod +x gradlew`) instruction for Mac/Linux users immediately before the first run command; a "What to do next" section with generic contextual doc link placeholders (not hardcoded URLs); and a "Troubleshooting" section naming the three most common startup failure modes: (1) port 8080 already in use, (2) H2 in-memory datasource not configured, (3) Java version mismatch between runtime and compiled bytecode
 
 **Given** `dependencyUpdater=DEPENDABOT`
 **When** the ZIP is inspected
@@ -1484,9 +1490,9 @@ So that I can configure the repository secrets once and have confidence the rele
 
 ## Epic 8: Use Case Examples — Self-Contained Generated Projects
 
-Four self-contained, out-of-the-box runnable use case example projects are available in the gallery and generatable via all channels. Each demonstrates a distinct BPMN concept (user tasks, DMN decisions, timer escalation, service task orchestration), seeds realistic user roles via `data.sql`, and — where an external system is needed — includes a single-service Docker Compose file with health checks. Every example is validated in the CI matrix alongside the core project types.
+Four self-contained, out-of-the-box runnable use case example projects are available in the gallery and generatable via all channels. Each demonstrates a distinct BPMN concept (user tasks, DMN decisions, timer escalation, service task orchestration), seeds realistic user roles via `data.sql`, auto-creates an Operaton admin user at startup, and uses PostgreSQL via Docker Compose as the default datasource — with H2 available as a zero-code-change fallback profile. WireMock examples include Postgres and WireMock as two services in the same compose stack. Every example's README includes a BPMN model image, Bootstrap Data instructions, and a `chmod +x mvnw` step for Mac/Linux users. Every example is validated in the CI matrix alongside the core project types.
 
-### Story 8.1: UC-01 Leave Request — HR Approval Workflow (FR68–71)
+### Story 8.1: UC-01 Leave Request — HR Approval Workflow (FR68–71, FR74)
 
 As a **developer new to Operaton**,
 I want a pre-built leave request approval example I can run in under 2 minutes,
@@ -1495,8 +1501,12 @@ So that I immediately see how Operaton handles multi-role human task workflows u
 **Acceptance Criteria:**
 
 **Given** the Leave Request example project is generated and extracted
-**When** the developer runs `./mvnw spring-boot:run`
-**Then** the application starts successfully on port 8080 with no manual configuration; no Docker Compose is required; the Operaton Tasklist is accessible at `http://localhost:8080/operaton/app/tasklist`
+**When** the developer runs `docker compose up -d && ./mvnw spring-boot:run`
+**Then** the application starts successfully on port 8080 with PostgreSQL as the datasource; the Operaton Tasklist is accessible at `http://localhost:8080/operaton/app/tasklist`
+
+**Given** the `docker-compose.yml`
+**When** inspected
+**Then** it contains a PostgreSQL service with a health check; `depends_on: condition: service_healthy` is set; the Spring Boot app runs on the host, not in Docker
 
 **Given** the started application
 **When** a process instance is started
@@ -1504,27 +1514,27 @@ So that I immediately see how Operaton handles multi-role human task workflows u
 
 **Given** the generated `src/main/resources/data.sql`
 **When** inspected
-**Then** it seeds three users (`alice/alice`, `bob/bob`, `carol/carol`) into Operaton's identity tables and assigns them to groups `employees`, `managers`, and `hr` respectively; BPMN `candidateGroups` attributes match these group names exactly
+**Then** it seeds three users (`alice/alice`, `bob/bob`, `carol/carol`) into Operaton's identity tables and assigns them to groups `employees`, `managers`, and `hr` respectively; BPMN `candidateGroups` attributes match these group names exactly; an Operaton admin user is created if it does not already exist (the startup sequence checks and creates it on first boot)
 
 **Given** the BPMN process `leave-request.bpmn`
 **When** inspected
 **Then** it models: `StartEvent → UserTask(manager reviews)[candidateGroups=managers] → ExclusiveGateway → [approved] UserTask(HR records)[candidateGroups=hr] → EndEvent / [rejected] UserTask(employee notified)[candidateGroups=employees] → EndEvent`; all flow elements include valid `BPMNShape`/`BPMNEdge` layout data
 
-**Given** the Leave Request example project is generated and extracted
-**When** the developer runs `./mvnw spring-boot:run`
-**Then** no Docker Compose file exists in the project root; the example requires no external services
-
 **Given** the JUnit integration test
 **When** executed
-**Then** it includes an assertion verifying the process definition is deployed and the engine is reachable before any business-logic assertions; the test covers both the approval path (alice starts → bob approves → carol records) and the rejection path; all assertions pass without modification; zero active process instances remain after each path completes
+**Then** it uses the H2 profile (`@ActiveProfiles("h2")` or `mvn test -Dspring.profiles.active=h2`); it includes an assertion verifying the process definition is deployed and the engine is reachable before any business-logic assertions; the test covers both the approval path (alice starts → bob approves → carol records) and the rejection path; all assertions pass without modification; zero active process instances remain after each path completes
+
+**Given** the project includes `src/main/resources/application-h2.properties`
+**When** the developer runs `./mvnw spring-boot:run --spring.profiles.active=h2`
+**Then** the application starts with the embedded H2 datasource; no Docker Compose or PostgreSQL is required; no code changes are needed to switch profiles
 
 **Given** the generated README
 **When** the developer reads the "Getting Started in 5 Minutes" section
-**Then** it names alice and bob by name, describes the leave request scenario in plain language, and gives step-by-step instructions for logging into Tasklist as bob and completing the approval task — without referencing generic "User 1 / User 2" roles
+**Then** it: names alice and bob by name and gives step-by-step Tasklist instructions as those characters; includes a "Bootstrap Data" section explaining what `data.sql` seeds (users, groups, admin account) and how to re-apply it; includes an embedded image of the `leave-request.bpmn` process model; includes a `chmod +x mvnw` instruction for Mac/Linux users immediately before the first run command
 
 ---
 
-### Story 8.2: UC-02 Loan Application — DMN Decision + Service Tasks (FR68–72)
+### Story 8.2: UC-02 Loan Application — DMN Decision + Service Tasks (FR68–72, FR74)
 
 As a **developer evaluating Operaton's decision engine**,
 I want a pre-built loan application example that combines DMN business rules with BPMN service tasks,
@@ -1534,11 +1544,11 @@ So that I can see decision-driven process branching using a stubbed external cre
 
 **Given** the Loan Application example project is generated and extracted
 **When** the developer runs `docker compose up -d && ./mvnw spring-boot:run`
-**Then** the application starts successfully; WireMock is running and serving the credit-score stub; the application connects to WireMock without errors
+**Then** the application starts successfully; PostgreSQL and WireMock are both running; the application connects to both without errors
 
 **Given** the `docker-compose.yml`
 **When** inspected
-**Then** it contains exactly one service (`wiremock/wiremock`) with a pinned minor version (e.g. `3.x.y`, not `3.x` or `latest`); a health check on `/__admin/mappings` is defined; `depends_on` with `condition: service_healthy` is present for any service that depends on WireMock
+**Then** it contains two services: a PostgreSQL service and a `wiremock/wiremock` service with a pinned minor version (e.g. `3.x.y`, not `3.x` or `latest`); each service has a health check; `depends_on: condition: service_healthy` is set for both; the Spring Boot app runs on the host, not in Docker
 
 **Given** `src/main/resources/wiremock/mappings/`
 **When** inspected
@@ -1560,9 +1570,17 @@ So that I can see decision-driven process branching using a stubbed external cre
 **When** a developer adds `operaton-engine-dmn` to the project
 **Then** the dependency is explicitly declared in `pom.xml` / `build.gradle`; the build compiles and all DMN tests pass when the `operaton-spring-boot-starter-dmn` (or equivalent) starter is present; the dependency is not silently provided via transitive resolution from another starter
 
+**Given** the project includes `src/main/resources/application-h2.properties`
+**When** the developer runs `./mvnw spring-boot:run --spring.profiles.active=h2`
+**Then** the application starts with embedded H2; WireMock is still required (external API stubs); no code changes are needed to switch the datasource; integration tests use `@ActiveProfiles("h2")` so CI requires no PostgreSQL
+
+**Given** the generated README
+**When** read
+**Then** it includes a "Bootstrap Data" section, an embedded image of the `loan-application.bpmn` process model, and a `chmod +x mvnw` instruction for Mac/Linux users immediately before the first run command; the character-narrated section names jack and kate by name and walks through each DMN risk path
+
 ---
 
-### Story 8.3: UC-03 Incident Management — Timer Boundary + Escalation (FR68–72)
+### Story 8.3: UC-03 Incident Management — Timer Boundary + Escalation (FR68–72, FR74)
 
 As a **developer learning BPMN event handling**,
 I want a pre-built incident management example with a timer boundary event that escalates unresolved tickets,
@@ -1592,11 +1610,19 @@ So that I can see how Operaton handles SLA enforcement and task escalation out o
 
 **Given** the `docker-compose.yml`
 **When** inspected
-**Then** it contains exactly one service (`wiremock/wiremock`) with a pinned minor version (e.g. `3.x.y`, not `3.x` or `latest`); health check and `depends_on: condition: service_healthy` are present
+**Then** it contains two services: a PostgreSQL service and a `wiremock/wiremock` service with a pinned minor version (e.g. `3.x.y`, not `3.x` or `latest`); each service has a health check; `depends_on: condition: service_healthy` is set for both; the Spring Boot app runs on the host
+
+**Given** the project includes `src/main/resources/application-h2.properties`
+**When** the developer runs `./mvnw spring-boot:run --spring.profiles.active=h2`
+**Then** the application starts with embedded H2; WireMock is still required for API stubs; integration tests use `@ActiveProfiles("h2")` so CI requires no PostgreSQL
+
+**Given** the generated README
+**When** read
+**Then** it includes a "Bootstrap Data" section, an embedded image of the `incident-management.bpmn` process model, and a `chmod +x mvnw` instruction for Mac/Linux users immediately before the first run command; the character-narrated section names henry and iris and walks through both the normal resolution and the escalation paths
 
 ---
 
-### Story 8.4: UC-04 Order Fulfillment — Service Task Orchestration (FR68–72)
+### Story 8.4: UC-04 Order Fulfillment — Service Task Orchestration (FR68–72, FR74)
 
 As a **developer building service-oriented processes**,
 I want a pre-built order fulfillment example with multiple service tasks calling stubbed REST APIs,
@@ -1622,11 +1648,19 @@ So that I can see how Operaton orchestrates multi-step external service calls wi
 
 **Given** the `docker-compose.yml`
 **When** inspected
-**Then** it contains exactly one service (`wiremock/wiremock`) with a pinned minor version (e.g. `3.x.y`, not `3.x` or `latest`); the `./wiremock` bind-mount path points to `src/main/resources/wiremock` so stub files are editable without rebuilding; health check and `depends_on` conditions are present
+**Then** it contains two services: a PostgreSQL service and a `wiremock/wiremock` service with a pinned minor version (e.g. `3.x.y`, not `3.x` or `latest`); the `./wiremock` bind-mount path points to `src/main/resources/wiremock`; health checks and `depends_on: condition: service_healthy` are present for both; the Spring Boot app runs on the host
 
 **Given** `data.sql`
 **When** inspected
-**Then** it seeds one user `dave/dave` in group `warehouse`; the warehouse UserTask `candidateGroups` attribute matches exactly
+**Then** it seeds one user `dave/dave` in group `warehouse`; an Operaton admin user is created at startup if absent; the warehouse UserTask `candidateGroups` attribute matches exactly
+
+**Given** the project includes `src/main/resources/application-h2.properties`
+**When** the developer runs `./mvnw spring-boot:run --spring.profiles.active=h2`
+**Then** the application starts with embedded H2; WireMock is still required for API stubs; integration tests use `@ActiveProfiles("h2")` so CI requires no PostgreSQL
+
+**Given** the generated README
+**When** read
+**Then** it includes a "Bootstrap Data" section, an embedded image of the `order-fulfillment.bpmn` process model, and a `chmod +x mvnw` instruction for Mac/Linux users immediately before the first run command; the character-narrated section names dave and walks through both the in-stock and out-of-stock paths
 
 ---
 

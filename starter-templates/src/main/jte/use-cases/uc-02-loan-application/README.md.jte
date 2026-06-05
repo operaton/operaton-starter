@@ -4,15 +4,17 @@
 
 A self-contained Operaton BPM example combining DMN business rule evaluation with service task orchestration.
 
+![Process Model](docs/process-model.png)
+
 ## The Scenario
 
-**Eve** is a loan underwriter at a bank. When a customer submits a loan application, the system:
+**Jack** applies for a loan. **Kate** is the underwriter who reviews medium-risk applications. When a loan application is submitted, the system:
 
 1. Calls an external credit scoring API (stubbed with WireMock)
 2. Evaluates a **DMN decision table** to determine risk level (`low` / `medium` / `high`)
 3. Routes the application:
    - **Low risk** → automatically approved
-   - **Medium risk** → Eve reviews it in the Tasklist
+   - **Medium risk** → Kate reviews it in the Tasklist
    - **High risk** → automatically rejected
 
 ## Getting Started in 5 Minutes
@@ -21,20 +23,20 @@ A self-contained Operaton BPM example combining DMN business rule evaluation wit
 
 - Java ${config.javaVersion()}+
 - Maven (or use the included `./mvnw`)
-- Docker (for WireMock)
+- Docker (for Postgres and WireMock)
 
-### 1. Start WireMock
+### 1. Start services
 
 ```bash
 docker compose up -d
 ```
 
-This starts WireMock on port 8089 with the credit-score stub loaded from `src/main/resources/wiremock/mappings/`.
+This starts Postgres on port 5432 and WireMock on port 8089 with the credit-score stub loaded from `src/main/resources/wiremock/mappings/`.
 
 ### 2. Start the Application
 
 ```bash
-./mvnw spring-boot:run
+chmod +x mvnw && ./mvnw spring-boot:run
 ```
 
 The application starts on port ${config.serverPort()}. Open:
@@ -57,7 +59,7 @@ The credit score service (WireMock) returns a score of 750, which the DMN table 
 
 Lower the stub score by editing `src/main/resources/wiremock/mappings/credit-score-stub.json` to return `{"score": 650}`, then restart WireMock and start a new process instance.
 
-A task will appear in the Tasklist for **Eve** (login: `eve` / password: `eve`) to review.
+A task will appear in the Tasklist for **Kate** (login: `kate` / password: `kate`) to review.
 
 ## Project Structure
 
@@ -99,8 +101,13 @@ Tests use **Testcontainers** to start WireMock automatically — no Docker Compo
 ./mvnw verify
 ```
 
+## Bootstrap Data
+
+Users jack and kate are seeded from `src/main/resources/data.sql` on startup.
+
 ## Users
 
 | Username | Password | Group        | Role              |
 |----------|----------|--------------|-------------------|
-| eve      | eve      | underwriters | Loan underwriter  |
+| jack     | jack     | applicants   | Loan applicant    |
+| kate     | kate     | underwriters | Loan underwriter  |

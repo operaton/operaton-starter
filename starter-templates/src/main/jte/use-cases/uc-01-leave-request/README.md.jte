@@ -5,7 +5,9 @@
 A pre-built Operaton use case example: **Leave Request HR Approval Workflow**.
 
 Alice submits a leave request. Bob (her manager) reviews it and either approves or rejects it.
-If approved, Carol from HR records the approved leave. No Docker, no external services — just run it.
+If approved, Carol from HR records the approved leave. Start with Docker Compose for the Postgres database.
+
+![Process Model](docs/process-model.png)
 
 ## Getting Started in 5 Minutes
 
@@ -13,11 +15,18 @@ If approved, Carol from HR records the approved leave. No Docker, no external se
 
 - Java ${config.javaVersion()} or later
 - Maven wrapper included (`./mvnw`)
+- Docker (for Postgres)
 
-### Run the application
+### 1. Start the database
 
 ```bash
-./mvnw spring-boot:run
+docker compose up -d
+```
+
+### 2. Run the application
+
+```bash
+chmod +x mvnw && ./mvnw spring-boot:run
 ```
 
 The application starts on port ${config.serverPort()}.
@@ -38,11 +47,17 @@ The application starts on port ${config.serverPort()}.
 
 ### Pre-seeded users
 
-| Username | Password | Group     | Role              |
-|----------|----------|-----------|-------------------|
-| alice    | alice    | employees | Leave requester   |
-| bob      | bob      | managers  | Approves/rejects  |
-| carol    | carol    | hr        | Records approved leave |
+| Username | Password | Group           | Role                   |
+|----------|----------|-----------------|------------------------|
+| alice    | alice    | employees       | Leave requester        |
+| bob      | bob      | managers        | Approves/rejects       |
+| carol    | carol    | hr              | Records approved leave |
+| admin    | admin    | operaton-admin  | Operaton admin         |
+
+### Bootstrap Data
+
+Users alice, bob, carol, and admin are seeded from `src/main/resources/data.sql` on startup.
+The admin user can log into the Operaton Admin UI to manage users, groups, and authorizations.
 
 ### Run the tests
 

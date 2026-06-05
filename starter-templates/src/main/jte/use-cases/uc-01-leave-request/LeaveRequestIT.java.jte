@@ -10,6 +10,7 @@ import org.operaton.bpm.engine.TaskService;
 import org.operaton.bpm.engine.task.Task;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 
 import java.util.Map;
 
@@ -23,6 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * Run with: ./mvnw test
  */
+@ActiveProfiles("h2")
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 class LeaveRequestIT {
 
