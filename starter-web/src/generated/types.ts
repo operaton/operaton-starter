@@ -22,6 +22,7 @@ export interface UseCaseExample {
   defaultArtifactId: string
   defaultProjectName: string
   dockerCompose: boolean
+  templateManifest?: TemplateManifestEntry[]
 }
 
 export interface Metadata {

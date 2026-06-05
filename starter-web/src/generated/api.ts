@@ -25,3 +25,18 @@ export async function generateProject(config: ProjectConfig): Promise<Blob> {
   }
   return response.blob()
 }
+
+export async function previewTemplate(templateId: string, config: ProjectConfig): Promise<string | null> {
+  try {
+    const response = await fetch(`${BASE_URL}/api/v1/preview`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({ templateId, config })
+    })
+    if (!response.ok) return null
+    const data = await response.json()
+    return data.content ?? null
+  } catch {
+    return null
+  }
+}

@@ -18,6 +18,16 @@ function handleSelect(node: TreeNode) {
 }
 
 watch(() => props.manifest, () => { selectedFile.value = null })
+
+function flatPaths(nodes: TreeNode[]): string[] {
+  return nodes.flatMap(n => n.isDir ? flatPaths(n.children ?? []) : [n.path])
+}
+
+watch(tree, (newTree) => {
+  if (selectedFile.value && !flatPaths(newTree).includes(selectedFile.value.path)) {
+    selectedFile.value = null
+  }
+})
 </script>
 
 <template>
@@ -44,6 +54,7 @@ watch(() => props.manifest, () => { selectedFile.value = null })
         <FileContentPane
           v-if="selectedFile"
           :node="selectedFile"
+          :config="config"
         />
       </div>
     </div>

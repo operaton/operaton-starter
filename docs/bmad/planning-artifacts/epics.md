@@ -85,6 +85,9 @@ FR70: Each MVP use case example that requires an external system includes a `doc
 FR71: Each MVP use case example includes a character-narrated "Getting Started in 5 Minutes" README section that names the pre-seeded users and guides the developer through Tasklist step-by-step as those characters
 FR72: WireMock stub mapping files for examples that use WireMock are committed in `src/main/resources/wiremock/mappings/` and mounted via bind-mount in `docker-compose.yml`; no stubs configured in Java code; WireMock container image version pinned to specific minor version in template
 FR73: Use case examples discoverable and generatable via all channels; `GET /api/v1/metadata` returns useCaseId list with display name, description, tags, and parameter bundle; `POST /api/v1/generate` accepts optional `useCaseId` resolving to a fixed parameter bundle — no separate generation path
+FR76: The file content pane reactively re-renders when any configuration value changes while a file is open — including Group ID, Artifact ID, project name, Java version, build system, or extras — so displayed content always reflects current form state without requiring re-selection
+FR77: If a file is open in the content pane and a configuration change causes that file to leave the tree (e.g., switching from Maven to Gradle removes `pom.xml`), the content pane clears immediately; no stale content from a no-longer-applicable file remains visible
+FR78: Each use case example entry in the metadata response carries its own `templateManifest` — the list of files specific to that use case including the use-case-specific BPMN — so the File Structure Preview and content pane show the actual use case workflow instead of the generic skeleton process
 
 ### NonFunctional Requirements
 
@@ -219,6 +222,9 @@ FR72: Epic 8 — WireMock stubs as committed files (mappings/) in use case examp
 FR73: Epic 3 + Epic 8 — useCaseId in metadata response and as optional param in POST /api/v1/generate
 FR74: Epic 8 — H2 fallback profile (`application-h2.properties`) in every use case example; README documents the switch; H2 active during `mvn test`
 FR75: Epic 2 — Operaton `banner.txt` included in generated Spring Boot Process Application projects
+FR76: Epic 4 — File content pane reactively re-renders on any configuration change (deep watch on config)
+FR77: Epic 4 — File content pane clears when selected file leaves tree due to configuration change
+FR78: Epic 4 + Epic 8 — Use case examples carry their own `templateManifest` in metadata; File Structure Preview shows use-case-specific BPMN instead of skeleton
 
 ## Epic List
 
@@ -242,7 +248,7 @@ Any developer with internet access (or a curl command) can generate an Operaton 
 
 ### Epic 4: Web UI — Browser-Based Project Generation
 Practitioners complete configuration and download a ZIP in under 30 seconds. Explorers discover their project type through a visual gallery — including four use case example cards that pre-fill the form for real-world scenarios. Both enjoy a professional, keyboard-accessible, operaton.org-consistent interface with live preview, interactive file content pane, and shareable config URLs — benchmarked against start.spring.io and code.quarkus.io.
-**FRs covered:** FR16–20, FR22–23, FR40–41, FR43, FR45, FR46, FR56, FR57, FR60, FR67
+**FRs covered:** FR16–20, FR22–23, FR40–41, FR43, FR45, FR46, FR56, FR57, FR60, FR67, FR76, FR77, FR78
 **UX-DRs covered:** UX-DR1 through UX-DR12
 **ARCH covered:** ARCH-8
 **NFRs:** NFR2, NFR3, NFR11, NFR12, NFR16, NFR20
@@ -265,7 +271,7 @@ Every tagged release automatically publishes to all distribution channels — Do
 
 ### Epic 8: Use Case Examples — Self-Contained Generated Projects
 Four self-contained, out-of-the-box runnable use case example projects are available in the gallery and generatable via all channels using a `useCaseId` parameter. Each demonstrates a distinct BPMN concept (user tasks, DMN decisions, timer escalation, service task orchestration), seeds realistic user roles via `data.sql`, auto-creates an Operaton admin user at startup, and uses PostgreSQL via Docker Compose as the default datasource — with H2 available as a zero-code-change fallback profile. WireMock examples include Postgres and WireMock as two services in the same compose stack. Every example's README includes a BPMN model image, Bootstrap Data instructions, and a `chmod +x mvnw` step for Mac/Linux users. Every example is validated in the CI matrix alongside the core project types.
-**FRs covered:** FR68–75
+**FRs covered:** FR68–75, FR78
 **NFRs:** NFR17 (CI validation extended to cover use case examples)
 
 ---

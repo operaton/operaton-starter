@@ -427,6 +427,14 @@ components:
           type: boolean
           description: Whether the example requires Docker Compose by default
           example: false
+        templateManifest:
+          type: array
+          items:
+            $ref: "#/components/schemas/TemplateManifestEntry"
+          description: >
+            File tree manifest for the use case example, used by the UI to render
+            the preview. Contains the actual use-case-specific templates (e.g. the
+            real BPMN, not the skeleton).
 
     ProblemDetail:
       type: object

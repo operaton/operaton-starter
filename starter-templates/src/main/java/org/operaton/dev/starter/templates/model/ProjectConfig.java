@@ -33,15 +33,16 @@ public record ProjectConfig(
 
     /**
      * Derives the Java package from groupId and artifactId.
-     * Hyphens in artifactId are replaced with underscores (valid Java identifier).
+     * Hyphens in artifactId are removed (not valid in Java identifiers).
+     * Example: com.example / my-process-app → com.example.myprocessapp
      */
     public String javaPackage() {
-        return groupId + "." + artifactId.replace('-', '_');
+        return groupId + "." + artifactId.replace("-", "");
     }
 
     /**
      * Derives the file-system path segment from groupId and artifactId.
-     * Example: com.example / my-process → com/example/my_process
+     * Example: com.example / my-process-app → com/example/myprocessapp
      */
     public String packagePath() {
         return javaPackage().replace('.', '/');

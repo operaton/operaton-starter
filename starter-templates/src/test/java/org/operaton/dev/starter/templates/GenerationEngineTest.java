@@ -112,8 +112,8 @@ class GenerationEngineTest {
             }
         }
 
-        // Core Java sources
-        String pkgPath = "com/example/my_process";
+        // Core Java sources — hyphens stripped from artifactId in Java package
+        String pkgPath = "com/example/myprocess";
         assertTrue(entries.contains("src/main/java/" + pkgPath + "/Application.java"));
         assertTrue(entries.contains("src/main/java/" + pkgPath + "/delegate/SkeletonDelegate.java"));
         assertTrue(entries.contains("src/test/java/" + pkgPath + "/ProcessIT.java"));

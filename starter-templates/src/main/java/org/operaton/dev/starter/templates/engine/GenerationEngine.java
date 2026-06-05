@@ -445,6 +445,14 @@ public class GenerationEngine {
         addEntry(zos, entryPath, content.getBytes(java.nio.charset.StandardCharsets.UTF_8));
     }
 
+    /**
+     * Renders a single JTE template with the given config and returns the content as a String.
+     * Used by the preview endpoint to show rendered file content in the UI.
+     */
+    public String renderSingleTemplate(String templateId, ProjectConfig config) {
+        return renderTemplate(templateId, config);
+    }
+
     private String renderTemplate(String templateName, ProjectConfig config) {
         StringOutput output = new StringOutput();
         jte.render(templateName, config, output);

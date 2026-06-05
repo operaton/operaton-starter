@@ -15,6 +15,7 @@
     "generate:api": "echo 'API types are in src/generated/'"
   },
   "dependencies": {
+    "bpmn-js": "^18.17.1",
     "highlight.js": "^11.11.1",
     "vue": "^3.5.13",
     "vue-router": "^4.5.0"

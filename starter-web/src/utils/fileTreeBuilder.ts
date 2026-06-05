@@ -26,7 +26,9 @@ export function buildFileTree(
 }
 
 function interpolatePath(path: string, config: ProjectConfig): string {
-  const packagePath = `${config.groupId.replace(/\./g, '/')}/${config.artifactId}`
+  // Hyphens are stripped from artifactId when used as a Java package/directory name
+  const sanitizedArtifactId = config.artifactId.replace(/-/g, '')
+  const packagePath = `${config.groupId.replace(/\./g, '/')}/${sanitizedArtifactId}`
   return path
     .replace('{package}', packagePath)
     .replace('{artifactId}', config.artifactId)

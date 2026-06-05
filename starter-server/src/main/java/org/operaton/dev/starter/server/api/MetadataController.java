@@ -63,7 +63,8 @@ public class MetadataController {
                 .buildSystem("MAVEN")
                 .defaultArtifactId("leave-request-example")
                 .defaultProjectName("Leave Request Example")
-                .dockerCompose(false),
+                .dockerCompose(false)
+                .templateManifest(uc01LeaveRequestManifest()),
             new UseCaseExample()
                 .useCaseId("uc-02-loan-application")
                 .title("Loan Application")
@@ -73,7 +74,8 @@ public class MetadataController {
                 .buildSystem("MAVEN")
                 .defaultArtifactId("loan-application-example")
                 .defaultProjectName("Loan Application Example")
-                .dockerCompose(true),
+                .dockerCompose(true)
+                .templateManifest(uc02LoanApplicationManifest()),
             new UseCaseExample()
                 .useCaseId("uc-03-incident-management")
                 .title("Incident Management")
@@ -83,7 +85,8 @@ public class MetadataController {
                 .buildSystem("MAVEN")
                 .defaultArtifactId("incident-management-example")
                 .defaultProjectName("Incident Management Example")
-                .dockerCompose(true),
+                .dockerCompose(true)
+                .templateManifest(uc03IncidentManagementManifest()),
             new UseCaseExample()
                 .useCaseId("uc-04-order-fulfillment")
                 .title("Order Fulfillment")
@@ -94,7 +97,85 @@ public class MetadataController {
                 .defaultArtifactId("order-fulfillment-example")
                 .defaultProjectName("Order Fulfillment Example")
                 .dockerCompose(true)
+                .templateManifest(uc04OrderFulfillmentManifest())
         );
+    }
+
+    private List<TemplateManifestEntry> uc01LeaveRequestManifest() {
+        String d = "use-cases/uc-01-leave-request/";
+        List<TemplateManifestEntry> e = new ArrayList<>();
+        e.add(entry("pom.xml", null, d + "maven/pom.xml.jte"));
+        e.add(entry("src/main/java/{package}/Application.java", null, d + "Application.java.jte"));
+        e.add(entry("src/main/resources/leave-request.bpmn", null, d + "leave-request.bpmn.jte"));
+        e.add(entry("src/main/resources/application.properties", null, d + "application.properties.jte"));
+        e.add(entry("src/main/resources/application-h2.properties", null, d + "application-h2.properties.jte"));
+        e.add(entry("src/main/resources/data.sql", null, d + "data.sql.jte"));
+        e.add(entry("src/test/java/{package}/LeaveRequestIT.java", null, d + "LeaveRequestIT.java.jte"));
+        e.add(entry("README.md", null, d + "README.md.jte"));
+        return e;
+    }
+
+    private List<TemplateManifestEntry> uc02LoanApplicationManifest() {
+        String d = "use-cases/uc-02-loan-application/";
+        List<TemplateManifestEntry> e = new ArrayList<>();
+        e.add(entry("pom.xml", null, d + "maven/pom.xml.jte"));
+        e.add(entry("src/main/java/{package}/Application.java", null, d + "Application.java.jte"));
+        e.add(entry("src/main/java/{package}/delegate/CreditScoreDelegate.java", null, d + "CreditScoreDelegate.java.jte"));
+        e.add(entry("src/main/java/{package}/delegate/NotificationDelegate.java", null, d + "NotificationDelegate.java.jte"));
+        e.add(entry("src/main/resources/loan-application.bpmn", null, d + "loan-application.bpmn.jte"));
+        e.add(entry("src/main/resources/dmn/risk-assessment.dmn", null, d + "risk-assessment.dmn.jte"));
+        e.add(entry("src/main/resources/application.properties", null, d + "application.properties.jte"));
+        e.add(entry("src/main/resources/application-h2.properties", null, d + "application-h2.properties.jte"));
+        e.add(entry("src/main/resources/data.sql", null, d + "data.sql.jte"));
+        e.add(entry("src/main/resources/wiremock/mappings/credit-score-stub.json", null, d + "wiremock/mappings/credit-score-stub.json.jte"));
+        e.add(entry("src/test/java/{package}/LoanApplicationIT.java", null, d + "LoanApplicationIT.java.jte"));
+        e.add(entry("docker-compose.yml", null, d + "docker-compose.yml.jte"));
+        e.add(entry("README.md", null, d + "README.md.jte"));
+        return e;
+    }
+
+    private List<TemplateManifestEntry> uc03IncidentManagementManifest() {
+        String d = "use-cases/uc-03-incident-management/";
+        List<TemplateManifestEntry> e = new ArrayList<>();
+        e.add(entry("pom.xml", null, d + "maven/pom.xml.jte"));
+        e.add(entry("src/main/java/{package}/Application.java", null, d + "Application.java.jte"));
+        e.add(entry("src/main/java/{package}/delegate/CloseTicketDelegate.java", null, d + "CloseTicketDelegate.java.jte"));
+        e.add(entry("src/main/java/{package}/delegate/PostMortemDelegate.java", null, d + "PostMortemDelegate.java.jte"));
+        e.add(entry("src/main/resources/incident-management.bpmn", null, d + "incident-management.bpmn.jte"));
+        e.add(entry("src/main/resources/application.properties", null, d + "application.properties.jte"));
+        e.add(entry("src/main/resources/application-h2.properties", null, d + "application-h2.properties.jte"));
+        e.add(entry("src/main/resources/application-test.properties", null, d + "application-test.properties.jte"));
+        e.add(entry("src/main/resources/data.sql", null, d + "data.sql.jte"));
+        e.add(entry("src/main/resources/wiremock/mappings/close-ticket-stub.json", null, d + "wiremock/mappings/close-ticket-stub.json.jte"));
+        e.add(entry("src/main/resources/wiremock/mappings/post-mortem-stub.json", null, d + "wiremock/mappings/post-mortem-stub.json.jte"));
+        e.add(entry("src/test/java/{package}/IncidentManagementIT.java", null, d + "IncidentManagementIT.java.jte"));
+        e.add(entry("docker-compose.yml", null, d + "docker-compose.yml.jte"));
+        e.add(entry("README.md", null, d + "README.md.jte"));
+        return e;
+    }
+
+    private List<TemplateManifestEntry> uc04OrderFulfillmentManifest() {
+        String d = "use-cases/uc-04-order-fulfillment/";
+        List<TemplateManifestEntry> e = new ArrayList<>();
+        e.add(entry("pom.xml", null, d + "maven/pom.xml.jte"));
+        e.add(entry("src/main/java/{package}/Application.java", null, d + "Application.java.jte"));
+        e.add(entry("src/main/java/{package}/delegate/InventoryDelegate.java", null, d + "InventoryDelegate.java.jte"));
+        e.add(entry("src/main/java/{package}/delegate/PaymentDelegate.java", null, d + "PaymentDelegate.java.jte"));
+        e.add(entry("src/main/java/{package}/delegate/NotifyCustomerDelegate.java", null, d + "NotifyCustomerDelegate.java.jte"));
+        e.add(entry("src/main/java/{package}/delegate/NotifyBackorderDelegate.java", null, d + "NotifyBackorderDelegate.java.jte"));
+        e.add(entry("src/main/resources/order-fulfillment.bpmn", null, d + "order-fulfillment.bpmn.jte"));
+        e.add(entry("src/main/resources/application.properties", null, d + "application.properties.jte"));
+        e.add(entry("src/main/resources/application-h2.properties", null, d + "application-h2.properties.jte"));
+        e.add(entry("src/main/resources/data.sql", null, d + "data.sql.jte"));
+        e.add(entry("src/main/resources/wiremock/mappings/inventory-in-stock.json", null, d + "wiremock/mappings/inventory-in-stock.json.jte"));
+        e.add(entry("src/main/resources/wiremock/mappings/inventory-out-of-stock.json", null, d + "wiremock/mappings/inventory-out-of-stock.json.jte"));
+        e.add(entry("src/main/resources/wiremock/mappings/payment-success.json", null, d + "wiremock/mappings/payment-success.json.jte"));
+        e.add(entry("src/main/resources/wiremock/mappings/notify-customer.json", null, d + "wiremock/mappings/notify-customer.json.jte"));
+        e.add(entry("src/main/resources/wiremock/mappings/notify-backorder.json", null, d + "wiremock/mappings/notify-backorder.json.jte"));
+        e.add(entry("src/test/java/{package}/OrderFulfillmentIT.java", null, d + "OrderFulfillmentIT.java.jte"));
+        e.add(entry("docker-compose.yml", null, d + "docker-compose.yml.jte"));
+        e.add(entry("README.md", null, d + "README.md.jte"));
+        return e;
     }
 
     private ProjectTypeInfo buildProcessApplication() {
