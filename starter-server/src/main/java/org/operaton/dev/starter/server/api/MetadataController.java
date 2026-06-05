@@ -48,7 +48,53 @@ public class MetadataController {
         if (defaultGroupId != null && !defaultGroupId.isBlank()) {
             metadata.setDefaultGroupId(defaultGroupId);
         }
+        metadata.setUseCaseExamples(buildUseCaseExamples());
         return metadata;
+    }
+
+    private List<UseCaseExample> buildUseCaseExamples() {
+        return List.of(
+            new UseCaseExample()
+                .useCaseId("uc-01-leave-request")
+                .title("Leave Request")
+                .description("A manager approves employee leave — two roles, one process, zero infrastructure overhead.")
+                .tags(List.of("multi-role", "human-tasks"))
+                .projectType("PROCESS_APPLICATION")
+                .buildSystem("MAVEN")
+                .defaultArtifactId("leave-request-example")
+                .defaultProjectName("Leave Request Example")
+                .dockerCompose(false),
+            new UseCaseExample()
+                .useCaseId("uc-02-loan-application")
+                .title("Loan Application")
+                .description("Credit scoring via DMN decision table with WireMock-stubbed external API — covers low/medium/high risk routing.")
+                .tags(List.of("DMN", "service-tasks", "wiremock", "docker-compose"))
+                .projectType("PROCESS_APPLICATION")
+                .buildSystem("MAVEN")
+                .defaultArtifactId("loan-application-example")
+                .defaultProjectName("Loan Application Example")
+                .dockerCompose(true),
+            new UseCaseExample()
+                .useCaseId("uc-03-incident-management")
+                .title("Incident Management")
+                .description("SLA timer boundary event that escalates unresolved tickets from first-line to second-line engineering.")
+                .tags(List.of("timer", "boundary-event", "escalation", "wiremock", "docker-compose"))
+                .projectType("PROCESS_APPLICATION")
+                .buildSystem("MAVEN")
+                .defaultArtifactId("incident-management-example")
+                .defaultProjectName("Incident Management Example")
+                .dockerCompose(true),
+            new UseCaseExample()
+                .useCaseId("uc-04-order-fulfillment")
+                .title("Order Fulfillment")
+                .description("Multi-service-task orchestration with inventory, payment, and notification REST calls stubbed via WireMock.")
+                .tags(List.of("service-tasks", "rest", "wiremock", "conditional-routing", "docker-compose"))
+                .projectType("PROCESS_APPLICATION")
+                .buildSystem("MAVEN")
+                .defaultArtifactId("order-fulfillment-example")
+                .defaultProjectName("Order Fulfillment Example")
+                .dockerCompose(true)
+        );
     }
 
     private ProjectTypeInfo buildProcessApplication() {

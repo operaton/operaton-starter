@@ -139,10 +139,10 @@ development_status:
   # ─────────────────────────────────────────────────────────────────────────
   epic-8: in-progress
 
-  8-1-uc-01-leave-request-hr-approval-workflow: backlog
-  8-2-uc-02-loan-application-dmn-decision-service-tasks: backlog
-  8-3-uc-03-incident-management-timer-boundary-escalation: backlog
-  8-4-uc-04-order-fulfillment-service-task-orchestration: backlog
-  8-5-use-case-example-gallery-cards: backlog
+  8-1-uc-01-leave-request-hr-approval-workflow: done
+  8-2-uc-02-loan-application-dmn-decision-service-tasks: done
+  8-3-uc-03-incident-management-timer-boundary-escalation: done
+  8-4-uc-04-order-fulfillment-service-task-orchestration: done
+  8-5-use-case-example-gallery-cards: done
 
   epic-8-retrospective: optional

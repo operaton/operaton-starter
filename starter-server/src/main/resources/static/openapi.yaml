@@ -17,6 +17,101 @@ servers:
 
 paths:
   /api/v1/generate:
+    get:
+      operationId: generateProjectFromQuery
+      summary: Generate a project archive from query parameters
+      description: |
+        Generates an Operaton project archive (ZIP) based on query parameters.
+        This exists primarily for IDE deep-link compatibility.
+      parameters:
+        - name: projectType
+          in: query
+          schema:
+            type: string
+            enum: [PROCESS_APPLICATION, PROCESS_ARCHIVE, DMN_PROJECT]
+            default: PROCESS_APPLICATION
+        - name: buildSystem
+          in: query
+          schema:
+            type: string
+            enum: [MAVEN, GRADLE_GROOVY, GRADLE_KOTLIN]
+            default: MAVEN
+        - name: groupId
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: "^[a-zA-Z][a-zA-Z0-9.\\-]*$"
+        - name: artifactId
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: "^[a-zA-Z][a-zA-Z0-9\\-]*$"
+        - name: projectName
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: javaVersion
+          in: query
+          schema:
+            type: integer
+            enum: [17, 21, 25]
+            default: 17
+        - name: deploymentTarget
+          in: query
+          schema:
+            type: string
+            enum: [TOMCAT, STANDALONE_ENGINE]
+        - name: dependencyUpdater
+          in: query
+          schema:
+            type: string
+            enum: [DEPENDABOT, RENOVATE]
+            default: RENOVATE
+        - name: dockerCompose
+          in: query
+          schema:
+            type: boolean
+            default: false
+        - name: githubActions
+          in: query
+          schema:
+            type: boolean
+            default: true
+        - name: useCaseId
+          in: query
+          schema:
+            type: string
+          description: |
+            Optional use case example identifier. When provided, the server resolves the
+            full parameter bundle for that use case and generates use-case-specific files.
+      responses:
+        "200":
+          description: ZIP archive of the generated project
+          content:
+            application/zip:
+              schema:
+                type: string
+                format: binary
+        "400":
+          description: Invalid configuration
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+        "429":
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the rate limit resets
+              schema:
+                type: integer
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
     post:
       operationId: generateProject
       summary: Generate a project archive
@@ -96,7 +191,7 @@ components:
       properties:
         projectType:
           type: string
-          enum: [PROCESS_APPLICATION, PROCESS_ARCHIVE]
+          enum: [PROCESS_APPLICATION, PROCESS_ARCHIVE, DMN_PROJECT]
           description: Type of Operaton project to generate
         buildSystem:
           type: string
@@ -140,6 +235,12 @@ components:
           type: boolean
           description: Include GitHub Actions CI/CD skeleton in generated project
           default: true
+        useCaseId:
+          type: string
+          description: |
+            Optional use case example identifier. When provided, the server resolves the
+            full parameter bundle for that use case and generates use-case-specific files.
+          example: uc-01-leave-request
 
     Metadata:
       type: object
@@ -158,6 +259,18 @@ components:
             $ref: "#/components/schemas/BuildSystemInfo"
         globalOptions:
           $ref: "#/components/schemas/GlobalOptions"
+        defaultGroupId:
+          type: string
+          description: >
+            Operator-configured default Group ID. Present only when the self-hosted instance
+            sets STARTER_DEFAULTS_GROUP_ID. Clients should pre-fill the groupId field with
+            this value when present.
+          example: com.example
+        useCaseExamples:
+          type: array
+          items:
+            $ref: "#/components/schemas/UseCaseExample"
+          description: Pre-configured use case example projects available in the gallery
 
     ProjectTypeInfo:
       type: object
@@ -262,6 +375,58 @@ components:
             This is the static template source — it does not reflect the current form state.
             Null for binary files or files where preview is not meaningful.
           example: "package ${groupId};\n\nimport org.springframework.boot.SpringApplication;\n..."
+
+    UseCaseExample:
+      type: object
+      required:
+        - useCaseId
+        - title
+        - description
+        - tags
+        - projectType
+        - buildSystem
+        - defaultArtifactId
+        - defaultProjectName
+        - dockerCompose
+      properties:
+        useCaseId:
+          type: string
+          description: Unique identifier for the use case example
+          example: uc-01-leave-request
+        title:
+          type: string
+          description: Short display title for the gallery card
+          example: Leave Request
+        description:
+          type: string
+          description: One-sentence scenario description for the gallery card
+          example: A manager approves employee leave — two roles, one process, zero infrastructure overhead.
+        tags:
+          type: array
+          items:
+            type: string
+          description: Capability tags displayed on the gallery card
+          example: ["multi-role", "human-tasks"]
+        projectType:
+          type: string
+          description: Base project type for generation
+          example: PROCESS_APPLICATION
+        buildSystem:
+          type: string
+          description: Default build system for generation
+          example: MAVEN
+        defaultArtifactId:
+          type: string
+          description: Default artifact ID to pre-fill in the configure form
+          example: leave-request-example
+        defaultProjectName:
+          type: string
+          description: Default project name to pre-fill in the configure form
+          example: Leave Request Example
+        dockerCompose:
+          type: boolean
+          description: Whether the example requires Docker Compose by default
+          example: false
 
     ProblemDetail:
       type: object

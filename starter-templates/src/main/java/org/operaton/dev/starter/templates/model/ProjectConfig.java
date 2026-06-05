@@ -24,7 +24,8 @@ public record ProjectConfig(
         boolean githubActions,
         String operatonVersionOverride,
         String mavenRegistryUrl,
-        int serverPort
+        int serverPort,
+        String useCaseId
 ) {
 
     /** Default Java version used when not specified by the user. */
@@ -80,7 +81,31 @@ public record ProjectConfig(
                 githubActions,
                 normalizeBlank(operatonVersionOverride),
                 normalizeBlank(mavenRegistryUrl),
-                serverPort
+                serverPort,
+                useCaseId
+        );
+    }
+
+    /**
+     * Applies server-side defaults for a named use case example so generation stays consistent
+     * even when callers omit or override incompatible fields.
+     */
+    public ProjectConfig withUseCaseDefaults(ProjectType projectType, BuildSystem buildSystem, boolean dockerCompose) {
+        return new ProjectConfig(
+                groupId,
+                artifactId,
+                projectName,
+                projectType,
+                buildSystem,
+                javaVersion,
+                deploymentTarget,
+                dependencyUpdater,
+                dockerCompose,
+                githubActions,
+                operatonVersionOverride,
+                mavenRegistryUrl,
+                serverPort,
+                useCaseId
         );
     }
 
@@ -103,6 +128,7 @@ public record ProjectConfig(
         private String operatonVersionOverride = "";
         private String mavenRegistryUrl = "";
         private int serverPort = 8080;
+        private String useCaseId = null;
 
         private Builder() {}
 
@@ -136,6 +162,11 @@ public record ProjectConfig(
             return this;
         }
 
+        public Builder useCaseId(String useCaseId) {
+            this.useCaseId = useCaseId;
+            return this;
+        }
+
         public ProjectConfig build() {
             if (groupId == null || groupId.isBlank()) {
                 throw new IllegalStateException("groupId is required");
@@ -156,7 +187,8 @@ public record ProjectConfig(
                     dockerCompose, githubActions,
                     normalizeBlank(operatonVersionOverride),
                     normalizeBlank(mavenRegistryUrl),
-                    serverPort
+                    serverPort,
+                    useCaseId
             );
         }
     }

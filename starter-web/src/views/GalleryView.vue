@@ -5,128 +5,13 @@ import { useMetadata } from '@/composables/useMetadata'
 import ProjectTypeCard from '@/components/ProjectTypeCard.vue'
 import SkeletonCard from '@/components/SkeletonCard.vue'
 import ErrorBanner from '@/components/ErrorBanner.vue'
-import UseCaseCard, { type UseCase } from '@/components/UseCaseCard.vue'
+import UseCaseGalleryCard from '@/components/UseCaseGalleryCard.vue'
+import type { UseCaseExample } from '@/generated/types'
 
 const { data: metadata, isLoading, error } = useMetadata()
 const router = useRouter()
 const galleryRef = ref<HTMLElement | null>(null)
 const useCasesRef = ref<HTMLElement | null>(null)
-
-const USE_CASES: UseCase[] = [
-  {
-    title: 'Expense Approval',
-    description: 'Multi-level approval workflow for employee expense reports with manager and finance sign-off.',
-    icon: '💰',
-    tags: ['Approvals', 'HR', 'Spring Boot'],
-    query: {
-      projectType: 'PROCESS_APPLICATION',
-      buildSystem: 'MAVEN',
-      javaVersion: '17',
-      artifactId: 'expense-approval',
-      projectName: 'Expense Approval',
-      githubActions: 'true',
-      dockerCompose: 'true',
-      dependencyUpdater: 'RENOVATE',
-    },
-  },
-  {
-    title: 'Employee Onboarding',
-    description: 'Structured onboarding process coordinating IT provisioning, HR paperwork, and team introductions.',
-    icon: '🧑‍💼',
-    tags: ['HR', 'Onboarding', 'Spring Boot'],
-    query: {
-      projectType: 'PROCESS_APPLICATION',
-      buildSystem: 'MAVEN',
-      javaVersion: '21',
-      artifactId: 'employee-onboarding',
-      projectName: 'Employee Onboarding',
-      githubActions: 'true',
-      dockerCompose: 'false',
-      dependencyUpdater: 'RENOVATE',
-    },
-  },
-  {
-    title: 'IT Incident Management',
-    description: 'Escalation and resolution workflow for IT incidents with SLA tracking and stakeholder notifications.',
-    icon: '🚨',
-    tags: ['ITSM', 'Escalation', 'Gradle Kotlin'],
-    query: {
-      projectType: 'PROCESS_APPLICATION',
-      buildSystem: 'GRADLE_KOTLIN',
-      javaVersion: '21',
-      artifactId: 'incident-management',
-      projectName: 'IT Incident Management',
-      githubActions: 'true',
-      dockerCompose: 'true',
-      dependencyUpdater: 'RENOVATE',
-    },
-  },
-  {
-    title: 'Customer Order Fulfillment',
-    description: 'End-to-end order processing from placement through payment, fulfillment, and delivery confirmation.',
-    icon: '📦',
-    tags: ['E-Commerce', 'Integration', 'Spring Boot'],
-    query: {
-      projectType: 'PROCESS_APPLICATION',
-      buildSystem: 'MAVEN',
-      javaVersion: '17',
-      artifactId: 'order-fulfillment',
-      projectName: 'Customer Order Fulfillment',
-      githubActions: 'true',
-      dockerCompose: 'true',
-      dependencyUpdater: 'DEPENDABOT',
-    },
-  },
-  {
-    title: 'Leave Request',
-    description: 'Simple leave approval process deployable to a shared Operaton engine — ideal for enterprise environments.',
-    icon: '🏖️',
-    tags: ['HR', 'Approvals', 'Process Archive'],
-    query: {
-      projectType: 'PROCESS_ARCHIVE',
-      buildSystem: 'MAVEN',
-      javaVersion: '17',
-      artifactId: 'leave-request',
-      projectName: 'Leave Request',
-      deploymentTarget: 'TOMCAT',
-      githubActions: 'true',
-      dockerCompose: 'false',
-      dependencyUpdater: 'RENOVATE',
-    },
-  },
-  {
-    title: 'DMN Decision Table',
-    description: 'Standalone DMN decision project with a skeleton decision table, Spring Boot evaluator, and passing tests out of the box.',
-    icon: '📊',
-    tags: ['DMN', 'Decision Table', 'Rules Engine'],
-    query: {
-      projectType: 'DMN_PROJECT',
-      buildSystem: 'MAVEN',
-      javaVersion: '17',
-      artifactId: 'my-decisions',
-      projectName: 'My Decisions',
-      githubActions: 'true',
-      dockerCompose: 'false',
-      dependencyUpdater: 'RENOVATE',
-    },
-  },
-  {
-    title: 'Document Review & Sign-off',
-    description: 'Collaborative document review workflow with parallel reviewer tracks and sequential approval gates.',
-    icon: '📄',
-    tags: ['Compliance', 'Documents', 'Gradle Kotlin'],
-    query: {
-      projectType: 'PROCESS_APPLICATION',
-      buildSystem: 'GRADLE_KOTLIN',
-      javaVersion: '21',
-      artifactId: 'document-review',
-      projectName: 'Document Review',
-      githubActions: 'true',
-      dockerCompose: 'false',
-      dependencyUpdater: 'RENOVATE',
-    },
-  },
-]
 
 function scrollToGallery() {
   galleryRef.value?.scrollIntoView({ behavior: 'smooth' })
@@ -138,6 +23,20 @@ function scrollToUseCases() {
 
 function goToConfigure() {
   router.push('/configure')
+}
+
+function handleUseCaseSelect(entry: UseCaseExample) {
+  router.push({
+    path: '/configure',
+    query: {
+      projectType: entry.projectType,
+      buildSystem: entry.buildSystem,
+      artifactId: entry.defaultArtifactId,
+      projectName: entry.defaultProjectName,
+      dockerCompose: String(entry.dockerCompose),
+      useCaseId: entry.useCaseId,
+    },
+  })
 }
 </script>
 
@@ -197,14 +96,25 @@ function goToConfigure() {
       </div>
     </section>
 
-    <!-- Use Cases Section -->
-    <section ref="useCasesRef" class="py-12 px-6 md:px-8 max-w-content mx-auto">
+    <!-- Use Case Examples Section (API-driven) -->
+    <section
+      v-if="metadata?.useCaseExamples?.length"
+      ref="useCasesRef"
+      class="py-12 px-6 md:px-8 max-w-content mx-auto border-b border-neutral-200"
+    >
       <div class="mb-8">
-        <h2 class="text-2xl font-semibold text-neutral-900 mb-2">Start from a use case</h2>
-        <p class="text-sm text-neutral-500">Pre-configured templates for common business processes. Pick one and customize from there.</p>
+        <h2 class="text-2xl font-semibold text-neutral-900 mb-2">Use Case Examples</h2>
+        <p class="text-sm text-neutral-500">
+          Self-contained examples covering real-world BPM scenarios. Each generates a runnable project.
+        </p>
       </div>
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <UseCaseCard v-for="uc in USE_CASES" :key="uc.title" :use-case="uc" />
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <UseCaseGalleryCard
+          v-for="uc in metadata.useCaseExamples"
+          :key="uc.useCaseId"
+          :entry="uc"
+          @select="handleUseCaseSelect"
+        />
       </div>
     </section>
   </div>
