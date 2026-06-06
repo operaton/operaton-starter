@@ -57,13 +57,13 @@ public class MetadataController {
             new UseCaseExample()
                 .useCaseId("uc-01-leave-request")
                 .title("Leave Request")
-                .description("A manager approves employee leave — two roles, one process, zero infrastructure overhead.")
-                .tags(List.of("multi-role", "human-tasks"))
+                .description("Employee leave approval with automatic validation, persisted balances, manager review, and HR finalization.")
+                .tags(List.of("multi-role", "human-tasks", "validation", "postgresql", "docker-compose"))
                 .projectType("PROCESS_APPLICATION")
                 .buildSystem("MAVEN")
                 .defaultArtifactId("leave-request-example")
                 .defaultProjectName("Leave Request Example")
-                .dockerCompose(false)
+                .dockerCompose(true)
                 .templateManifest(uc01LeaveRequestManifest()),
             new UseCaseExample()
                 .useCaseId("uc-02-loan-application")
@@ -106,10 +106,14 @@ public class MetadataController {
         List<TemplateManifestEntry> e = new ArrayList<>();
         e.add(entry("pom.xml", null, d + "maven/pom.xml.jte"));
         e.add(entry("src/main/java/{package}/Application.java", null, d + "Application.java.jte"));
+        e.add(entry("src/main/java/{package}/VacationBalanceService.java", null, d + "VacationBalanceService.java.jte"));
+        e.add(entry("src/main/java/{package}/delegate/LeaveRequestValidationDelegate.java", null, d + "delegate/LeaveRequestValidationDelegate.java.jte"));
+        e.add(entry("src/main/java/{package}/delegate/FinalizeLeaveApprovalDelegate.java", null, d + "delegate/FinalizeLeaveApprovalDelegate.java.jte"));
         e.add(entry("src/main/resources/leave-request.bpmn", null, d + "leave-request.bpmn.jte"));
         e.add(entry("src/main/resources/application.properties", null, d + "application.properties.jte"));
         e.add(entry("src/main/resources/application-h2.properties", null, d + "application-h2.properties.jte"));
-        e.add(entry("src/main/resources/data.sql", null, d + "data.sql.jte"));
+        e.add(entry("src/main/resources/schema.sql", null, d + "schema.sql.jte"));
+        e.add(entry("src/main/java/{package}/DataInitializer.java", null, d + "DataInitializer.java.jte"));
         e.add(entry("src/test/java/{package}/LeaveRequestIT.java", null, d + "LeaveRequestIT.java.jte"));
         e.add(entry("README.md", null, d + "README.md.jte"));
         return e;
@@ -126,7 +130,7 @@ public class MetadataController {
         e.add(entry("src/main/resources/dmn/risk-assessment.dmn", null, d + "risk-assessment.dmn.jte"));
         e.add(entry("src/main/resources/application.properties", null, d + "application.properties.jte"));
         e.add(entry("src/main/resources/application-h2.properties", null, d + "application-h2.properties.jte"));
-        e.add(entry("src/main/resources/data.sql", null, d + "data.sql.jte"));
+        e.add(entry("src/main/java/{package}/DataInitializer.java", null, d + "DataInitializer.java.jte"));
         e.add(entry("src/main/resources/wiremock/mappings/credit-score-stub.json", null, d + "wiremock/mappings/credit-score-stub.json.jte"));
         e.add(entry("src/test/java/{package}/LoanApplicationIT.java", null, d + "LoanApplicationIT.java.jte"));
         e.add(entry("docker-compose.yml", null, d + "docker-compose.yml.jte"));
@@ -145,7 +149,7 @@ public class MetadataController {
         e.add(entry("src/main/resources/application.properties", null, d + "application.properties.jte"));
         e.add(entry("src/main/resources/application-h2.properties", null, d + "application-h2.properties.jte"));
         e.add(entry("src/main/resources/application-test.properties", null, d + "application-test.properties.jte"));
-        e.add(entry("src/main/resources/data.sql", null, d + "data.sql.jte"));
+        e.add(entry("src/main/java/{package}/DataInitializer.java", null, d + "DataInitializer.java.jte"));
         e.add(entry("src/main/resources/wiremock/mappings/close-ticket-stub.json", null, d + "wiremock/mappings/close-ticket-stub.json.jte"));
         e.add(entry("src/main/resources/wiremock/mappings/post-mortem-stub.json", null, d + "wiremock/mappings/post-mortem-stub.json.jte"));
         e.add(entry("src/test/java/{package}/IncidentManagementIT.java", null, d + "IncidentManagementIT.java.jte"));
@@ -166,7 +170,7 @@ public class MetadataController {
         e.add(entry("src/main/resources/order-fulfillment.bpmn", null, d + "order-fulfillment.bpmn.jte"));
         e.add(entry("src/main/resources/application.properties", null, d + "application.properties.jte"));
         e.add(entry("src/main/resources/application-h2.properties", null, d + "application-h2.properties.jte"));
-        e.add(entry("src/main/resources/data.sql", null, d + "data.sql.jte"));
+        e.add(entry("src/main/java/{package}/DataInitializer.java", null, d + "DataInitializer.java.jte"));
         e.add(entry("src/main/resources/wiremock/mappings/inventory-in-stock.json", null, d + "wiremock/mappings/inventory-in-stock.json.jte"));
         e.add(entry("src/main/resources/wiremock/mappings/inventory-out-of-stock.json", null, d + "wiremock/mappings/inventory-out-of-stock.json.jte"));
         e.add(entry("src/main/resources/wiremock/mappings/payment-success.json", null, d + "wiremock/mappings/payment-success.json.jte"));

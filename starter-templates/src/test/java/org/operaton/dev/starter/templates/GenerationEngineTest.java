@@ -398,6 +398,52 @@ class GenerationEngineTest {
         assertTrue(readme.contains("./gradlew"), "README build commands should use ./gradlew");
     }
 
+    @Test
+    void uc01_leave_request_archive_contains_balance_support_files() throws Exception {
+        var config = ProjectConfig.builder()
+                .groupId("com.example")
+                .artifactId("leave-request-demo")
+                .projectName("Leave Request Demo")
+                .useCaseId("uc-01-leave-request")
+                .build();
+
+        var entries = listZipEntries(engine.generate(config));
+        String pkgPath = "com/example/leaverequestdemo";
+
+        assertTrue(entries.contains("src/main/java/" + pkgPath + "/VacationBalanceService.java"));
+        assertTrue(entries.contains("src/main/java/" + pkgPath + "/delegate/LeaveRequestValidationDelegate.java"));
+        assertTrue(entries.contains("src/main/java/" + pkgPath + "/delegate/FinalizeLeaveApprovalDelegate.java"));
+        assertTrue(entries.contains("src/main/resources/schema.sql"));
+        assertTrue(entries.contains("src/main/java/" + pkgPath + "/DataInitializer.java"));
+    }
+
+    @ParameterizedTest(name = "Detailed README present — {0}")
+    @MethodSource("useCaseIds")
+    void use_case_readmes_include_guided_flow_sections(String useCaseId) throws Exception {
+        var config = ProjectConfig.builder()
+                .groupId("com.example")
+                .artifactId(useCaseId)
+                .projectName("Use Case Example")
+                .useCaseId(useCaseId)
+                .build();
+
+        String readme = readZipEntry(engine.generate(config), "README.md");
+
+        assertTrue(readme.contains("## Actors"));
+        assertTrue(readme.contains("## Main Flow"));
+        assertTrue(readme.contains("## Alternate Paths"));
+        assertTrue(readme.contains("## Important Business Rules"));
+    }
+
+    static Stream<Arguments> useCaseIds() {
+        return Stream.of(
+                "uc-01-leave-request",
+                "uc-02-loan-application",
+                "uc-03-incident-management",
+                "uc-04-order-fulfillment"
+        ).map(Arguments::of);
+    }
+
     private static List<String> listZipEntries(byte[] zip) throws Exception {
         var entries = new ArrayList<String>();
         try (var zis = new ZipInputStream(new ByteArrayInputStream(zip))) {

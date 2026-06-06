@@ -2,28 +2,27 @@
 @param ProjectConfig config
 package ${config.javaPackage()};
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.operaton.bpm.engine.FormService;
+import org.operaton.bpm.engine.IdentityService;
 import org.operaton.bpm.engine.ProcessEngine;
 import org.operaton.bpm.engine.RepositoryService;
 import org.operaton.bpm.engine.RuntimeService;
 import org.operaton.bpm.engine.TaskService;
+import org.operaton.bpm.engine.form.FormField;
+import org.operaton.bpm.engine.runtime.ProcessInstance;
 import org.operaton.bpm.engine.task.Task;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 
+import java.time.LocalDate;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Integration test for the Leave Request approval workflow.
- *
- * Covers both the approval path (alice → bob approves → carol records)
- * and the rejection path (alice → bob rejects → alice notified).
- *
- * Run with: ./mvnw test
- */
 @ActiveProfiles("h2")
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 class LeaveRequestIT {
@@ -40,53 +39,91 @@ class LeaveRequestIT {
     @Autowired
     private TaskService taskService;
 
+    @Autowired
+    private FormService formService;
+
+    @Autowired
+    private IdentityService identityService;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+    @BeforeEach
+    void resetVacationBalances() {
+        jdbcTemplate.update(
+                "UPDATE employee_vacation_balance SET remaining_vacation_days = ? WHERE employee_id = ?",
+                30,
+                "alice"
+        );
+        jdbcTemplate.update(
+                "UPDATE employee_vacation_balance SET remaining_vacation_days = ? WHERE employee_id = ?",
+                30,
+                "bob"
+        );
+        jdbcTemplate.update(
+                "UPDATE employee_vacation_balance SET remaining_vacation_days = ? WHERE employee_id = ?",
+                30,
+                "carol"
+        );
+    }
+
     @Test
     void processDefinitionIsDeployed() {
         long count = repositoryService.createProcessDefinitionQuery()
                 .processDefinitionKey("leave-request")
                 .count();
+
         assertThat(count).as("leave-request process definition must be deployed").isEqualTo(1);
     }
 
     @Test
-    void approvalPath_aliceStartsBobApproves_carolRecords() {
-        // Alice starts a leave request
-        var instance = runtimeService.startProcessInstanceByKey("leave-request",
-                Map.of("requester", "alice"));
+    void startForm_exposesVacationInputs() {
+        String processDefinitionId = repositoryService.createProcessDefinitionQuery()
+                .processDefinitionKey("leave-request")
+                .singleResult()
+                .getId();
 
-        // Bob (manager) sees and claims the task
+        assertThat(formService.getStartFormData(processDefinitionId).getFormFields())
+                .extracting(FormField::getId)
+                .contains("startDate", "durationDays");
+    }
+
+    @Test
+    void approvalPath_persistsRequestedDataAndDeductsBalanceAfterHrFinalization() {
+        LocalDate requestedStartDate = LocalDate.now().plusDays(2);
+        ProcessInstance instance = startLeaveRequest("alice", requestedStartDate, 5);
+
+        assertThat(runtimeService.getVariable(instance.getId(), "requester")).isEqualTo("alice");
+        assertThat(runtimeService.getVariable(instance.getId(), "startDate")).isEqualTo(requestedStartDate.toString());
+        assertThat(runtimeService.getVariable(instance.getId(), "durationDays")).isEqualTo(5);
+        assertThat(runtimeService.getVariable(instance.getId(), "remainingVacationDays")).isEqualTo(30);
+        assertThat(runtimeService.getVariable(instance.getId(), "validationPassed")).isEqualTo(true);
+
         Task managerTask = taskService.createTaskQuery()
                 .processInstanceId(instance.getId())
                 .taskCandidateGroup("managers")
                 .singleResult();
-        assertThat(managerTask).as("manager review task must exist").isNotNull();
-        assertThat(managerTask.getName()).isEqualTo("Manager Reviews Request");
+        assertThat(managerTask).isNotNull();
 
         taskService.claim(managerTask.getId(), "bob");
         taskService.complete(managerTask.getId(), Map.of("approved", true));
 
-        // Carol (HR) sees the approved leave task
         Task hrTask = taskService.createTaskQuery()
                 .processInstanceId(instance.getId())
                 .taskCandidateGroup("hr")
                 .singleResult();
-        assertThat(hrTask).as("HR recording task must exist after approval").isNotNull();
-        assertThat(hrTask.getName()).isEqualTo("HR Records Approved Leave");
+        assertThat(hrTask).isNotNull();
 
         taskService.claim(hrTask.getId(), "carol");
         taskService.complete(hrTask.getId());
 
-        // Process must have ended — no active instances
-        long activeCount = runtimeService.createProcessInstanceQuery()
-                .processInstanceId(instance.getId())
-                .count();
-        assertThat(activeCount).as("no active instances after approval path completes").isZero();
+        assertThat(activeProcessInstances(instance.getId())).isZero();
+        assertThat(readBalance("alice")).isEqualTo(25);
     }
 
     @Test
-    void rejectionPath_bobRejects_aliceNotified() {
-        var instance = runtimeService.startProcessInstanceByKey("leave-request",
-                Map.of("requester", "alice"));
+    void rejectionPath_managerRejects_employeeIsNotified() {
+        ProcessInstance instance = startLeaveRequest("alice", LocalDate.now().plusDays(1), 2);
 
         Task managerTask = taskService.createTaskQuery()
                 .processInstanceId(instance.getId())
@@ -97,20 +134,116 @@ class LeaveRequestIT {
         taskService.claim(managerTask.getId(), "bob");
         taskService.complete(managerTask.getId(), Map.of("approved", false));
 
-        // Alice (employee) sees the rejection notification task
         Task employeeTask = taskService.createTaskQuery()
                 .processInstanceId(instance.getId())
                 .taskCandidateGroup("employees")
                 .singleResult();
-        assertThat(employeeTask).as("employee notification task must exist after rejection").isNotNull();
+        assertThat(employeeTask).isNotNull();
         assertThat(employeeTask.getName()).isEqualTo("Employee Notified of Rejection");
 
         taskService.claim(employeeTask.getId(), "alice");
         taskService.complete(employeeTask.getId());
 
-        long activeCount = runtimeService.createProcessInstanceQuery()
+        assertThat(activeProcessInstances(instance.getId())).isZero();
+        assertThat(readBalance("alice")).isEqualTo(30);
+    }
+
+    @Test
+    void requestWithPastStartDate_isRejectedBeforeManagerReview() {
+        ProcessInstance instance = startLeaveRequest("alice", LocalDate.now().minusDays(1), 3);
+
+        assertThat(taskService.createTaskQuery()
                 .processInstanceId(instance.getId())
+                .taskCandidateGroup("managers")
+                .singleResult()).isNull();
+
+        Task employeeTask = taskService.createTaskQuery()
+                .processInstanceId(instance.getId())
+                .taskCandidateGroup("employees")
+                .singleResult();
+        assertThat(employeeTask).isNotNull();
+        assertThat(runtimeService.getVariable(instance.getId(), "validationPassed")).isEqualTo(false);
+        assertThat(runtimeService.getVariable(instance.getId(), "rejectionReason"))
+                .isEqualTo("Start date must be today or later.");
+        assertThat(runtimeService.getVariable(instance.getId(), "remainingVacationDays")).isEqualTo(30);
+
+        taskService.claim(employeeTask.getId(), "alice");
+        taskService.complete(employeeTask.getId());
+
+        assertThat(activeProcessInstances(instance.getId())).isZero();
+        assertThat(readBalance("alice")).isEqualTo(30);
+    }
+
+    @Test
+    void secondRequest_usesPersistedBalanceAndRejectsWhenDurationExceedsRemainingDays() {
+        ProcessInstance approvedRequest = startLeaveRequest("alice", LocalDate.now().plusDays(3), 8);
+
+        Task firstManagerTask = taskService.createTaskQuery()
+                .processInstanceId(approvedRequest.getId())
+                .taskCandidateGroup("managers")
+                .singleResult();
+        assertThat(firstManagerTask).isNotNull();
+        taskService.claim(firstManagerTask.getId(), "bob");
+        taskService.complete(firstManagerTask.getId(), Map.of("approved", true));
+
+        Task firstHrTask = taskService.createTaskQuery()
+                .processInstanceId(approvedRequest.getId())
+                .taskCandidateGroup("hr")
+                .singleResult();
+        assertThat(firstHrTask).isNotNull();
+        taskService.claim(firstHrTask.getId(), "carol");
+        taskService.complete(firstHrTask.getId());
+
+        assertThat(readBalance("alice")).isEqualTo(22);
+
+        ProcessInstance rejectedRequest = startLeaveRequest("alice", LocalDate.now().plusDays(10), 23);
+
+        assertThat(taskService.createTaskQuery()
+                .processInstanceId(rejectedRequest.getId())
+                .taskCandidateGroup("managers")
+                .singleResult()).isNull();
+        assertThat(runtimeService.getVariable(rejectedRequest.getId(), "remainingVacationDays")).isEqualTo(22);
+        assertThat(runtimeService.getVariable(rejectedRequest.getId(), "validationPassed")).isEqualTo(false);
+        assertThat(runtimeService.getVariable(rejectedRequest.getId(), "rejectionReason"))
+                .isEqualTo("Requested 23 vacation days exceeds the remaining balance of 22 day(s).");
+
+        Task employeeTask = taskService.createTaskQuery()
+                .processInstanceId(rejectedRequest.getId())
+                .taskCandidateGroup("employees")
+                .singleResult();
+        assertThat(employeeTask).isNotNull();
+        taskService.claim(employeeTask.getId(), "alice");
+        taskService.complete(employeeTask.getId());
+
+        assertThat(activeProcessInstances(rejectedRequest.getId())).isZero();
+        assertThat(readBalance("alice")).isEqualTo(22);
+    }
+
+    private ProcessInstance startLeaveRequest(String userId, LocalDate startDate, int durationDays) {
+        identityService.setAuthenticatedUserId(userId);
+        try {
+            return runtimeService.startProcessInstanceByKey("leave-request", Map.of(
+                    "startDate", startDate.toString(),
+                    "durationDays", durationDays
+            ));
+        } finally {
+            identityService.clearAuthentication();
+        }
+    }
+
+    private long activeProcessInstances(String processInstanceId) {
+        return runtimeService.createProcessInstanceQuery()
+                .processInstanceId(processInstanceId)
                 .count();
-        assertThat(activeCount).as("no active instances after rejection path completes").isZero();
+    }
+
+    private int readBalance(String employeeId) {
+        Integer balance = jdbcTemplate.queryForObject(
+                "SELECT remaining_vacation_days FROM employee_vacation_balance WHERE employee_id = ?",
+                Integer.class,
+                employeeId
+        );
+        assertThat(balance).isNotNull();
+        return balance;
     }
 }

@@ -2,48 +2,79 @@
 @param ProjectConfig config
 # ${config.projectName()}
 
-A self-contained Operaton BPM example demonstrating multi-service-task orchestration with conditional routing.
+A self-contained Operaton example for **order fulfillment orchestration** across inventory, payment, warehouse, and customer-notification steps.
 
-![Process Model](docs/process-model.png)
+## Scenario
 
-## The Scenario
+Each order starts with an `orderId`. The process checks inventory first, then branches:
 
-When a customer places an order:
+- in stock → charge payment, create a warehouse task, notify the customer
+- out of stock → skip manual work and send a backorder notification
 
-1. **Inventory check** — calls a REST API to verify stock availability
-2. **Routing** — two paths based on availability:
-   - **In stock**: Charge payment → **Dave** (warehouse) packs and ships → Customer notified
-   - **Out of stock**: Customer notified of backorder
+All integrations are stubbed with WireMock so the example stays local and deterministic.
 
-All external calls are stubbed with WireMock — no real services needed.
+## Actors
 
-## Getting Started in 5 Minutes
+| Actor | Username | Group | Responsibility |
+|------|----------|-------|----------------|
+| Customer / caller | external caller | n/a | Starts the order process |
+| Warehouse operator | `dave` / `dave` | `warehouse` | Packs and ships in-stock orders |
+| Automation | system | n/a | Calls inventory, payment, and notification endpoints |
+| Admin | `admin` / `admin` | `operaton-admin` | Operaton administration only |
+
+## Main Flow
+
+1. A caller starts `order-fulfillment` with `orderId`.
+2. `InventoryDelegate` checks stock availability and stores `available`.
+3. If `available == true`, `PaymentDelegate` charges the order.
+4. Dave receives **Pack & Ship** in Tasklist.
+5. When Dave completes the task, `NotifyCustomerDelegate` sends the shipment notification and the process ends.
+
+## Alternate Paths
+
+### Backorder path
+
+If inventory is unavailable, the BPMN gateway skips payment and warehouse work entirely. `NotifyBackorderDelegate` sends the backorder notification and the process ends immediately.
+
+### In-stock path with human handoff
+
+This branch demonstrates orchestration plus a user task. Inventory and payment are automated, but warehouse fulfillment is intentionally modeled as human work.
+
+## Routing Rules Reference
+
+- Inventory is always checked before payment is attempted.
+- Only in-stock orders reach the warehouse task.
+- `orderId` prefixes are used by WireMock to simulate stock conditions locally.
+- Customer notification is different for shipped orders versus backorders.
+
+## Getting Started
 
 ### Prerequisites
 
 - Java ${config.javaVersion()}+
-- Maven (or use the included `./mvnw`)
-- Docker (for Postgres and WireMock)
+- Maven wrapper included (`./mvnw`)
+- Docker (PostgreSQL + WireMock in the default profile)
 
-### 1. Start services
+### 1. Start dependencies
 
 ```bash
 docker compose up -d
 ```
 
-This starts Postgres on port 5432 and WireMock on port 8089, serving inventory, payment, and notification stubs.
-
-### 2. Start the Application
+### 2. Run the application
 
 ```bash
 chmod +x mvnw && ./mvnw spring-boot:run
 ```
 
-The application starts on port ${config.serverPort()}. Open:
-- **Tasklist**: http://localhost:${config.serverPort()}/operaton/app/tasklist
-- **Cockpit**: http://localhost:${config.serverPort()}/operaton/app/cockpit
+### 3. Open the web apps
 
-### 3. Start an Order
+- Tasklist: http://localhost:${config.serverPort()}/operaton/app/tasklist
+- Cockpit: http://localhost:${config.serverPort()}/operaton/app/cockpit
+
+## Local Walkthrough
+
+### In-stock order
 
 ```bash
 curl -s -X POST http://localhost:${config.serverPort()}/engine-rest/process-definition/key/order-fulfillment/start \
@@ -51,25 +82,39 @@ curl -s -X POST http://localhost:${config.serverPort()}/engine-rest/process-defi
   -d '{"variables": {"orderId": {"value": "ORD-001", "type": "String"}}}'
 ```
 
-### 4. Pack and Ship as Dave
+The default inventory stub returns `available: true`, so payment runs and Dave (`dave / dave`) receives **Pack & Ship**.
 
-Log into Tasklist as `dave` / `dave`. The **Pack & Ship** task appears after inventory check and payment succeeds. Complete it to trigger the customer notification.
+### Out-of-stock order
 
-### 5. Try the Out-of-Stock Path
+Start the process with an ID that begins with `out-of-stock-`, for example `out-of-stock-ORD-002`. The inventory stub returns `available: false`, and the process goes straight to the backorder notification branch with no warehouse task.
 
-Use an orderId starting with `out-of-stock-` (e.g. `out-of-stock-ORD-002`). The WireMock stub matches this pattern and returns `available: false`, routing directly to backorder notification.
+## Important Business Rules
 
-## WireMock Stubs
+- `available == true` is the gateway condition for payment and shipping
+- `available == false` short-circuits the process to backorder notification
+- Payment is never attempted for out-of-stock orders
+- Warehouse work only exists for orders that passed both inventory and payment
 
-Stubs are in `src/main/resources/wiremock/mappings/`:
+## Project Structure
 
-| File | Endpoint | Response |
-|------|----------|----------|
-| `inventory-in-stock.json` | GET /inventory/* | `{"available": true}` |
-| `inventory-out-of-stock.json` | GET /inventory/out-of-stock-* | `{"available": false}` |
-| `payment-success.json` | POST /payments | `{"status": "approved"}` |
-| `notify-customer.json` | POST /notifications/customer | 200 OK |
-| `notify-backorder.json` | POST /notifications/backorder | 200 OK |
+```
+src/
+  main/
+    java/${config.packagePath()}/
+      Application.java
+      DataInitializer.java
+      delegate/
+        InventoryDelegate.java
+        PaymentDelegate.java
+        NotifyCustomerDelegate.java
+        NotifyBackorderDelegate.java
+    resources/
+      order-fulfillment.bpmn
+      wiremock/mappings/
+  test/
+    java/${config.packagePath()}/
+      OrderFulfillmentIT.java
+```
 
 ## Running Tests
 
@@ -77,15 +122,4 @@ Stubs are in `src/main/resources/wiremock/mappings/`:
 ./mvnw verify
 ```
 
-Tests use Testcontainers to start WireMock automatically — no Docker Compose needed for CI.
-
-## Bootstrap Data
-
-Dave (warehouse) and the admin user are seeded from `src/main/resources/data.sql` on startup.
-
-## Users
-
-| Username | Password | Group          | Role               |
-|----------|----------|----------------|--------------------|
-| dave     | dave     | warehouse      | Warehouse operator |
-| admin    | admin    | operaton-admin | Operaton admin     |
+`OrderFulfillmentIT` verifies both the in-stock warehouse path and the direct backorder path.

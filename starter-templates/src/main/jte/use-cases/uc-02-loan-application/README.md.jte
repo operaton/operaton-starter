@@ -2,50 +2,80 @@
 @param ProjectConfig config
 # ${config.projectName()}
 
-A self-contained Operaton BPM example combining DMN business rule evaluation with service task orchestration.
+A self-contained Operaton example for **loan application triage** that combines a credit-score service call, DMN evaluation, and conditional user-task routing.
 
-![Process Model](docs/process-model.png)
+## Scenario
 
-## The Scenario
+Each loan application collects a requested `loanAmount`. The workflow enriches that request with a credit score from WireMock, evaluates the DMN decision table, and then routes the application based on the computed `riskLevel`.
 
-**Jack** applies for a loan. **Kate** is the underwriter who reviews medium-risk applications. When a loan application is submitted, the system:
+## Actors
 
-1. Calls an external credit scoring API (stubbed with WireMock)
-2. Evaluates a **DMN decision table** to determine risk level (`low` / `medium` / `high`)
-3. Routes the application:
-   - **Low risk** → automatically approved
-   - **Medium risk** → Kate reviews it in the Tasklist
-   - **High risk** → automatically rejected
+| Actor | Username | Group | Responsibility |
+|------|----------|-------|----------------|
+| Applicant | external caller | n/a | Starts the process with a `loanAmount` |
+| Underwriter | `eve` / `eve` | `underwriters` | Reviews only medium-risk applications |
+| Decision automation | system | n/a | Calls the credit-score API and evaluates the DMN table |
 
-## Getting Started in 5 Minutes
+## Main Flow
+
+1. A caller starts `loan-application` with `loanAmount`.
+2. `CreditScoreDelegate` calls the WireMock credit-score endpoint and stores `creditScore`.
+3. The BPMN business-rule task evaluates `dmn/risk-assessment.dmn` and writes `riskLevel`.
+4. The exclusive gateway routes by risk:
+   - `low` → auto-approve notification
+   - `medium` → **Underwriter Review**
+   - `high` → auto-reject notification
+5. Medium-risk applications end only after Eve claims and completes the underwriter task.
+
+## Alternate Paths
+
+### Low-risk path
+
+The application never waits on a human. A favorable score and amount combination drives the process straight to the approval notification task and then to completion.
+
+### Medium-risk path
+
+The workflow pauses in Tasklist for the `underwriters` group. This is the only human-in-the-loop branch and is the best path for learning how DMN outputs influence BPMN routing.
+
+### High-risk path
+
+If the DMN decision returns `high`, the process skips the user task completely and sends the rejection notification automatically.
+
+## Risk Rules Reference
+
+- The decision table, not handwritten Java branching, defines the risk thresholds.
+- `creditScore` is supplied by the external API delegate before DMN evaluation.
+- `riskLevel` is a process variable, so you can inspect the decision outcome directly in Cockpit.
+- WireMock is the only external dependency for the example; no real credit bureau integration is required.
+
+## Getting Started
 
 ### Prerequisites
 
 - Java ${config.javaVersion()}+
-- Maven (or use the included `./mvnw`)
-- Docker (for Postgres and WireMock)
+- Maven wrapper included (`./mvnw`)
+- Docker (PostgreSQL + WireMock in the default profile)
 
-### 1. Start services
+### 1. Start dependencies
 
 ```bash
 docker compose up -d
 ```
 
-This starts Postgres on port 5432 and WireMock on port 8089 with the credit-score stub loaded from `src/main/resources/wiremock/mappings/`.
-
-### 2. Start the Application
+### 2. Run the application
 
 ```bash
 chmod +x mvnw && ./mvnw spring-boot:run
 ```
 
-The application starts on port ${config.serverPort()}. Open:
-- **Tasklist**: http://localhost:${config.serverPort()}/operaton/app/tasklist
-- **Cockpit**: http://localhost:${config.serverPort()}/operaton/app/cockpit
+### 3. Open the web apps
 
-### 3. Start a Loan Application
+- Tasklist: http://localhost:${config.serverPort()}/operaton/app/tasklist
+- Cockpit: http://localhost:${config.serverPort()}/operaton/app/cockpit
 
-Using the Tasklist or curl:
+## Local Walkthrough
+
+### Default low-risk example
 
 ```bash
 curl -s -X POST http://localhost:${config.serverPort()}/engine-rest/process-definition/key/loan-application/start \
@@ -53,61 +83,47 @@ curl -s -X POST http://localhost:${config.serverPort()}/engine-rest/process-defi
   -d '{"variables": {"loanAmount": {"value": 100000, "type": "Integer"}}}'
 ```
 
-The credit score service (WireMock) returns a score of 750, which the DMN table evaluates as **low risk** → auto-approved.
+With the default WireMock response, the delegate returns a score of 750 and the DMN table routes the instance to the low-risk auto-approval path.
 
-### 4. Try the Medium-Risk Path
+### Medium-risk example
 
-Lower the stub score by editing `src/main/resources/wiremock/mappings/credit-score-stub.json` to return `{"score": 650}`, then restart WireMock and start a new process instance.
+Edit `src/main/resources/wiremock/mappings/credit-score-stub.json` to return a score around 650, restart WireMock, and start another application. Eve (`eve / eve`) will receive **Underwriter Review** in Tasklist.
 
-A task will appear in the Tasklist for **Kate** (login: `kate` / password: `kate`) to review.
+### High-risk example
+
+Return a score below 600 from the WireMock stub. The process will skip the user task and finish on the automatic rejection branch.
+
+## Important Business Rules
+
+- `creditScore >= 700` and moderate amount → `low`
+- `600 <= creditScore <= 699` and moderate amount → `medium`
+- `creditScore < 600` → `high`
+- Medium risk is the only branch that requires manual review
 
 ## Project Structure
 
 ```
 src/
   main/
-    java/...
-      Application.java              # Spring Boot entry point
+    java/${config.packagePath()}/
+      Application.java
+      DataInitializer.java
       delegate/
-        CreditScoreDelegate.java    # Calls WireMock credit-score API
-        NotificationDelegate.java   # Logs approval/rejection
+        CreditScoreDelegate.java
+        NotificationDelegate.java
     resources/
-      loan-application.bpmn         # BPMN process definition
-      dmn/
-        risk-assessment.dmn         # DMN decision table
-      wiremock/
-        mappings/
-          credit-score-stub.json    # WireMock stub for credit score API
-      application.properties
-      data.sql                      # Seeds eve/underwriters identity
+      loan-application.bpmn
+      dmn/risk-assessment.dmn
+      wiremock/mappings/credit-score-stub.json
   test/
-    java/.../LoanApplicationIT.java # Integration test (Testcontainers WireMock)
-docker-compose.yml                  # WireMock for local development
+    java/${config.packagePath()}/
+      LoanApplicationIT.java
 ```
 
-## DMN Decision Table
-
-| Credit Score | Loan Amount | Risk Level |
-|-------------|-------------|------------|
-| >= 700      | <= 500000   | low        |
-| 600 – 699   | <= 500000   | medium     |
-| < 600       | any         | high       |
-
 ## Running Tests
-
-Tests use **Testcontainers** to start WireMock automatically — no Docker Compose needed for CI:
 
 ```bash
 ./mvnw verify
 ```
 
-## Bootstrap Data
-
-Users jack and kate are seeded from `src/main/resources/data.sql` on startup.
-
-## Users
-
-| Username | Password | Group        | Role              |
-|----------|----------|--------------|-------------------|
-| jack     | jack     | applicants   | Loan applicant    |
-| kate     | kate     | underwriters | Loan underwriter  |
+`LoanApplicationIT` covers DMN deployment, isolated DMN evaluation, and all three process branches.

@@ -8,3 +8,4 @@ spring.datasource.username=sa
 spring.datasource.password=
 spring.datasource.platform=h2
 operaton.bpm.database.type=h2
+spring.sql.init.mode=always

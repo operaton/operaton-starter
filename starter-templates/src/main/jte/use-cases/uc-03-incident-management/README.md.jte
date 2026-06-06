@@ -2,62 +2,122 @@
 @param ProjectConfig config
 # ${config.projectName()}
 
-A self-contained Operaton BPM example demonstrating timer boundary events and SLA-driven task escalation.
+A self-contained Operaton example for **incident management with SLA escalation** using timer boundary events and service-task integrations.
 
-![Process Model](docs/process-model.png)
+## Scenario
 
-## The Scenario
+The process starts when a caller reports an `incidentId`. First-line support gets an initial chance to resolve the issue. If the SLA expires, an interrupting timer boundary event escalates the work to second-line engineering and triggers a post-mortem notification path.
 
-**Henry** reports an incident. **Iris** is the second-line engineer who takes over if the SLA fires. When an incident is reported, the first-line team has **1 hour** to resolve it.
+## Actors
 
-- If the first-line team resolves it in time, the ticket is closed via REST (WireMock-stubbed).
-- If the **SLA timer fires**, the task escalates to **Iris** (second-line engineering) who investigates and sends a post-mortem notification.
+| Actor | Username | Group | Responsibility |
+|------|----------|-------|----------------|
+| Incident reporter | external caller | n/a | Starts the incident process |
+| First-line support | `frank` / `frank` | `first-line` | Performs initial triage and can resolve the incident before the SLA fires |
+| Second-line engineer | `grace` / `grace` | `second-line` | Handles escalated incidents after the timer interrupts first-line work |
+| Automation | system | n/a | Calls ticket-close and post-mortem notification endpoints |
 
-## Getting Started in 5 Minutes
+## Main Flow
+
+1. A caller starts `incident-management` with `incidentId`.
+2. **First-Line Triage** is created for the `first-line` group.
+3. At the same time, an interrupting boundary timer is scheduled using `timer.escalation.duration`.
+4. If Frank completes the task with `resolved = true` before the timer fires, the process calls `CloseTicketDelegate` and ends.
+5. If the timer fires first, the first-line task is interrupted and the process moves to **Second-Line Engineer**.
+6. Grace completes the second-line task and `PostMortemDelegate` sends the follow-up notification before the process ends.
+
+## Alternate Paths
+
+### Resolved before SLA breach
+
+This is the fastest happy path. First-line support resolves the issue, the ticket-close service is called, and no escalation or post-mortem path is needed.
+
+### Escalated after SLA breach
+
+If the timer fires, Operaton cancels the original first-line task automatically because the boundary event is interrupting. A new task appears for the `second-line` group and the post-mortem notification is sent after completion.
+
+## SLA Notes
+
+- The SLA is modeled in BPMN, not in Java polling code.
+- `timer.escalation.duration` controls how long first-line support has before escalation.
+- The boundary timer is interrupting, so only one active human task exists after escalation.
+- The generated `application-test.properties` shortens the timer to keep automated tests fast.
+
+## Getting Started
 
 ### Prerequisites
 
 - Java ${config.javaVersion()}+
-- Maven (or use the included `./mvnw`)
-- Docker (for Postgres and WireMock)
+- Maven wrapper included (`./mvnw`)
+- Docker (PostgreSQL + WireMock in the default profile)
 
-### 1. Start services
+### 1. Start dependencies
 
 ```bash
 docker compose up -d
 ```
 
-This starts Postgres on port 5432 and WireMock on port 8089, serving stubs for close-ticket and post-mortem endpoints.
-
-### 2. Start the Application
+### 2. Run the application
 
 ```bash
 chmod +x mvnw && ./mvnw spring-boot:run
 ```
 
-The application starts on port ${config.serverPort()}. Open:
-- **Tasklist**: http://localhost:${config.serverPort()}/operaton/app/tasklist
-- **Cockpit**: http://localhost:${config.serverPort()}/operaton/app/cockpit
+### 3. Open the web apps
 
-### 3. Start an Incident
+- Tasklist: http://localhost:${config.serverPort()}/operaton/app/tasklist
+- Cockpit: http://localhost:${config.serverPort()}/operaton/app/cockpit
+
+## Local Walkthrough
+
+### Resolved path
+
+1. Start an instance:
+   ```bash
+   curl -s -X POST http://localhost:${config.serverPort()}/engine-rest/process-definition/key/incident-management/start \
+     -H "Content-Type: application/json" \
+     -d '{"variables": {"incidentId": {"value": "INC-001", "type": "String"}}}'
+   ```
+2. Log in as `frank / frank`.
+3. Claim **First-Line Triage** and complete it with `resolved = true`.
+4. The workflow calls the close-ticket stub and ends.
+
+### Escalation path
+
+Run the app with a shorter timer for a quick demo:
 
 ```bash
-curl -s -X POST http://localhost:${config.serverPort()}/engine-rest/process-definition/key/incident-management/start \
-  -H "Content-Type: application/json" \
-  -d '{"variables": {"incidentId": {"value": "INC-001", "type": "String"}}}'
+./mvnw spring-boot:run -Dspring-boot.run.arguments=--timer.escalation.duration=PT10S
 ```
 
-### 4. Resolve as first-line
+Start a new incident and wait for the timer to fire. The first-line task disappears and Grace (`grace / grace`) receives **Second-Line Engineer**.
 
-Log into Tasklist as `frank` / `frank`. The **First-Line Triage** task appears. Complete it with `resolved = true` to close the ticket.
+## Important Business Rules
 
-### 5. Test the Escalation Path
+- First-line resolution requires `resolved = true`
+- Any unresolved or timed-out incident escalates
+- Escalation also triggers a post-mortem notification step
+- Tests advance Operaton's internal clock instead of using `Thread.sleep`
 
-For a quick local demo, restart the app with a shorter SLA such as `--timer.escalation.duration=PT10S`, then wait 10 seconds. Check Cockpit — the task should appear in Iris's `second-line` inbox.
+## Project Structure
 
-## Timer Override for Tests
-
-`application-test.properties` overrides `timer.escalation.duration=PT5S`. Tests use `ClockUtil.setCurrentTime(...)` to advance Operaton's internal clock — no `Thread.sleep` needed.
+```
+src/
+  main/
+    java/${config.packagePath()}/
+      Application.java
+      DataInitializer.java
+      delegate/
+        CloseTicketDelegate.java
+        PostMortemDelegate.java
+    resources/
+      incident-management.bpmn
+      application-test.properties
+      wiremock/mappings/
+  test/
+    java/${config.packagePath()}/
+      IncidentManagementIT.java
+```
 
 ## Running Tests
 
@@ -65,15 +125,4 @@ For a quick local demo, restart the app with a shorter SLA such as `--timer.esca
 ./mvnw verify
 ```
 
-Tests use Testcontainers to start WireMock automatically — no Docker Compose needed for CI.
-
-## Bootstrap Data
-
-Users frank and iris (and grace) are seeded from `src/main/resources/data.sql` on startup.
-
-## Users
-
-| Username | Password | Group       | Role                  |
-|----------|----------|-------------|-----------------------|
-| frank    | frank    | first-line  | First-line support    |
-| iris     | iris     | second-line | Second-line engineer  |
+`IncidentManagementIT` verifies deployment, the resolved path, and timer-driven escalation to second-line support.

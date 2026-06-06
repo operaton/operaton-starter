@@ -72,7 +72,7 @@ class ApiControllerTest {
     }
 
     @Test
-    void generate_with_useCaseId_produces_zip_with_leave_request_bpmn_and_data_sql() throws Exception {
+    void generate_with_useCaseId_produces_zip_with_leave_request_balance_support() throws Exception {
         String body = """
                 {
                   "projectType": "PROCESS_APPLICATION",
@@ -105,8 +105,12 @@ class ApiControllerTest {
 
         assertTrue(entries.contains("src/main/resources/leave-request.bpmn"),
                 "ZIP must contain leave-request.bpmn; got: " + entries);
-        assertTrue(entries.contains("src/main/resources/data.sql"),
-                "ZIP must contain data.sql; got: " + entries);
+        assertTrue(entries.contains("src/main/resources/schema.sql"),
+                "ZIP must contain schema.sql; got: " + entries);
+        assertTrue(entries.contains("src/main/java/com/example/leaverequestexample/DataInitializer.java"),
+                "ZIP must contain DataInitializer.java; got: " + entries);
+        assertTrue(entries.contains("src/main/java/com/example/leaverequestexample/VacationBalanceService.java"),
+                "ZIP must contain VacationBalanceService.java; got: " + entries);
         assertTrue(entries.contains("pom.xml"),
                 "ZIP must contain pom.xml; got: " + entries);
     }
@@ -301,7 +305,9 @@ class ApiControllerTest {
 
         assertTrue(entries.contains("src/main/resources/leave-request.bpmn"),
                 "ZIP must contain leave-request.bpmn when useCaseId is provided via query; got: " + entries);
-        assertTrue(entries.contains("src/main/resources/data.sql"),
-                "ZIP must contain data.sql when useCaseId is provided via query; got: " + entries);
+        assertTrue(entries.contains("src/main/resources/schema.sql"),
+                "ZIP must contain schema.sql when useCaseId is provided via query; got: " + entries);
+        assertTrue(entries.contains("src/main/java/com/example/leaverequestexample/DataInitializer.java"),
+                "ZIP must contain DataInitializer.java when useCaseId is provided via query; got: " + entries);
     }
 }

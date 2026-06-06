@@ -11,7 +11,7 @@ spring.datasource.password=postgres
 
 # H2 fallback: run with --spring.profiles.active=h2 (no Docker needed)
 
-# Load data.sql to seed users, groups, and memberships
+# Initialize the vacation balance table in both PostgreSQL and H2 modes
 spring.sql.init.mode=always
 
 # Operaton configuration

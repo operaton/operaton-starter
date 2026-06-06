@@ -112,6 +112,15 @@ public class GenerationEngine {
         addTemplateEntry(zos,
                 "src/main/java/" + pkgPath + "/Application.java",
                 templateDir + "Application.java.jte", config);
+        addTemplateEntry(zos,
+                "src/main/java/" + pkgPath + "/VacationBalanceService.java",
+                templateDir + "VacationBalanceService.java.jte", config);
+        addTemplateEntry(zos,
+                "src/main/java/" + pkgPath + "/delegate/LeaveRequestValidationDelegate.java",
+                templateDir + "delegate/LeaveRequestValidationDelegate.java.jte", config);
+        addTemplateEntry(zos,
+                "src/main/java/" + pkgPath + "/delegate/FinalizeLeaveApprovalDelegate.java",
+                templateDir + "delegate/FinalizeLeaveApprovalDelegate.java.jte", config);
 
         addTemplateEntry(zos,
                 "src/main/resources/application.properties",
@@ -120,11 +129,14 @@ public class GenerationEngine {
                 "src/main/resources/application-h2.properties",
                 templateDir + "application-h2.properties.jte", config);
         addTemplateEntry(zos,
+                "src/main/resources/schema.sql",
+                templateDir + "schema.sql.jte", config);
+        addTemplateEntry(zos,
                 "src/main/resources/leave-request.bpmn",
                 templateDir + "leave-request.bpmn.jte", config);
         addTemplateEntry(zos,
-                "src/main/resources/data.sql",
-                templateDir + "data.sql.jte", config);
+                "src/main/java/" + pkgPath + "/DataInitializer.java",
+                templateDir + "DataInitializer.java.jte", config);
 
         addTemplateEntry(zos,
                 "src/test/java/" + pkgPath + "/LeaveRequestIT.java",
@@ -164,8 +176,8 @@ public class GenerationEngine {
                 "src/main/resources/dmn/risk-assessment.dmn",
                 templateDir + "risk-assessment.dmn.jte", config);
         addTemplateEntry(zos,
-                "src/main/resources/data.sql",
-                templateDir + "data.sql.jte", config);
+                "src/main/java/" + pkgPath + "/DataInitializer.java",
+                templateDir + "DataInitializer.java.jte", config);
         addTemplateEntry(zos,
                 "src/main/resources/wiremock/mappings/credit-score-stub.json",
                 templateDir + "wiremock/mappings/credit-score-stub.json.jte", config);
@@ -208,8 +220,8 @@ public class GenerationEngine {
                 "src/main/resources/incident-management.bpmn",
                 templateDir + "incident-management.bpmn.jte", config);
         addTemplateEntry(zos,
-                "src/main/resources/data.sql",
-                templateDir + "data.sql.jte", config);
+                "src/main/java/" + pkgPath + "/DataInitializer.java",
+                templateDir + "DataInitializer.java.jte", config);
         addTemplateEntry(zos,
                 "src/main/resources/wiremock/mappings/close-ticket-stub.json",
                 templateDir + "wiremock/mappings/close-ticket-stub.json.jte", config);
@@ -258,8 +270,8 @@ public class GenerationEngine {
                 "src/main/resources/order-fulfillment.bpmn",
                 templateDir + "order-fulfillment.bpmn.jte", config);
         addTemplateEntry(zos,
-                "src/main/resources/data.sql",
-                templateDir + "data.sql.jte", config);
+                "src/main/java/" + pkgPath + "/DataInitializer.java",
+                templateDir + "DataInitializer.java.jte", config);
         addTemplateEntry(zos,
                 "src/main/resources/wiremock/mappings/inventory-in-stock.json",
                 templateDir + "wiremock/mappings/inventory-in-stock.json.jte", config);

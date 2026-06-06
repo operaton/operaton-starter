@@ -10,3 +10,7 @@
 - Large `previewContent` values have no server-side size cap — `overflow-auto` present in `FileContentPane.vue` but long lines can still cause layout issues; add max-h or truncation in a future story.
 - Copy button rapid-click timeout not debounced in `FileContentPane.vue` — minor UX polish.
 - Long filenames truncated with no tooltip in `FileContentPane.vue` — add `title` attribute for full name on hover.
+
+## Deferred from: quick dev review of spec-leave-request-vacation-balances-and-detailed-use-case-readmes (2026-06-06)
+
+- UC-02/03/04 switched from SQL-based identity seeding to `DataInitializer.java`, but generation tests still do not assert those generated archives include the initializer or preserve runnable seeded demo identities; add focused coverage in a later template-validation story.
