@@ -11,8 +11,6 @@ spring.datasource.password=postgres
 
 # H2 fallback: run with --spring.profiles.active=h2 (no Docker needed)
 
-# Load data.sql to seed users, groups, and memberships
-spring.sql.init.mode=always
 
 # Operaton configuration
 operaton.bpm.auto-deployment-enabled=true
