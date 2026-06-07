@@ -22,6 +22,10 @@ The process validates those inputs immediately, routes valid requests to the man
 | HR | `carol` / `carol` | `hr` | Finalizes approved leave so the persisted balance is reduced |
 | Admin | `admin` / `admin` | `operaton-admin` | Operaton administration only |
 
+## Starting the Process
+
+Log in as **alice / alice** (group: `employees`) in Tasklist to start this process. Members of the `employees` group can initiate a leave request, and the seeded `admin / admin` account can also start it directly because `candidateStarterGroups` includes `operaton-admin`.
+
 ## Main Flow
 
 1. Alice starts the **leave-request** process while authenticated in Tasklist or Cockpit.
@@ -95,7 +99,7 @@ The application starts on port ${config.serverPort()}.
    - `durationDays` = any value up to 30
 3. Log in as `bob / bob`, claim **Manager Reviews Request**, and complete it with `approved = true`.
 4. Log in as `carol / carol`, claim **HR Records Approved Leave**, and complete it.
-5. Inspect the process variables in Cockpit — `remainingVacationDays` now shows the deducted value.
+5. Inspect the persisted balance or start a second request — Alice's available vacation days are now reduced for the next request.
 
 ### Past-date rejection
 
@@ -104,6 +108,53 @@ Start the process with `startDate` before today. No manager task is created. Ali
 ### Over-balance rejection
 
 After approving one valid request, start another request for Alice with `durationDays` greater than the updated balance. The second instance is rejected automatically before manager review because the persisted balance was already reduced by the first approved request.
+
+## REST API
+
+You can drive the entire leave request process via the Operaton REST API without using the Tasklist UI.
+
+### Start a leave request (as Alice)
+
+```bash
+curl -u alice:alice -X POST \
+  http://localhost:${config.serverPort()}/engine-rest/process-definition/key/leave-request/start \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "variables": {
+      "startDate": {"value": "2030-07-01", "type": "String"},
+      "durationDays": {"value": 5, "type": "Integer"}
+    }
+  }'
+```
+
+### List active tasks for the leave-request process
+
+```bash
+curl -u alice:alice \
+  'http://localhost:${config.serverPort()}/engine-rest/task?processDefinitionKey=leave-request'
+```
+
+### Complete the manager review task (approve, as Bob)
+
+Replace `{taskId}` with the task ID returned by the list tasks call:
+
+```bash
+curl -u bob:bob -X POST \
+  http://localhost:${config.serverPort()}/engine-rest/task/{taskId}/complete \
+  -H 'Content-Type: application/json' \
+  -d '{"variables": {"approved": {"value": true, "type": "Boolean"}}}'
+```
+
+### Complete the HR records task (as Carol)
+
+```bash
+curl -u carol:carol -X POST \
+  http://localhost:${config.serverPort()}/engine-rest/task/{taskId}/complete \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+
+> **Note:** Process start requires Alice (`employees` group). Manager tasks are accessible to Bob (`managers` group). HR tasks require Carol (`hr` group).
 
 ## API Example
 

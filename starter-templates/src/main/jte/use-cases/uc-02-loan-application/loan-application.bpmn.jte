@@ -11,7 +11,8 @@
              exporter="operaton modeler"
              exporterVersion="1.0">
 
-  <process id="loan-application" name="Loan Application" isExecutable="true">
+  <process id="loan-application" name="Loan Application" isExecutable="true"
+           operaton:candidateStarterGroups="employees,operaton-admin">
 
     <startEvent id="StartEvent_1" name="Loan Application Received">
       <outgoing>Flow_start_to_credit</outgoing>
@@ -51,11 +52,11 @@
       <outgoing>Flow_medium_end</outgoing>
     </userTask>
 
-    <serviceTask id="Task_AutoReject" name="Auto-Reject Notify"
-                 operaton:class="${config.javaPackage()}.delegate.NotificationDelegate">
+    <sendTask id="Task_AutoReject" name="Send Rejection Email"
+              operaton:delegateExpression="${'$'}{rejectionEmailDelegate}">
       <incoming>Flow_high</incoming>
       <outgoing>Flow_reject_end</outgoing>
-    </serviceTask>
+    </sendTask>
 
     <endEvent id="EndEvent_Approved" name="Loan Approved">
       <incoming>Flow_approve_end</incoming>
@@ -82,7 +83,11 @@
       <conditionExpression xsi:type="tFormalExpression">${'$'}{riskLevel == 'high'}</conditionExpression>
     </sequenceFlow>
     <sequenceFlow id="Flow_approve_end" sourceRef="Task_AutoApprove" targetRef="EndEvent_Approved"/>
-    <sequenceFlow id="Flow_medium_end" sourceRef="Task_UnderwriterReview" targetRef="EndEvent_UnderwriterPending"/>
+    <sequenceFlow id="Flow_medium_end" sourceRef="Task_UnderwriterReview" targetRef="EndEvent_UnderwriterPending">
+      <extensionElements>
+        <operaton:executionListener event="take" expression="${'$'}{execution.setVariable('loanDecision', 'APPROVED')}"/>
+      </extensionElements>
+    </sequenceFlow>
     <sequenceFlow id="Flow_reject_end" sourceRef="Task_AutoReject" targetRef="EndEvent_Rejected"/>
 
   </process>

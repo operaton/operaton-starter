@@ -17,10 +17,14 @@ All integrations are stubbed with WireMock so the example stays local and determ
 
 | Actor | Username | Group | Responsibility |
 |------|----------|-------|----------------|
-| Customer / caller | external caller | n/a | Starts the order process |
+| Customer / caller | `frank` / `frank` | `sales` | Starts the order process |
 | Warehouse operator | `dave` / `dave` | `warehouse` | Packs and ships in-stock orders |
 | Automation | system | n/a | Calls inventory, payment, and notification endpoints |
 | Admin | `admin` / `admin` | `operaton-admin` | Operaton administration only |
+
+## Starting the Process
+
+Log in as **frank / frank** (group: `sales`) in Tasklist to start this process. Only members of the `sales` group can place orders — this is enforced by `candidateStarterGroups` on the process definition.
 
 ## Main Flow
 
@@ -114,6 +118,43 @@ src/
   test/
     java/${config.packagePath()}/
       OrderFulfillmentIT.java
+```
+
+## REST API
+
+### Start a process instance
+
+```bash
+curl -u frank:frank -X POST \
+  http://localhost:8080/engine-rest/process-definition/key/order-fulfillment/start \
+  -H 'Content-Type: application/json' \
+  -d '{"variables": {"orderId": {"value": "ORD-001", "type": "String"}}}'
+```
+
+### List tasks for this process
+
+```bash
+curl -u frank:frank \
+  http://localhost:8080/engine-rest/task?processDefinitionKey=order-fulfillment
+```
+
+### Complete the Pack & Ship task (warehouse group)
+
+```bash
+curl -u dave:dave -X POST \
+  http://localhost:8080/engine-rest/task/{taskId}/complete \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+
+### Suspend a running process instance (ops pattern)
+
+```bash
+# Suspend a running process instance (ops pattern)
+curl -u admin:admin -X PUT \
+  http://localhost:8080/engine-rest/process-instance/{processInstanceId}/suspended \
+  -H 'Content-Type: application/json' \
+  -d '{"suspended": true}'
 ```
 
 ## Running Tests

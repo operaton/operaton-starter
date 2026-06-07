@@ -2,6 +2,7 @@
 @param ProjectConfig config
 package ${config.javaPackage()}.delegate;
 
+import org.operaton.bpm.engine.delegate.BpmnError;
 import org.operaton.bpm.engine.delegate.DelegateExecution;
 import org.operaton.bpm.engine.delegate.JavaDelegate;
 import org.slf4j.Logger;
@@ -20,6 +21,10 @@ public class PaymentDelegate implements JavaDelegate {
 
     @Override
     public void execute(DelegateExecution execution) throws Exception {
+        Boolean simulateFailure = (Boolean) execution.getVariable("simulatePaymentFailure");
+        if (Boolean.TRUE.equals(simulateFailure)) {
+            throw new BpmnError("PAYMENT_FAILED", "Payment failed due to simulation flag");
+        }
         String url = paymentServiceUrl + "/payments";
         String response = new RestTemplate().postForObject(url, null, String.class);
         log.info("Payment processed for order {}: {}", execution.getVariable("orderId"), response);

@@ -5,7 +5,7 @@ baseline_commit: 8276b7e2ca9360e2a68b5e74f97a339c168e34f2
 # Story 8.1: UC-01 Leave Request — HR Approval Workflow
 
 ## Status
-todo
+in-progress
 
 ## Story
 
@@ -76,6 +76,15 @@ So that I immediately see how Operaton handles multi-role human task workflows u
   - [ ] 12.3: Add `chmod +x mvnw` instruction for Mac/Linux users immediately before the first `./mvnw` command
 
 - [ ] Task 13: Run `mvn verify` — all tests green
+
+### Review Findings
+
+- [x] [Review][Patch] Removed the added escalation path so the UC-01 BPMN matches the selected Story 8.1 review scope [starter-templates/src/main/jte/use-cases/uc-01-leave-request/leave-request.bpmn.jte]
+- [x] [Review][Patch] Updated README start-access guidance to match `candidateStarterGroups="employees,operaton-admin"` [starter-templates/src/main/jte/use-cases/uc-01-leave-request/README.md.jte:27]
+- [x] [Review][Patch] Hard-coded PostgreSQL database name no longer matches the generated artifact id [starter-templates/src/main/jte/use-cases/uc-01-leave-request/docker-compose.yml.jte:7]
+- [x] [Review][Patch] `remainingVacationDays` is overwritten during approval finalization, breaking the new history assertion [starter-templates/src/main/jte/use-cases/uc-01-leave-request/delegate/FinalizeLeaveApprovalDelegate.java.jte:27]
+- [x] [Review][Patch] Removing the timer boundary path also removed the malformed `managerReviewTimeout` runtime risk [starter-templates/src/main/jte/use-cases/uc-01-leave-request/leave-request.bpmn.jte]
+- [x] [Review][Patch] `startDate.plusDays(durationDays - 1)` can overflow for extreme future dates [starter-templates/src/main/jte/use-cases/uc-01-leave-request/delegate/LeaveRequestValidationDelegate.java.jte:36-43]
 
 ## Dev Notes
 

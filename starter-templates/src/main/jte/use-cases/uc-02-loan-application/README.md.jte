@@ -12,9 +12,13 @@ Each loan application collects a requested `loanAmount`. The workflow enriches t
 
 | Actor | Username | Group | Responsibility |
 |------|----------|-------|----------------|
-| Applicant | external caller | n/a | Starts the process with a `loanAmount` |
+| Applicant | `alice` / `alice` | `employees` | Starts the process with a `loanAmount` |
 | Underwriter | `eve` / `eve` | `underwriters` | Reviews only medium-risk applications |
 | Decision automation | system | n/a | Calls the credit-score API and evaluates the DMN table |
+
+## Starting the Process
+
+Log in as **alice / alice** (group: `employees`) in Tasklist to start this process. Only members of the `employees` group can initiate a loan application — this is enforced by `candidateStarterGroups` on the process definition.
 
 ## Main Flow
 
@@ -120,10 +124,51 @@ src/
       LoanApplicationIT.java
 ```
 
+## Email Testing with Mailpit
+
+When running with Docker Compose, Mailpit captures all outgoing emails locally.
+
+Access the Mailpit web UI at: http://localhost:8025
+
+To see rejection emails, start processes with high-risk loan amounts that trigger auto-rejection.
+Users that may receive emails: applicants whose `applicantEmail` variable is set when starting the process.
+
+## REST API
+
+### Start a loan application (as alice)
+
+```bash
+curl -s -u alice:alice -X POST \
+  http://localhost:${config.serverPort()}/engine-rest/process-definition/key/loan-application/start \
+  -H "Content-Type: application/json" \
+  -d '{
+    "variables": {
+      "loanAmount":      {"value": 50000,             "type": "Integer"},
+      "applicantEmail":  {"value": "alice@example.com","type": "String"}
+    }
+  }'
+```
+
+### List open underwriter tasks
+
+```bash
+curl -s http://localhost:${config.serverPort()}/engine-rest/task?processDefinitionKey=loan-application
+```
+
+### Complete an underwriter review task
+
+```bash
+TASK_ID=<id from previous response>
+curl -s -X POST \
+  http://localhost:${config.serverPort()}/engine-rest/task/${'$'}{TASK_ID}/complete \
+  -H "Content-Type: application/json" \
+  -d '{"variables": {}}'
+```
+
 ## Running Tests
 
 ```bash
 ./mvnw verify
 ```
 
-`LoanApplicationIT` covers DMN deployment, isolated DMN evaluation, and all three process branches.
+`LoanApplicationIT` covers DMN deployment, isolated DMN evaluation, business-key querying, and all three process branches.

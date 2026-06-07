@@ -20,10 +20,13 @@ public class DataInitializer implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) {
+        createGroupIfAbsent("employees", "Employees", "WORKFLOW");
         createGroupIfAbsent("underwriters", "Underwriters", "WORKFLOW");
 
+        createUserIfAbsent("alice", "Alice", "Employee", "alice@example.com", "alice");
         createUserIfAbsent("eve", "Eve", "Underwriter", "eve@example.com", "eve");
 
+        createMembershipIfAbsent("alice", "employees");
         createMembershipIfAbsent("eve", "underwriters");
     }
 

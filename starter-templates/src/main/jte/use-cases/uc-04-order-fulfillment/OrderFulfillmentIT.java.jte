@@ -3,9 +3,13 @@
 package ${config.javaPackage()};
 
 import org.junit.jupiter.api.*;
+import org.operaton.bpm.engine.HistoryService;
+import org.operaton.bpm.engine.ManagementService;
 import org.operaton.bpm.engine.ProcessEngine;
 import org.operaton.bpm.engine.RuntimeService;
+import org.operaton.bpm.engine.SuspendedEntityInteractionException;
 import org.operaton.bpm.engine.TaskService;
+import org.operaton.bpm.engine.runtime.Job;
 import org.operaton.bpm.engine.runtime.ProcessInstance;
 import org.operaton.bpm.engine.task.Task;
 import org.operaton.bpm.engine.variable.Variables;
@@ -56,6 +60,12 @@ class OrderFulfillmentIT {
 
     @Autowired
     private ProcessEngine processEngine;
+
+    @Autowired
+    private ManagementService managementService;
+
+    @Autowired
+    private HistoryService historyService;
 
     @Test
     @Order(1)
@@ -111,5 +121,78 @@ class OrderFulfillmentIT {
                 .processInstanceId(instance.getId())
                 .count();
         assertEquals(0, activeCount, "No active instances should remain after out-of-stock path");
+    }
+
+    @Test
+    @Order(4)
+    void paymentFailurePath_endsAtFailedEvent() {
+        RuntimeService runtimeService = processEngine.getRuntimeService();
+
+        // Start process with simulatePaymentFailure = true (in-stock order so payment is reached)
+        ProcessInstance instance = runtimeService.startProcessInstanceByKey(
+                "order-fulfillment",
+                Variables.createVariables()
+                        .putValue("orderId", "ORD-003")
+                        .putValue("simulatePaymentFailure", true));
+
+        // The async job for Task_ChargePayment must be executed to trigger the BpmnError
+        Job job = processEngine.getManagementService().createJobQuery()
+                .processInstanceId(instance.getId())
+                .singleResult();
+        if (job != null) {
+            processEngine.getManagementService().executeJob(job.getId());
+        }
+
+        // Process should have ended (via error boundary → EndEvent_Failed)
+        long finishedCount = historyService.createHistoricProcessInstanceQuery()
+                .processInstanceId(instance.getId())
+                .finished()
+                .count();
+        assertEquals(1, finishedCount, "Process should have finished via payment failure path");
+
+        // orderStatus should be FAILED
+        Object orderStatus = historyService.createHistoricVariableInstanceQuery()
+                .processInstanceId(instance.getId())
+                .variableName("orderStatus")
+                .singleResult()
+                .getValue();
+        assertEquals("FAILED", orderStatus, "orderStatus should be FAILED");
+    }
+
+    @Test
+    @Order(5)
+    void suspendAndActivateProcessInstance() {
+        RuntimeService runtimeService = processEngine.getRuntimeService();
+        TaskService taskService = processEngine.getTaskService();
+
+        // Use happy path (in-stock order)
+        ProcessInstance pi = runtimeService.startProcessInstanceByKey(
+                "order-fulfillment",
+                Variables.putValue("orderId", "ORD-001"));
+
+        // Suspend the process instance
+        runtimeService.suspendProcessInstanceById(pi.getId());
+
+        assertEquals(1, runtimeService.createProcessInstanceQuery().suspended()
+                .processInstanceId(pi.getId()).count());
+
+        Job job = managementService.createJobQuery().processInstanceId(pi.getId()).singleResult();
+        if (job != null) {
+            assertThrows(SuspendedEntityInteractionException.class,
+                    () -> managementService.executeJob(job.getId()));
+        }
+
+        // Activate the process instance
+        runtimeService.activateProcessInstanceById(pi.getId());
+
+        assertEquals(1, runtimeService.createProcessInstanceQuery().active()
+                .processInstanceId(pi.getId()).count());
+
+        // Clean up: complete the warehouse task so the process ends
+        Task task = taskService.createTaskQuery().processInstanceId(pi.getId()).singleResult();
+        if (task != null) {
+            taskService.claim(task.getId(), "dave");
+            taskService.complete(task.getId());
+        }
     }
 }

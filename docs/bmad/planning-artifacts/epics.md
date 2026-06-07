@@ -1,1703 +1,469 @@
 ---
 stepsCompleted: ['step-01-validate-prerequisites', 'step-02-design-epics', 'step-03-create-stories', 'step-04-final-validation']
 workflowStatus: complete
-completedAt: '2026-03-27'
-updatedAt: '2026-06-05'
-updateReason: 'FR74/FR75 added; FR69/FR70/FR71 updated (Postgres default, admin auto-create, H2 fallback, Bootstrap Data, BPMN images, chmod+x); Story 2.3 banner.txt AC; Story 2.6 chmod+x README AC; Epic 8 stories 8.1–8.4 updated; Epic 8 summary updated; FR coverage map updated'
+completedAt: '2026-06-07'
 inputDocuments:
-  - 'docs/bmad/planning-artifacts/prd.md'
-  - 'docs/bmad/planning-artifacts/architecture.md'
-  - 'docs/bmad/planning-artifacts/ux-design-specification.md'
+  - 'docs/bmad/planning-artifacts/prds/prd-operaton-starter-uc-enhancements-2026-06-06/prd.md'
+workflowStatus: in-progress
+project_name: operaton-starter
 ---
 
-# operaton-starter - Epic Breakdown
+# operaton-starter Use Case Enhancements - Epic Breakdown
 
 ## Overview
 
-This document provides the complete epic and story breakdown for operaton-starter, decomposing the requirements from the PRD, UX Design requirements (extracted from PRD), and Architecture requirements into implementable stories.
+This document provides the complete epic and story breakdown for the operaton-starter use case enhancements, decomposing the requirements from the PRD into implementable stories.
 
 ## Requirements Inventory
 
 ### Functional Requirements
 
-FR1: The system can generate a project archive for any supported project type × build system combination
-FR2: The system generates projects that compile and pass their included tests without manual modification; generated projects are complete, working examples — not minimal scaffolds — with meaningful process logic, valid BPMN diagrams, and implemented delegates that a developer can run, study, and extend
-FR3: The system always generates projects targeting the current stable Operaton release (no user-selectable version)
-FR4: The system propagates developer identity (Group ID, Artifact ID, project name) consistently across all generated files — Java package names, BPMN process IDs, Spring application name
-FR5: The system generates a BPMN process file for applicable project types; the BPMN file contains a complete, graphically valid diagram — all flow elements include `BPMNShape` and `BPMNEdge` layout data so the process renders correctly in any BPMN-aware tool without manual repositioning
-FR6: The system generates a `processes.xml` deployment descriptor for Process Archive projects, pre-configured with the selected deployment target
-FR7: The system generates deployment-target-appropriate artifact configuration (WAR/JAR) for Process Archive projects
-FR8: The generation engine is a single shared implementation invoked by all channels — web UI, REST API, CLI, and MCP module; no per-channel generation logic
-FR9: A developer can select a project type (MVP: Process Application, Process Archive)
-FR10: A developer selects a build system in two steps: first choosing between Maven and Gradle; if Gradle is chosen, a DSL sub-option (Groovy or Kotlin) becomes visible and must be selected before generation; the DSL sub-option is hidden when Maven is selected
-FR11: A developer can specify Group ID, Artifact ID, and project name as project identity
-FR12: A developer can select a deployment target for Process Archive projects
-FR13: Dependency update configuration is an opt-in Extras option (unchecked by default); when a developer checks it, a sub-option for flavour (Dependabot or Renovate) becomes visible and must be selected before generation; the sub-option is hidden when the Dependency Updates option is unchecked
-FR14: A developer can opt in to Docker Compose file generation; this option is only presented for project types that support containerised embedded deployment (Process Application); it is not shown for Process Archive projects
-FR15: A developer can opt in to GitHub Actions CI/CD skeleton generation
-FR56: All Extras options (Dependency Updates, Docker Compose, GitHub Actions) are unchecked/off by default; a developer must explicitly enable each one
-FR16: A developer can share a project configuration as a URL that restores and pre-fills the configuration form when opened
-FR17: A developer can configure a project and download a ZIP archive through a browser
-FR60: The web UI serves a `favicon.ico` derived from the Operaton logo so that browser tabs and bookmarks display the Operaton brand mark; no 404 error is emitted for `/favicon.ico` requests
-FR18: A developer can browse available project types as a visual gallery with capability descriptions
-FR19: A developer can see a live file tree preview of the project to be generated, updated as configuration options change; the preview is interactive — selecting a file shows its content
-FR20: A developer can access inline contextual help for any configuration option without leaving the page
-FR22: A developer can complete the full configuration and download flow without using a mouse
-FR23: The web UI populates all configuration options and gallery content from the REST API metadata endpoint
-FR24: An API consumer can generate and download a project archive via `POST /api/v1/generate` with `Accept: application/zip`
-FR25: An API consumer can retrieve all supported configuration options and project template manifests via `GET /api/v1/metadata`
-FR26: An API consumer can access the complete OpenAPI specification at `/api/v1/docs`
-FR27: The system enforces a rate limit per IP address and returns a structured error response when exceeded
-FR28: A developer can generate and download a project archive using `npx operaton-starter` with all options as command-line flags
-FR29: The CLI outputs the project archive as raw bytes to stdout when stdout is a pipe, enabling shell scripting
-FR30: A developer can instruct the CLI to extract the generated archive into a specified directory
-FR31: An AI assistant can generate an Operaton project archive by invoking the `generate_project` MCP tool from the `operaton-starter-mcp` npm package
-FR32: The `operaton-starter-mcp` package can be configured with a custom base URL to point at a self-hosted instance
-FR33: Every generated project includes a README with project-specific next-step instructions tailored to the selected project type and build system
-FR34: Every generated project includes a configured dependency update file (Dependabot or Renovate) ready to use without modification
-FR35: Generated Process Application projects include a GitHub Actions CI/CD workflow that passes on first push
-FR36: Generated projects with Docker Compose enabled include a `docker-compose.yml` that starts the application
-FR37: An operator can deploy Operaton Starter as a self-hosted instance using a Docker image with no external service dependencies at startup
-FR38: An operator can configure self-hosted instance defaults (default Group ID, Maven registry URL, Operaton version) via environment variables
-FR39: The running instance exposes a health check endpoint for operational monitoring
-FR40: A developer can access the tool through two distinct entry points: a direct configuration form and a project gallery, with both leading to the same generation flow
-FR41: A developer can access an explanation distinguishing between available project types to inform their selection
-FR42: The CLI and `operaton-starter-mcp` client code are generated from the OpenAPI specification; no hand-written client code exists independently of the API contract
-FR43: The web UI renders the project file tree preview from template manifests in the metadata response, without a per-change server round-trip
-FR57: When a developer clicks a file in the File Structure Preview, the file's representative content is shown in a content pane adjacent to the file tree; the content pane updates when a different file is selected; no download or generation step is required to see the content; the content is served as static template source included in the metadata response (`TemplateManifestEntry.previewContent`) — it is representative of the template structure and does not dynamically reflect the current form state; this preserves the no-server-round-trip invariant from FR43
-FR44: Generated projects include complete, runnable delegate implementations — not stub placeholders — wired to the BPMN service tasks; each delegate performs a meaningful operation representative of the project type; a JUnit test deploys and executes the full process end-to-end without modification
-FR45: When a developer reaches the configuration details page via the gallery or a direct project-type entry point, the project type is pre-set from that selection and displayed as read-only context — it is not re-presented as an editable field on the details page
-FR46: Configuration options on the details page are conditionally rendered based on the selected project type; options that do not apply to the current project type are hidden entirely (not shown as disabled); the visible option set updates if the developer navigates back and changes the project type selection
-FR47: The repository contains a `Dockerfile` for building the Operaton Starter application image
-FR48: The self-hosted Docker image documents how to connect the `operaton-starter-mcp` npm package to the running instance via the `BASE_URL` environment variable, so AI assistants can use a self-hosted deployment as their generation backend; the build sequence is: (1) run `mvn verify` to produce the JAR, (2) build the Docker image from the pre-built JAR — the Docker build requires no Maven or internet access once the JAR is present
-FR49: Releases are created via a GitHub Actions workflow using **JReleaser**, following the release workflow pattern established in the `operaton/operaton` repository; JReleaser creates the GitHub Release, generates the changelog from conventional commits, and coordinates publishing to all distribution targets in a single automated run
-FR50: The Docker image is published to Docker Hub as `operaton/operaton-starter` on every release; image tags follow semantic versioning (`x.y.z`) with a `latest` tag updated on each stable release
-FR51: Maven artifacts (generation engine, archetypes, server) are published to Maven Central on every release via the standard Sonatype OSSRH publication flow coordinated by JReleaser
-FR52: The `operaton-starter-mcp` npm package is published to the public npm registry (`npmjs.com`) on every release, version-aligned with the overall project release tag
-FR53: The repository documentation specifies all credentials that must be configured as GitHub Actions secrets for the release workflow to succeed: Docker Hub credentials (`DOCKER_USERNAME`, `DOCKER_PASSWORD`), Maven Central/Sonatype credentials (`MAVEN_CENTRAL_USERNAME`, `MAVEN_CENTRAL_TOKEN`), npm publish token (`NPM_TOKEN`), and the GitHub token required by JReleaser for GitHub Release creation
-FR58: Generated projects have an elaborated, well-separated file structure appropriate to the project type: domain logic, process resources, configuration, and tests are placed in distinct packages and source directories; no application logic lives in a default/root package; the structure is a reference example a developer can extend directly, not a flat minimal scaffold
-FR59: Every generated project compiles, all included tests pass, and the application starts without errors on first run — the CI test matrix verifies all supported project-type × build-system combinations on every change to the generation templates
-FR61: Every generated project includes the appropriate build tool wrapper — Maven wrapper (`mvnw`, `mvnw.cmd`, `.mvn/wrapper/maven-wrapper.properties`) for Maven projects, Gradle wrapper (`gradlew`, `gradlew.bat`, `gradle/wrapper/gradle-wrapper.{jar,properties}`) for Gradle projects — enabling the project to be built without a globally installed Maven or Gradle installation
-FR67: The gallery displays a curated set of use case examples as a second section below the project types; each example card shows a title, one-sentence description, and capability tags; clicking a card pre-fills the configuration form and navigates to the details page; the four MVP use case examples are: Leave Request, Loan Application, Incident Management, Order Fulfillment
-FR68: Each MVP use case example generates a project that satisfies the self-containment invariant: `docker compose up -d` (if applicable) followed by `./mvnw spring-boot:run` starts successfully with no manual configuration; all included JUnit tests pass; the first test assertion verifies the process definition deployed
-FR69: Each MVP use case example seeds its user roles and groups via `data.sql` at startup; username and password are identical for each user (e.g., `alice/alice`); roles map to BPMN `candidateGroups` expressions in the process definition
-FR70: Each MVP use case example that requires an external system includes a `docker-compose.yml` with exactly one external service; health check + `depends_on: condition: service_healthy`; Spring Boot app runs on the host
-FR71: Each MVP use case example includes a character-narrated "Getting Started in 5 Minutes" README section that names the pre-seeded users and guides the developer through Tasklist step-by-step as those characters
-FR72: WireMock stub mapping files for examples that use WireMock are committed in `src/main/resources/wiremock/mappings/` and mounted via bind-mount in `docker-compose.yml`; no stubs configured in Java code; WireMock container image version pinned to specific minor version in template
-FR73: Use case examples discoverable and generatable via all channels; `GET /api/v1/metadata` returns useCaseId list with display name, description, tags, and parameter bundle; `POST /api/v1/generate` accepts optional `useCaseId` resolving to a fixed parameter bundle — no separate generation path
-FR76: The file content pane reactively re-renders when any configuration value changes while a file is open — including Group ID, Artifact ID, project name, Java version, build system, or extras — so displayed content always reflects current form state without requiring re-selection
-FR77: If a file is open in the content pane and a configuration change causes that file to leave the tree (e.g., switching from Maven to Gradle removes `pom.xml`), the content pane clears immediately; no stale content from a no-longer-applicable file remains visible
-FR78: Each use case example entry in the metadata response carries its own `templateManifest` — the list of files specific to that use case including the use-case-specific BPMN — so the File Structure Preview and content pane show the actual use case workflow instead of the generic skeleton process
+FR-1: Each use case BPMN must declare `operaton:candidateStarterGroups` — UC-01/02/03 use `employees`, UC-04 uses new `sales` group
+FR-2: All user tasks across all four BPMNs must carry `operaton:candidateGroups`; audit and fill any gaps
+FR-3.1: Replace UC-02 `Auto-Reject Notify` service task with a BPMN Send Task named "Send Rejection Email"
+FR-3.2: Implement `RejectionEmailDelegate` using Spring `JavaMailSender`, reading `applicantEmail` process variable
+FR-3.3: Populate `applicantEmail` process variable from DataInitializer or identity service at runtime
+FR-3.4: Configure `spring.mail.host=localhost` and `spring.mail.port=1025` in UC-02 application properties
+FR-4: Add Mailpit container to UC-02 `docker-compose.yml` (SMTP :1025, Web UI :8025)
+FR-5: Add "Email Testing with Mailpit" section to UC-02 README with URL, user email addresses, and trigger explanation
+FR-6.1: Set `startDate`, `endDate`, `days` (calendar), `remainingVacationDays` as process variables at UC-01 process start
+FR-6.2/3: UC-01 embedded task forms for "Manager Reviews Request" and "HR Records Approved Leave" display all five fields read-only
+FR-6.4: Implement forms as embedded HTML files referenced via `operaton:formKey`
+FR-7: Each use case sets a named status variable (leaveStatus, loanDecision, incidentPriority, orderStatus) at key transitions via `execution.setVariable()`
+FR-8.1: Add non-interrupting timer boundary event to UC-01 "Manager Reviews Request" task (default PT72H, overridable via `managerReviewTimeout` variable)
+FR-8.2: Timer escalation path invokes reminder delegate and sets `escalated = true`
+FR-8.3: Integration test asserts escalation fires with `managerReviewTimeout = PT1S`
+FR-9.1: `PaymentDelegate` throws `BpmnError(PAYMENT_FAILED)` when `simulatePaymentFailure = true`
+FR-9.2: UC-04 BPMN handles `PAYMENT_FAILED` via boundary error event routing to "Notify Customer of Failure"
+FR-9.3: Payment service task declares `operaton:failedJobRetryTimeCycle="R3/PT10S"`
+FR-9.4: Integration test asserts failure path reached when `simulatePaymentFailure = true`
+FR-10.1: UC-02 process started with business key (`"LOAN-" + UUID`)
+FR-10.2: Integration test demonstrates querying by business key
+FR-10.3: UC-02 README explains business keys
+FR-11.1: UC-03 "First-Line Triage" task carries non-interrupting boundary signal catch event `EscalationSignal`
+FR-11.2: Signal fires escalation to "Second-Line Engineer" task in parallel
+FR-11.3: Integration test calls `runtimeService.signalEventReceived("EscalationSignal")` and asserts second-line task created
+FR-12: `OrderFulfillmentIT` includes suspend/activate test case (suspend → assert no job execution → activate → assert completion)
+FR-13.1: Manager task completion sets task-local `approvalComment` via `taskService.setVariableLocal()`
+FR-13.2: Integration test retrieves comment from history via `HistoryService`
+FR-14: `LeaveRequestIT` asserts `remainingVacationDays` decremented after HR step via `HistoryService.createHistoricVariableInstanceQuery()`
+DR-15: All four use case READMEs include REST API section with curl examples for start, list tasks, and complete task
 
-### NonFunctional Requirements
+### Non-Functional Requirements
 
-NFR1: `POST /api/v1/generate` responds with a complete ZIP within 1 second for up to 10 concurrent requests under normal load
-NFR2: Web UI live preview updates within 200ms of any configuration change
-NFR3: End-to-end time from UI landing to ZIP download completes within 30 seconds
-NFR4: The starter's own repository is configured with Dependabot or Renovate to automatically detect and propose Operaton version bumps
-NFR5: Public instance at `start.operaton.org` achieves 99.9% uptime measured over a rolling 30-day window
-NFR6: Self-hosted Docker image starts successfully with no external network calls; the generation engine has no runtime database dependency — all request state is ephemeral
-NFR7: All traffic to `start.operaton.org` is served over HTTPS; HTTP requests redirect to HTTPS
-NFR8: No user-identifying data is persisted; only transient IP-based data is held for rate limiting enforcement and discarded after the rate-limit window
-NFR9: Rate limit enforcement returns HTTP 429 with a `Retry-After` header specifying the retry interval
-NFR10: The service is horizontally scalable by adding instances; all instances are interchangeable with no sticky sessions required
-NFR11: The web UI conforms to WCAG 2.1 Level AA; validated using automated accessibility tooling (e.g., axe-core) in CI and manual keyboard navigation testing before each release
-NFR12: All web UI functionality is operable via keyboard navigation with visible focus indicators throughout
-NFR13: Generated Process Application projects target Java 21+ and use the Spring Boot version specified in the current Operaton BOM
-NFR14: Generated projects using Gradle target Gradle 8+
-NFR15: The `operaton-starter-mcp` npm package supports all Node.js Active LTS versions
-NFR16: Browser support for the web UI covers the latest 2 major versions of Chrome, Firefox, Safari, and Edge
-NFR17: All supported project type × build system combinations (MVP: 6) are validated in CI on every template change; any failure blocks merge
-NFR18: The service emits structured JSON logs compatible with standard log aggregation tools
-NFR19: The Docker image is configurable entirely via environment variables; no file-based configuration is required at runtime
-NFR20: The web UI visual design is consistent with the `operaton.org` and `docs.operaton.org` design system — colors, typography, and component patterns signal the same product family
-NFR21: On any pull request that modifies generation templates, a dedicated CI workflow — separate from the unit test suite — identifies the project type × build system combinations affected by the changed template files, generates a project for each affected combination, builds the generated project, and starts the application to verify it comes up successfully; all steps must pass for the PR to be mergeable; combinations not touched by the PR's template changes are excluded from that run to keep feedback fast
-NFR22: Each submodule in the monorepo (`starter-server`, `starter-templates`, `starter-archetypes`, `starter-mcp`, `starter-web`) has its own `README.md` covering: the submodule's role, prerequisites, how to build it in isolation, how to run or use it locally, and at least one concrete usage example; a contributor must be able to build and exercise any submodule using only its README without consulting other sources
+NFR-1: Authorization enforced at the Operaton engine level via BPMN attributes — no application-layer workarounds
+NFR-2: Email delivery from rejection path visible in Mailpit within 5 seconds of process completion
+NFR-3: Timer boundary test must complete without real waiting (PT1S override)
+NFR-4: All use case integration tests remain green after all changes
+NFR-5: No new runtime dependencies beyond `spring-boot-starter-mail` (UC-02 only) and Mailpit as a Docker service
 
 ### Additional Requirements
 
-- [ARCH-1] Monorepo with Maven parent POM aggregating 5 modules: starter-server, starter-templates, starter-archetypes, starter-web, starter-mcp
-- [ARCH-2] Module bootstrapping: starter-server via Spring Initializr; starter-web via `npm create vue@latest` (TypeScript, Vue Router, Vitest, ESLint+Prettier); starter-mcp via `npm init` + manual TypeScript setup; starter-templates and starter-archetypes as plain Maven modules
-- [ARCH-3] JTE (Java Template Engine) as the template engine — precompiled at build time via `jte-maven-plugin`; zero runtime template parsing
-- [ARCH-4] Zero Spring dependencies in starter-templates — enforced via ArchUnit test in every build
-- [ARCH-5] OpenAPI spec-first discipline: `openapi.yaml` authored and frozen before any channel client code generation begins; spec freeze enforced as GitHub Actions PR status check
-- [ARCH-6] Metadata schema (`/api/v1/metadata` response shape) must be defined as an architectural artifact before any channel implementation begins
-- [ARCH-7] Implementation sequence: (1) OpenAPI spec + metadata schema → (2) starter-templates engine → (3) starter-server REST API + freeze spec → (4) design token extraction → (5) starter-web + starter-mcp in parallel → (6) starter-archetypes last
-- [ARCH-8] Design tokens (colors, typography, spacing) extracted from `github.com/operaton/operaton.org` Jekyll source into Tailwind config before starter-web implementation
-- [ARCH-9] CI/CD: GitHub Actions with `build-java`, `test-matrix` (6 parallel jobs), `contract-check`, `lint-web` on every PR/push; `docker-publish` + `npm-publish` on tagged release
-- [ARCH-10] Docker base image: `eclipse-temurin:25-jre-alpine`; published to `docker.io/operaton/operaton-starter` on every tagged release
-- [ARCH-11] Rate limiting: Bucket4j in-memory, best-effort per IP (10 req/min); no Redis; stateless constraint preserved
-- [ARCH-12] Domain model ownership: `starter-templates` owns `ProjectConfig`, `BuildSystem` (enum), `ProjectType` (enum); no parallel definitions in other modules
-- [ARCH-13] Generated project Java version picker: default Java 17; options 17, 21, 25; all three validated in CI matrix
-- [ARCH-14] Pre-publish prerequisite: `org.operaton.dev` groupId must be claimed at `central.sonatype.com` before first Maven Central publish
-- [ARCH-15] Structured JSON logging via Logback + `logstash-logback-encoder`; no IP address in log body
-- [ARCH-16] CORS configured for `start.operaton.org` and `localhost`; self-hosted instances configure via env var
-- [ARCH-17] Error responses use RFC 7807 Problem Details (`application/problem+json`) for all error responses
-- [ARCH-18] frontend-maven-plugin for hermetic Node.js builds (pinned Node/npm version) in starter-web and starter-mcp Maven modules
-- [ARCH-19] JTE spike required as first `starter-templates` implementation story — validate precompilation and zero-Spring constraint before full engine implementation
+- UC-04 DataInitializer must create `sales` group and user `frank` (frank@example.com, password `frank`)
+- UC-02 and UC-03 reuse existing `employees` group — no new users needed for those use cases
+- Embedded HTML task forms are new files; no existing `operaton:formKey` present in UC-01 BPMN
+- `remainingVacationDays` on task forms reflects balance before deduction (pre-request state)
+- `days` counts calendar days inclusive of start and end date
 
 ### UX Design Requirements
 
-UX-DR1: The web UI landing page provides two distinct entry points: a direct configuration form (Practitioner path, for developers who know what they want) and a visual project gallery (Explorer/discovery path), both routing to the same generation flow (covers FR40)
-UX-DR2: The project gallery displays visual cards for each project type with capability description, capability tags, and a persona hint (e.g. "Ideal for Camunda 7 migrators") — all content driven from the metadata endpoint (covers FR18, FR41, FR23)
-UX-DR3: Every configuration option on the form has inline contextual help accessible without leaving the page — including "?" icons that expand explanatory text distinguishing project types (covers FR20, FR41)
-UX-DR4: The live file tree preview renders client-side from template manifests in the metadata response and updates within 200ms of any configuration change, with no server round-trip per change (covers FR19, FR43, NFR2)
-UX-DR5: The full configuration and download flow is keyboard-complete — every element focusable via Tab, all actions triggerable via keyboard, with visible focus rings throughout (covers FR22, NFR12)
-UX-DR7: The web UI generates and displays a shareable URL encoding the current configuration that restores and pre-fills the form when opened (covers FR16)
-UX-DR8: The web UI visual design matches the operaton.org and docs.operaton.org design system — colors, typography, and spacing extracted as Tailwind design tokens from the operaton.org Jekyll source (covers NFR20, ARCH-8)
-UX-DR9: Browser support covers the latest 2 major versions of Chrome, Firefox, Safari, and Edge (covers NFR16)
-UX-DR10: The web UI meets WCAG 2.1 Level AA, validated by axe-core in CI on every PR (covers NFR11)
-UX-DR11: The web UI visual design is professional, polished, and delightful — clean and purposeful without being bloated; every element earns its place; the experience should feel like a joy to use, not just functional
-UX-DR12: The gallery's use case example cards (section 2) visually distinguish themselves from project type cards (section 1); each card carries a title, one-sentence scenario description, and capability tags (e.g., `multi-role`, `docker-compose`, `DMN`, `timer`); clicking a card navigates to the details page with form pre-filled for that example (covers FR67)
+N/A — no UX document for this scope. Task form display (FR-6) is the only UI surface; requirements are fully specified in the PRD.
 
 ### FR Coverage Map
 
-FR1: Epic 2 — Generate any project type × build system combination
-FR2: Epic 2 — Generated projects compile and tests pass without modification
-FR3: Epic 2 — Always targets current stable Operaton release
-FR4: Epic 2 — Identity propagation (Group ID, Artifact ID, name) across all generated files
-FR5: Epic 2 — Skeleton BPMN process file generation
-FR6: Epic 2 — `processes.xml` deployment descriptor for Process Archive
-FR7: Epic 2 — WAR/JAR artifact configuration for Process Archive
-FR8: Epic 2 — Single unified generation engine across all channels
-FR9: Epic 2 — Select project type
-FR10: Epic 2 — Select build system (Maven, Gradle Groovy, Gradle Kotlin)
-FR11: Epic 2 — Specify Group ID, Artifact ID, project name
-FR12: Epic 2 — Deployment target selection for Process Archive
-FR13: Epic 2 — Dependabot or Renovate choice
-FR14: Epic 2 — Docker Compose opt-in
-FR15: Epic 2 — GitHub Actions CI/CD skeleton opt-in
-FR16: Epic 4 — Shareable configuration URL
-FR17: Epic 4 — Browser-based ZIP download
-FR18: Epic 4 — Visual project gallery
-FR19: Epic 4 — Live file tree preview
-FR20: Epic 4 — Inline contextual help
-FR21: removed — IDE deep-links (IntelliJ IDEA, VS Code) explicitly descoped; browser-to-IDE protocol handlers not reliably deliverable across environments
-FR22: Epic 4 — Keyboard-complete flow
-FR23: Epic 4 — Web UI driven from metadata endpoint
-FR24: Epic 3 — `POST /api/v1/generate`
-FR25: Epic 3 — `GET /api/v1/metadata`
-FR26: Epic 3 — `GET /api/v1/docs` (OpenAPI spec)
-FR27: Epic 3 — Rate limiting + HTTP 429 response
-FR28: Epic 5 — `npx operaton-starter` with CLI flags
-FR29: Epic 5 — CLI pipe mode (raw ZIP to stdout)
-FR30: Epic 5 — CLI `--extract` / `--output` flags
-FR31: Epic 5 — MCP `generate_project` tool
-FR32: Epic 5 — MCP configurable base URL
-FR33: Epic 2 — Project-specific README with next steps
-FR34: Epic 2 — Dependabot/Renovate config in generated project
-FR35: Epic 2 — GitHub Actions CI/CD skeleton in generated project
-FR36: Epic 2 — `docker-compose.yml` in generated project
-FR37: Epic 6 — Self-hosted Docker image
-FR38: Epic 6 — Env-var defaults for self-hosted instance
-FR39: Epic 3 — `/actuator/health` health endpoint
-FR40: Epic 4 — Two entry points: form + gallery
-FR41: Epic 4 — Project type disambiguation explanation
-FR42: Epic 5 — CLI + MCP clients generated from OpenAPI spec
-FR43: Epic 4 — Client-side preview from template manifests
-FR44: Epic 2 — Complete runnable delegate implementations + end-to-end JUnit test
-FR45: Epic 4 — Project type pre-set as read-only context when arriving from gallery
-FR46: Epic 4 — Conditional rendering of config options per project type (hidden, not disabled)
-FR47: Epic 6 — Dockerfile in repository (already covered in Story 6.1)
-FR48: Epic 6 — MCP self-hosting documentation
-FR49: Epic 7 — JReleaser-based release workflow
-FR50: Epic 7 — Docker Hub publishing on release
-FR51: Epic 7 — Maven Central publishing on release
-FR52: Epic 7 — npm publishing for operaton-starter-mcp on release
-FR53: Epic 7 — GitHub Actions secrets documentation
-NFR21: Epic 2 — Smart CI matrix: affected-combinations-only validation on template PRs
-NFR22: Epic 6 — Submodule READMEs for all five modules
-FR56: Epic 4 — All Extras options unchecked/off by default (Story 4.8)
-FR57: Epic 4 — File content pane shown when clicking file in File Structure Preview (Story 4.5)
-FR58: Epic 2 — Elaborated, well-separated file structure in generated projects
-FR59: Epic 2 — Every generated project compiles/tests pass/starts; CI validates all combinations (Stories 2.7, 2.8)
-FR60: Epic 4 — Web UI serves favicon.ico derived from Operaton logo
-FR61: Epic 2 — Generated projects include build tool wrapper (mvnw / gradlew)
-FR67: Epic 4 — Gallery use case examples section (Leave Request, Loan Application, Incident Management, Order Fulfillment cards)
-FR68: Epic 8 — Self-containment invariant for all use case example generated projects
-FR69: Epic 8 — data.sql user/group seeding + Operaton admin user auto-created at startup
-FR70: Epic 8 — Docker Compose (Postgres always; WireMock examples add it as second service) with health checks
-FR71: Epic 8 — Character-narrated README with Bootstrap Data section, BPMN model image, and chmod+x instruction
-FR72: Epic 8 — WireMock stubs as committed files (mappings/) in use case examples; pinned container version
-FR73: Epic 3 + Epic 8 — useCaseId in metadata response and as optional param in POST /api/v1/generate
-FR74: Epic 8 — H2 fallback profile (`application-h2.properties`) in every use case example; README documents the switch; H2 active during `mvn test`
-FR75: Epic 2 — Operaton `banner.txt` included in generated Spring Boot Process Application projects
-FR76: Epic 4 — File content pane reactively re-renders on any configuration change (deep watch on config)
-FR77: Epic 4 — File content pane clears when selected file leaves tree due to configuration change
-FR78: Epic 4 + Epic 8 — Use case examples carry their own `templateManifest` in metadata; File Structure Preview shows use-case-specific BPMN instead of skeleton
+| FR | Epic | Description |
+|----|------|-------------|
+| FR-1 | Epic 1 | candidateStarterGroups on all 4 BPMNs + frank/sales (UC-04) |
+| FR-2 | Epic 1 | User task candidateGroups audit |
+| FR-7 | Epic 1 | Status variables for Cockpit visibility |
+| FR-6 | Epic 2 | Task form variables + embedded HTML forms |
+| FR-8 | Epic 2 | Timer boundary escalation on manager task |
+| FR-13 | Epic 2 | Task-local approvalComment variable |
+| FR-14 | Epic 2 | History API assertion in LeaveRequestIT |
+| DR-15 (UC-01) | Epic 2 | REST API curl examples in leave request README |
+| FR-3 | Epic 3 | Send Rejection Email task + RejectionEmailDelegate |
+| FR-4 | Epic 3 | Mailpit in UC-02 docker-compose |
+| FR-5 | Epic 3 | Mailpit README section |
+| FR-10 | Epic 3 | Business key in UC-02 |
+| DR-15 (UC-02) | Epic 3 | REST API curl examples in loan application README |
+| FR-11 | Epic 4 | Signal event escalation in UC-03 |
+| DR-15 (UC-03) | Epic 4 | REST API curl examples in incident management README |
+| FR-9 | Epic 5 | PaymentDelegate failure + retry config |
+| FR-12 | Epic 5 | Process suspension demo in OrderFulfillmentIT |
+| DR-15 (UC-04) | Epic 5 | REST API curl examples in order fulfillment README |
 
 ## Epic List
 
-### Epic 1: Monorepo Foundation & API Contract
-The monorepo is bootstrapped, the OpenAPI spec and metadata schema are defined as the definitive contract, all modules are set up so every contributor can build from source, and the repo is wired for automated Operaton version tracking from day one.
-**FRs covered:** FR25 (metadata schema defined), FR26 (OpenAPI spec authored)
-**ARCH covered:** ARCH-1, ARCH-2, ARCH-5, ARCH-6, ARCH-7, ARCH-9, ARCH-14, ARCH-18
-**NFRs:** NFR4
+### Epic 1: Authorization Foundation
+Developers see realistic role-based access enforced by the engine, with process state visible in Cockpit without reading a BPMN. Stories must be sequenced: candidateStarterGroups first, then audit + status variables.
+**FRs covered:** FR-1, FR-2, FR-7
 
-### Epic 2: Core Generation Engine
-Any developer can invoke the pure-Java generation engine and receive a valid, compiling, immediately runnable Operaton project archive for any project type × build system combination — with correct identity propagation, complete BPMN, all generated project extras, build tool wrappers, and a full CI validation matrix.
-**FRs covered:** FR1–15, FR33–36, FR44, FR56 (partial), FR58, FR59, FR61
-**ARCH covered:** ARCH-3, ARCH-4, ARCH-12, ARCH-13, ARCH-19
-**NFRs:** NFR1 (partial), NFR13, NFR14, NFR17, NFR21
+### Epic 2: UC-01 Leave Request — Rich Task Experience
+Developers experience a complete human workflow: task forms surface all relevant data, timer escalation handles non-response, and the History API shows how variable state is audited.
+**FRs covered:** FR-6, FR-8, FR-13, FR-14, DR-15 (UC-01 README)
 
-### Epic 3: REST API — Programmatic Project Generation
-Any developer with internet access (or a curl command) can generate an Operaton project via `POST /api/v1/generate`, inspect all configuration options via the metadata endpoint, and read the OpenAPI spec — making the service usable from any tool, script, or integration. Use case examples are discoverable via metadata and generatable via `useCaseId` parameter on the same endpoint.
-**FRs covered:** FR24–27, FR39, FR42 (partial — OpenAPI generator toolchain wired), FR73 (partial — useCaseId in metadata + generate)
-**ARCH covered:** ARCH-11, ARCH-15, ARCH-16, ARCH-17
-**NFRs:** NFR1, NFR5, NFR7, NFR8, NFR9, NFR10, NFR18
+### Epic 3: UC-02 Loan Application — Email Integration & Business Keys
+Developers see Operaton integrate with external services: rejection triggers a real email visible in Mailpit, and business keys show how to correlate external IDs to process instances.
+**FRs covered:** FR-3, FR-4, FR-5, FR-10, DR-15 (UC-02 README)
 
-### Epic 4: Web UI — Browser-Based Project Generation
-Practitioners complete configuration and download a ZIP in under 30 seconds. Explorers discover their project type through a visual gallery — including four use case example cards that pre-fill the form for real-world scenarios. Both enjoy a professional, keyboard-accessible, operaton.org-consistent interface with live preview, interactive file content pane, and shareable config URLs — benchmarked against start.spring.io and code.quarkus.io.
-**FRs covered:** FR16–20, FR22–23, FR40–41, FR43, FR45, FR46, FR56, FR57, FR60, FR67, FR76, FR77, FR78
-**UX-DRs covered:** UX-DR1 through UX-DR12
-**ARCH covered:** ARCH-8
-**NFRs:** NFR2, NFR3, NFR11, NFR12, NFR16, NFR20
+### Epic 4: UC-03 Incident Management — Signal Escalation
+Developers learn signal-based escalation: an external signal fires a parallel second-line task without interrupting the original triage.
+**FRs covered:** FR-11, DR-15 (UC-03 README)
 
-### Epic 5: CLI & MCP — Terminal and AI-Native Access
-Developers generate projects from `npx operaton-starter` in scriptable or interactive mode. AI assistants (Claude, GitHub Copilot, Cursor) generate projects mid-conversation via the `operaton-starter-mcp` npm tool. All four access channels are live.
-**FRs covered:** FR28–32, FR42
-**NFRs:** NFR15
-
-### Epic 6: Self-Hosting & Production Operations
-Platform engineers and enterprise teams run a private Operaton Starter instance behind their firewall — configured entirely via environment variables, deployed from a published Docker image, with zero external dependencies at startup. Self-hosting documentation enables operators to connect the MCP client to their private instance.
-**FRs covered:** FR37–38, FR47, FR48
-**ARCH covered:** ARCH-9, ARCH-10
-**NFRs:** NFR5, NFR6, NFR19, NFR22
-
-### Epic 7: Release & Distribution
-Every tagged release automatically publishes to all distribution channels — Docker Hub, Maven Central, and npm — via a single JReleaser-orchestrated GitHub Actions workflow. The release process is fully documented including all required secrets.
-**FRs covered:** FR49–53
-**NFRs:** (none additional)
-
-### Epic 8: Use Case Examples — Self-Contained Generated Projects
-Four self-contained, out-of-the-box runnable use case example projects are available in the gallery and generatable via all channels using a `useCaseId` parameter. Each demonstrates a distinct BPMN concept (user tasks, DMN decisions, timer escalation, service task orchestration), seeds realistic user roles via `data.sql`, auto-creates an Operaton admin user at startup, and uses PostgreSQL via Docker Compose as the default datasource — with H2 available as a zero-code-change fallback profile. WireMock examples include Postgres and WireMock as two services in the same compose stack. Every example's README includes a BPMN model image, Bootstrap Data instructions, and a `chmod +x mvnw` step for Mac/Linux users. Every example is validated in the CI matrix alongside the core project types.
-**FRs covered:** FR68–75, FR78
-**NFRs:** NFR17 (CI validation extended to cover use case examples)
+### Epic 5: UC-04 Order Fulfillment — Failure Patterns & Resilience
+Developers see how Operaton handles failure: configurable error paths, job retry cycles, and process suspension/activation — all engine-level resilience with no application code needed.
+**FRs covered:** FR-9, FR-12, DR-15 (UC-04 README)
 
 ---
 
-## Epic 1: Monorepo Foundation & API Contract
+## Epic 5: UC-04 Order Fulfillment — Failure Patterns & Resilience
 
-The monorepo is bootstrapped, the OpenAPI spec and metadata schema are defined as the definitive contract, all modules are set up so every contributor can build from source, and the repo is wired for automated Operaton version tracking from day one.
+Developers see how Operaton handles failure: configurable error paths, job retry cycles, and process suspension/activation — all engine-level resilience with no application code needed.
 
-### Story 1.1: Bootstrap Monorepo Structure
+### Story 5.1: Add Payment Failure Path and Job Retry Configuration
 
-As a **developer contributing to operaton-starter**,
-I want the monorepo to be fully bootstrapped with all modules wired and building green,
-So that I can clone the repository and start working immediately without any manual setup.
-
-**Acceptance Criteria:**
-
-**Given** a developer clones the repository
-**When** they run `mvn verify` from the project root
-**Then** all 5 Maven modules build successfully with zero compilation errors and zero test failures
-
-**Given** the monorepo structure
-**When** inspecting the root `pom.xml`
-**Then** it declares all 5 modules as children: `starter-server`, `starter-templates`, `starter-archetypes`, `starter-web`, `starter-mcp`
-
-**Given** `starter-server`
-**When** inspected
-**Then** it is bootstrapped from Spring Initializr with Spring Boot 4.0.4, Java 21, Maven, and dependencies: `spring-boot-starter-web`, `spring-boot-starter-actuator`, `spring-boot-starter-validation`; the Operaton BOM 2.0.0 is added as an imported BOM; root package is `org.operaton.dev.starter.server`
-
-**Given** `starter-templates`
-**When** inspected
-**Then** it is a plain Maven module with root package `org.operaton.dev.starter.templates`, zero Spring dependencies in its POM, and an ArchUnit test that fails the build if any class imports from `org.springframework.*`
-
-**Given** a class importing from `org.springframework.*` is introduced into `starter-templates`
-**When** `mvn verify` is run
-**Then** the ArchUnit test fails the build with a clear violation message
-
-**Given** `starter-archetypes`
-**When** inspected
-**Then** it is a plain Maven module with root package `org.operaton.dev.starter.archetypes`
-
-**Given** `starter-web`
-**When** inspected
-**Then** it is scaffolded via `npm create vue@latest` with TypeScript, Vue Router, Vitest, ESLint+Prettier (no Pinia); its Maven POM uses `frontend-maven-plugin` with pinned Node.js v22 and npm 10 to run `npm ci && npm run build` during `mvn verify`
-
-**Given** `starter-mcp`
-**When** inspected
-**Then** it is scaffolded via `npm init` with TypeScript and `@modelcontextprotocol/sdk@1.28.0`; its Maven POM uses `frontend-maven-plugin` identically to `starter-web`
-
-**Given** the project root
-**When** inspected
-**Then** it contains: `renovate.json` (file present); `.editorconfig`; `.gitignore`; `README.md` (skeleton); `docker-compose.dev.yml` (skeleton)
-
-> **Note:** `org.operaton.dev` groupId must be claimed at `central.sonatype.com` before the first Maven Central release is attempted.
-
-### Story 1.2: Author OpenAPI Spec & Metadata Schema
-
-As a **developer building any channel** (web UI, CLI, MCP, or integration),
-I want a complete OpenAPI spec and metadata schema to exist as the single source of truth,
-So that I can generate client code and implement against a stable contract without coordination overhead.
+As a developer evaluating Operaton,
+I want to see a configurable payment failure route through a BPMN error boundary event with job retry,
+So that I understand how Operaton handles service failures, error escalation, and retry policies declaratively.
 
 **Acceptance Criteria:**
 
-**Given** the project root
-**When** inspected
-**Then** `openapi.yaml` exists and is a valid OpenAPI 3.x document covering the two developer-facing API endpoints: `POST /api/v1/generate` and `GET /api/v1/metadata`
+**Given** `PaymentDelegate.java.jte`
+**When** process variable `simulatePaymentFailure = true` is set at process start
+**Then** the delegate throws `new BpmnError("PAYMENT_FAILED")` instead of completing normally
 
-**Given** `POST /api/v1/generate` in `openapi.yaml`
-**When** inspected
-**Then** the request body schema defines all project configuration fields: `groupId`, `artifactId`, `projectName`, `projectType`, `buildSystem`, `javaVersion`, `deploymentTarget` (optional — validated server-side for Process Archive), `dependencyUpdater`, `dockerCompose` (boolean), `githubActions` (boolean); all fields use `camelCase`; required fields are declared
+**Given** `order-fulfillment.bpmn.jte`
+**When** a boundary error event catching `PAYMENT_FAILED` is added to the payment service task
+**Then** the error path routes to a "Notify Customer of Failure" end event
 
-**Given** `GET /api/v1/metadata` in `openapi.yaml`
-**When** inspected
-**Then** the response schema defines the full metadata shape: `projectTypes[]` (each with `id`, `displayName`, `description`, `tags`, `personaHint`, `templateManifest[]`), `buildSystems[]` (each with `id`, `displayName`), and `globalOptions.javaVersions` (options: [17, 21, 25], default: 17)
+**Given** the payment service task in the BPMN
+**When** `operaton:failedJobRetryTimeCycle="R3/PT10S"` is declared on the task
+**Then** the retry configuration is visible in the BPMN XML and Cockpit shows retries remaining on job failure
 
-**Given** `templateManifest` entries in the metadata schema
-**When** inspected
-**Then** each entry defines: `path` (string), `condition` (string or null), `templateId` (string)
+**Given** `OrderFulfillmentIT`
+**When** a process is started with `simulatePaymentFailure = true`
+**Then** the test asserts the process reaches the "Notify Customer of Failure" end event
+**And** the `orderStatus` variable equals `FAILED`
 
-**Given** `openapi.yaml`
-**When** validated with the OpenAPI Generator tool
-**Then** it produces valid server stubs and client code with zero errors
+### Story 5.2: Demonstrate Process Suspension and Activation
 
-**Given** `starter-server`
-**When** inspected
-**Then** `openapi.yaml` is referenced by `openapi-generator-maven-plugin` in the POM and server stubs are generated into `src/generated/` at build time; no hand-written DTOs duplicate the generated types
-
-**Given** the `/api/v1/docs` path
-**When** accessed in a browser
-**Then** it serves a static HTML page that renders the OpenAPI spec via Scalar loaded from CDN; this path is not declared as an endpoint in `openapi.yaml` itself — `openapi.yaml` is served as a static resource from `src/main/resources/static/`
-
-**Given** the `src/generated/` directory in any module
-**When** inspected
-**Then** it contains only OpenAPI-generated files; no manually authored files exist within it
-
-> **Note:** Spec freeze enforcement (GitHub Actions `contract-check` job) is wired in Story 1.3. Until then, spec discipline is by convention.
-
-### Story 1.3: GitHub Actions CI Pipeline
-
-As a **developer contributing to operaton-starter**,
-I want every pull request to be validated by an automated CI pipeline,
-So that broken builds, spec drift, and lint failures are caught before they reach the main branch.
+As a developer evaluating Operaton,
+I want to see a process instance suspended and reactivated in a test,
+So that I understand how operators can pause and resume process execution at runtime.
 
 **Acceptance Criteria:**
 
-**Given** a pull request is opened or pushed to
-**When** GitHub Actions triggers
-**Then** four jobs run in parallel: `build-java`, `test-matrix`, `contract-check`, and `lint-web`
+**Given** `OrderFulfillmentIT` starts a process instance
+**When** `runtimeService.suspendProcessInstanceById(processInstanceId)` is called
+**Then** `runtimeService.createProcessInstanceQuery().suspended().processInstanceId(id).count()` returns 1
 
-**Given** the `build-java` job
-**When** it runs
-**Then** it executes `mvn verify` on the full monorepo and fails the PR if any module fails to compile or any test fails
+**Given** the process instance is suspended
+**When** `managementService.executeJob(jobId)` is attempted for any active job
+**Then** a `SuspendedJobException` is thrown, confirming jobs do not execute while suspended
 
-**Given** the `test-matrix` job
-**When** inspected
-**Then** it is structured as a GitHub Actions matrix job with placeholder dimensions, ready to accept project type × build system combinations in Epic 2 without modifying the CI file structure
+**Given** `runtimeService.activateProcessInstanceById(processInstanceId)` is called
+**When** the process resumes
+**Then** the process instance is no longer suspended and continues to completion
 
-**Given** the `contract-check` job
-**When** it runs
-**Then** it validates that all generated client stubs are consistent with the current `openapi.yaml`; it posts a **warning-level** status check to the PR (not a hard merge block at this stage — promotes to hard block in Phase 2 once the spec is stable)
+**Given** no BPMN changes are required for this story
+**When** the story is implemented
+**Then** all changes are confined to `OrderFulfillmentIT.java.jte`
 
-**Given** the `lint-web` job
-**When** it runs
-**Then** it executes ESLint and Vitest for both `starter-web` and `starter-mcp`; any lint error or Vitest test failure fails the PR; a zero-test-suite result in `starter-mcp` is not treated as a failure
+### Story 5.3: Add REST API Documentation to Order Fulfillment README
 
-**Given** a tagged release (e.g. `v1.0.0`)
-**When** the release workflow triggers
-**Then** `docker-publish` and `npm-publish` stub jobs run, wired to tag triggers; the publish steps are stubs to be completed in Epics 5 and 6 respectively — no Docker image or npm package is published on non-tagged commits
+As a developer evaluating Operaton,
+I want the order fulfillment README to show REST API usage including process suspension,
+So that I understand how ops teams can manage running process instances programmatically.
 
-**Given** the CI pipeline with the monorepo in its bootstrapped state (Stories 1.1 and 1.2 complete)
-**When** triggered on first push
-**Then** all four CI jobs pass green with no manual intervention
+**Acceptance Criteria:**
+
+**Given** the UC-04 `README.md.jte`
+**When** a "REST API" section is added
+**Then** it contains `curl` examples for:
+- `POST /engine-rest/process-definition/key/order-fulfillment/start` with a realistic variable payload
+- `GET /engine-rest/task` filtered by process definition key
+- `POST /engine-rest/task/{id}/complete` for the pack-and-ship task
+- `PUT /engine-rest/process-instance/{id}/suspended` with body `{"suspended": true}` to demonstrate suspension
 
 ---
 
-## Epic 2: Core Generation Engine
+## Epic 4: UC-03 Incident Management — Signal Escalation
 
-Any developer can invoke the pure-Java generation engine and receive a valid, compiling, immediately runnable Operaton project archive for any project type × build system combination — with correct identity propagation, skeleton BPMN, all generated project extras, and a full CI validation matrix.
+Developers learn signal-based escalation: an external signal fires a parallel second-line task without interrupting the original triage.
 
-### Story 2.1: JTE Spike — Validate Template Engine & Zero-Spring Constraint
+### Story 4.1: Add Signal Event Escalation to Incident Management
 
-As a **developer implementing the generation engine**,
-I want to validate that JTE templates precompile correctly at build time with zero Spring dependencies,
-So that the team has confirmed the performance and constraint foundations before investing in full engine implementation.
-
-**Acceptance Criteria:**
-
-**Given** `starter-templates`
-**When** inspected
-**Then** `gg.jte:jte` and `gg.jte:jte-maven-plugin` are declared as dependencies; the JTE plugin version is declared in the parent POM `<pluginManagement>` section; the `jte-maven-plugin` is configured to precompile all templates at build time into generated Java classes
-
-**Given** a minimal sample JTE template exists in `starter-templates` (e.g. a trivial `pom.xml.jte` stub)
-**When** `mvn verify` runs
-**Then** the plugin compiles the template to a Java class at build time; no JTE template files are parsed at runtime; the compiled template classes are present in the output JAR
-
-**Given** a unit test in `starter-templates` that invokes the compiled template
-**When** the test runs
-**Then** it generates output from the precompiled template in-memory and asserts the output contains expected content — no Spring context, no file I/O, no subprocess invocation required
-
-**Given** the ArchUnit zero-Spring test from Story 1.1
-**When** `mvn verify` runs after adding JTE
-**Then** the ArchUnit test still passes — JTE introduces no Spring dependency into `starter-templates`
-
-**Given** the compiled template is invoked 100 times in a loop in a unit test
-**When** the test runs
-**Then** total execution completes in under 500ms — demonstrating precompilation eliminates runtime parsing overhead
-
-**Given** the spike is validated
-**When** reviewed
-**Then** the sample template is moved to `starter-templates/spike/` with a brief README — it is not left in the engine source path; an implementation note committed to `docs/arc42/04-solution-strategy.md` confirms: (1) JTE precompilation works with the `jte-maven-plugin` version used, (2) the zero-Spring constraint holds with JTE on the classpath, (3) 100 template invocations complete under 500ms
-
-### Story 2.2: Domain Model & Project Configuration
-
-As a **developer implementing the generation engine**,
-I want the shared domain model and `GenerationEngine` public API to be defined in `starter-templates`,
-So that all modules have a single source of truth for project configuration types and the engine has a clear, testable entry point.
+As a developer evaluating Operaton,
+I want an external signal to escalate an incident to second-line support in parallel with ongoing triage,
+So that I understand how boundary signal events enable async external triggers without interrupting active tasks.
 
 **Acceptance Criteria:**
 
-**Given** `starter-templates`
-**When** inspected
-**Then** the following types exist in `org.operaton.dev.starter.templates.model`: `ProjectConfig` (Java record), `ProjectType` (enum: `PROCESS_APPLICATION`, `PROCESS_ARCHIVE`), `BuildSystem` (enum: `MAVEN`, `GRADLE_GROOVY`, `GRADLE_KOTLIN`), `DeploymentTarget` (enum: `TOMCAT`, `STANDALONE_ENGINE`)
+**Given** `incident-management.bpmn.jte`
+**When** a non-interrupting boundary signal catch event named `EscalationSignal` is added to the "First-Line Triage" user task
+**Then** the signal event is wired to a sequence flow that creates the "Second-Line Engineer" user task in parallel
 
-**Given** `ProjectConfig`
-**When** inspected
-**Then** it is a Java record holding all project configuration fields: `groupId`, `artifactId`, `projectName`, `projectType`, `buildSystem`, `javaVersion` (int, default 17), `deploymentTarget` (Optional\<DeploymentTarget\>), `dependencyUpdater` (enum: `DEPENDABOT`, `RENOVATE`), `dockerCompose` (boolean), `githubActions` (boolean)
+**Given** a process instance is active at the "First-Line Triage" task
+**When** `runtimeService.signalEventReceived("EscalationSignal")` is called
+**Then** a "Second-Line Engineer" task is created and the "First-Line Triage" task remains active and claimable
 
-**Given** `starter-templates`
-**When** inspected
-**Then** a `GenerationEngine` class exists in `org.operaton.dev.starter.templates` with a single public method: `byte[] generate(ProjectConfig config)`
+**Given** `IncidentManagementIT`
+**When** the test sends `runtimeService.signalEventReceived("EscalationSignal")` after process start
+**Then** `taskService.createTaskQuery().taskDefinitionKey("Task_SecondLine").count()` returns 1
+**And** `taskService.createTaskQuery().taskDefinitionKey("Task_FirstLineTriage").count()` returns 1
 
-**Given** a `ProjectConfig` with any valid combination of fields
-**When** `GenerationEngine.generate(config)` is called
-**Then** it returns a non-empty `byte[]` whose contents are readable as a valid ZIP by `java.util.zip.ZipInputStream` without exception; the ZIP contains at least one file (e.g. a stub `pom.xml`)
+**Given** the `incidentPriority` status variable is set on the process (per Epic 1 Story 1.2)
+**When** the escalation signal fires
+**Then** `execution.setVariable("incidentPriority", "HIGH")` is called on the escalation path
 
-**Given** `ProjectType`, `BuildSystem`, `DeploymentTarget`, and `ProjectConfig` are defined in `starter-templates`
-**When** any other module needs these types
-**Then** it imports them from `starter-templates` — no module defines its own parallel representation
+### Story 4.2: Add REST API Documentation to Incident Management README
 
-**Given** the ArchUnit zero-Spring test
-**When** `mvn verify` runs after adding the domain model
-**Then** it still passes — no Spring imports introduced
-
-**Given** a `@ParameterizedTest` covering all 6 valid `ProjectType` × `BuildSystem` combinations
-**When** `GenerationEngine.generate(config)` is called for each combination
-**Then** it completes without exception, returns a non-null non-empty `byte[]`, and the result is a valid ZIP readable by `ZipInputStream` without exception
-
-### Story 2.3: Process Application Generation (Maven)
-
-As a **Java developer starting a new Operaton project**,
-I want to generate a fully working Process Application project with Maven build,
-So that I can clone it, run `mvn spring-boot:run`, and have a running Operaton engine with a deployed skeleton process in under 3 minutes.
+As a developer evaluating Operaton,
+I want the incident management README to show how to drive the process and send signals via REST,
+So that I understand how external systems can trigger Operaton signal events programmatically.
 
 **Acceptance Criteria:**
 
-**Given** a `ProjectConfig` with `projectType=PROCESS_APPLICATION`, `buildSystem=MAVEN`, and valid `groupId`, `artifactId`, `projectName`, `javaVersion`
-**When** `GenerationEngine.generate(config)` is called
-**Then** the returned ZIP contains: `pom.xml`, `src/main/java/{package}/Application.java`, `src/main/java/{package}/delegate/SkeletonDelegate.java`, `src/main/resources/{artifactId}.bpmn`, `src/main/resources/application.properties`, `src/test/java/{package}/ProcessIT.java`
-
-**Given** the generated `pom.xml`
-**When** inspected
-**Then** it declares: `groupId` matching the configured value, `artifactId` matching the configured value, Spring Boot parent POM at the version from the current Operaton BOM, Operaton BOM imported, Java version matching `javaVersion` config; no hardcoded Operaton version — driven from BOM
-
-**Given** the generated Java source files
-**When** inspected
-**Then** all Java package declarations match `{groupId}.{artifactId}` with dots replacing hyphens; no file contains a hardcoded package path
-
-**Given** the generated `{artifactId}.bpmn`
-**When** inspected
-**Then** the BPMN process ID contains `artifactId`; it includes one service task wired to `SkeletonDelegate` by class reference
-
-**Given** the generated `SkeletonDelegate.java`
-**When** inspected
-**Then** it implements `org.operaton.bpm.engine.delegate.JavaDelegate` and is wired to the skeleton BPMN service task
-
-**Given** the generated `application.properties`
-**When** inspected
-**Then** `spring.application.name` matches `projectName`
-
-**Given** the generated Process Application project
-**When** `src/main/resources/banner.txt` is inspected
-**Then** it contains the Operaton ASCII art logo and version placeholders (`${spring-boot.formatted-version}`, `${operaton.bpm.formatted-version}`, `@project.version@`); Spring Boot displays the banner automatically at startup with no additional configuration (FR75)
-
-**Given** the generated `ProcessIT.java`
-**When** the test is run in a project compiled from the generated ZIP
-**Then** it deploys the skeleton BPMN process and executes it end-to-end without manual modification — the test passes on first run
-
-**Given** a `@ParameterizedTest` in `starter-templates` testing the Maven Process Application combination
-**When** it runs
-**Then** it calls `GenerationEngine.generate(config)`, extracts the ZIP in-memory, and asserts: all expected files exist at correct paths, identity fields propagate correctly into `pom.xml`, package names, BPMN process ID, and `application.name`
-
-### Story 2.4: Process Application Generation (Gradle Groovy & Kotlin DSL)
-
-As a **Java developer who prefers Gradle**,
-I want to generate a fully working Process Application project with Gradle Groovy DSL or Gradle Kotlin DSL,
-So that I get the same ready-to-run experience as Maven users — just with my preferred build tool.
-
-**Acceptance Criteria:**
-
-**Given** a `ProjectConfig` with `projectType=PROCESS_APPLICATION`, `buildSystem=GRADLE_GROOVY`
-**When** `GenerationEngine.generate(config)` is called
-**Then** the ZIP contains `build.gradle` (Groovy DSL) instead of `pom.xml`; `settings.gradle` with `rootProject.name` matching `projectName`; all Java sources, BPMN, and test files identical in structure to Story 2.3 including `ProcessIT.java`
-
-**Given** a `ProjectConfig` with `projectType=PROCESS_APPLICATION`, `buildSystem=GRADLE_KOTLIN`
-**When** `GenerationEngine.generate(config)` is called
-**Then** the ZIP contains `build.gradle.kts` (Kotlin DSL) instead of `pom.xml`; `settings.gradle.kts` with `rootProject.name` matching `projectName`; all Java sources, BPMN, and test files identical in structure to Story 2.3 including `ProcessIT.java`
-
-**Given** both Gradle-generated `build.gradle` and `build.gradle.kts`
-**When** inspected
-**Then** they declare: Operaton BOM imported, Spring Boot plugin at the BOM-specified version, Java version matching `javaVersion` config; Gradle wrapper files (`gradlew`, `gradlew.bat`, `gradle/wrapper/`) are included; `gradle-wrapper.properties` targets a specific Gradle 8.x version pinned in the generation template
-
-**Given** identity propagation
-**When** either Gradle build file is inspected
-**Then** `group` matches `groupId`, `version` is set to `0.0.1-SNAPSHOT`, and the project name in `settings.gradle(.kts)` matches `projectName`
-
-**Given** the single `@ParameterizedTest` in `starter-templates` with a static combination provider (introduced in Story 2.3)
-**When** Story 2.4 is complete
-**Then** the provider includes rows for `GRADLE_GROOVY` and `GRADLE_KOTLIN` Process Application combinations; each row asserts: correct build file type present, no `pom.xml` present, identity fields propagate correctly, BPMN process ID contains `artifactId`, `ProcessIT.java` is present
-
-### Story 2.5: Process Archive Generation
-
-As a **Java developer deploying to a shared Operaton engine**,
-I want to generate a Process Archive project for my chosen deployment target,
-So that I receive a deployable WAR or JAR with a correctly configured `processes.xml` that works on first deployment.
-
-**Acceptance Criteria:**
-
-**Given** a `ProjectConfig` with `projectType=PROCESS_ARCHIVE`, `buildSystem=MAVEN`, `deploymentTarget=TOMCAT`
-**When** `GenerationEngine.generate(config)` is called
-**Then** the ZIP contains: `pom.xml` configured for WAR packaging, `src/main/resources/META-INF/processes.xml` pre-configured with the archive name and `deploymentTarget=TOMCAT`, `src/main/resources/{artifactId}.bpmn` (skeleton BPMN), no `Application.java` (no embedded engine)
-
-**Given** a `ProjectConfig` with `projectType=PROCESS_ARCHIVE`, `deploymentTarget=STANDALONE_ENGINE`
-**When** `GenerationEngine.generate(config)` is called
-**Then** the ZIP contains `processes.xml` pre-configured with `deploymentTarget=STANDALONE_ENGINE`; packaging is JAR
-
-**Given** the generated `processes.xml`
-**When** inspected
-**Then** the process archive name matches `artifactId`; the engine reference reflects the selected `deploymentTarget`; no hardcoded values exist — all driven from `ProjectConfig`
-
-**Given** Process Archive projects
-**When** inspected
-**Then** no `SkeletonDelegate.java`, no `ProcessIT.java`, and no Spring Boot application class are generated — Process Archive is engine-agnostic and has no embedded engine
-
-**Given** the single `@ParameterizedTest` combination provider
-**When** Story 2.5 is complete
-**Then** it includes rows for `PROCESS_ARCHIVE` × all three build systems × both deployment targets; each row asserts: correct packaging type, `processes.xml` present with correct content, no embedded engine classes present, identity propagation correct
-
-**Given** all 6 MVP project type × build system combinations (2 types × 3 build systems)
-**When** the parameterized test suite runs after Story 2.5
-**Then** all 6 combinations pass — this completes the core generation matrix
-
-### Story 2.6: Generated Project Extras (README, CI, Docker Compose, Dependabot/Renovate)
-
-As a **developer who just generated an Operaton project**,
-I want the generated ZIP to include a tailored README, dependency update config, and optional CI/Docker Compose files,
-So that my project is production-ready from the first commit — no boilerplate hunting required.
-
-**Acceptance Criteria:**
-
-**Given** any generated project
-**When** the ZIP is inspected
-**Then** it contains a `README.md` tailored to the selected `projectType` and `buildSystem` — including: the correct run command (`mvn spring-boot:run` or `./gradlew bootRun`); a `chmod +x mvnw` (or `chmod +x gradlew`) instruction for Mac/Linux users immediately before the first run command; a "What to do next" section with generic contextual doc link placeholders (not hardcoded URLs); and a "Troubleshooting" section naming the three most common startup failure modes: (1) port 8080 already in use, (2) H2 in-memory datasource not configured, (3) Java version mismatch between runtime and compiled bytecode
-
-**Given** `dependencyUpdater=DEPENDABOT`
-**When** the ZIP is inspected
-**Then** it contains `.github/dependabot.yml` configured for the project's build system; no `renovate.json` is present
-
-**Given** `dependencyUpdater=RENOVATE`
-**When** the ZIP is inspected
-**Then** it contains `renovate.json` configured for the project's build system; no `.github/dependabot.yml` is present
-
-**Given** `githubActions=true` and `projectType=PROCESS_APPLICATION`
-**When** the ZIP is inspected
-**Then** it contains `.github/workflows/ci.yml` that compiles the project and runs `ProcessIT.java`; the workflow targets the Java version matching `javaVersion` config
-
-**Given** `githubActions=true` and `projectType=PROCESS_ARCHIVE`
-**When** the ZIP is inspected
-**Then** it contains `.github/workflows/ci.yml` that compiles the project and runs whatever tests exist; no assumption is made about specific test class names
-
-**Given** `githubActions=false`
-**When** the ZIP is inspected
-**Then** no `.github/workflows/` directory is present
-
-**Given** `dockerCompose=true`
-**When** the ZIP is inspected
-**Then** it contains `docker-compose.yml` that starts the application with correct image and port bindings for the selected `projectType`
-
-**Given** `dockerCompose=false`
-**When** the ZIP is inspected
-**Then** no `docker-compose.yml` is present
-
-**Given** the `@ParameterizedTest` combination provider
-**When** Story 2.6 is complete
-**Then** test rows cover both `dependencyUpdater` values, both `githubActions` values, and both `dockerCompose` values — asserting correct file presence and absence for each combination
-
-### Story 2.7: CI Test Matrix — Validate All 6 Combinations
-
-As a **developer merging a template change**,
-I want the CI pipeline to compile and test all 6 project type × build system combinations on every PR,
-So that no template change can silently break any supported combination.
-
-> **Sequencing note:** This story is implemented after Stories 2.3–2.6 are complete — the matrix requires all 6 combinations to be implemented before it can validate them.
-
-**Acceptance Criteria:**
-
-**Given** the `test-matrix` GitHub Actions job (stub created in Story 1.3)
-**When** Story 2.7 is complete
-**Then** it is a full matrix job with dimensions `projectType: [PROCESS_APPLICATION, PROCESS_ARCHIVE]` × `buildSystem: [MAVEN, GRADLE_GROOVY, GRADLE_KOTLIN]` — 6 parallel jobs total
-
-**Given** each matrix job
-**When** it runs
-**Then** it executes as a CI shell step: (1) invokes `GenerationEngine.generate(config)` for its combination via `mvn exec:java` or equivalent, (2) extracts the ZIP to a temp directory, (3) `cd`s into that directory, (4) runs the appropriate build command — `mvn verify` for Maven, `./gradlew build` for Gradle; the job fails if compilation fails or any test fails
-
-**Given** each matrix job
-**When** inspected
-**Then** it uses the same pinned Java version as the rest of the CI pipeline — no version drift between build environment and what is being validated
-
-**Given** a template change that breaks one combination
-**When** the matrix runs
-**Then** only the affected job fails — other combinations continue and report independently; the PR is blocked from merging; this is a hard merge block (unlike `contract-check` which is warning-level)
-
-**Given** all 6 matrix jobs pass
-**When** a PR is reviewed
-**Then** the GitHub Actions status panel shows 6 green matrix job entries — one per combination — before merge is permitted
-
-**Given** the `@ParameterizedTest` suite in `starter-templates` (built across Stories 2.3–2.6)
-**When** `mvn verify` runs
-**Then** all combination rows pass — the unit-level parameterized tests validate ZIP contents in-memory; the CI matrix jobs validate that extracted projects actually build; these are complementary layers, not duplicates
-
-**Given** the CI matrix includes one additional smoke-test job for the Maven Process Application combination
-**When** the job runs
-**Then** it extracts the generated ZIP, runs `mvn spring-boot:run` in the background, polls `GET http://localhost:8080/actuator/health` until it returns `200 OK` (timeout: 60 seconds), then stops the process; the job fails if the application does not start within 60 seconds — this validates the PRD's hard guarantee that every generated Process Application starts without manual modification
-
-> **Note:** Story 2.7 runs all 6 combinations on every PR. The smart affected-only CI workflow required by NFR21 is implemented separately in Story 2.8.
-
-### Story 2.8: Smart CI Matrix — Affected-Combinations-Only Validation (NFR21)
-
-As a **developer merging a template change**,
-I want the CI pipeline to identify and validate only the project type × build system combinations actually affected by my template changes,
-So that feedback is fast — unaffected combinations don't slow down every PR.
-
-**Acceptance Criteria:**
-
-**Given** a PR that modifies one or more files in `starter-templates/src/main/jte/`
-**When** the smart matrix CI workflow triggers
-**Then** it determines which `projectType` × `buildSystem` combinations reference the changed template files; only those combinations are included in the matrix run for that PR
-
-**Given** the smart matrix workflow
-**When** inspected
-**Then** it is a dedicated GitHub Actions workflow file separate from the `test-matrix` job in Story 2.7; it uses a script (shell or Node.js) that reads the JTE template manifest to resolve which combinations depend on which template files, then outputs a GitHub Actions matrix JSON to drive the job dimensions
-
-**Given** a PR that modifies a shared template used by all combinations (e.g. `pom.xml.jte`)
-**When** the smart matrix runs
-**Then** all 6 combinations are included — the smart selection degrades gracefully to a full run when all are affected
-
-**Given** a PR that modifies a template used only by `PROCESS_APPLICATION` × `MAVEN` (e.g. `process-application/maven/pom.xml.jte`)
-**When** the smart matrix runs
-**Then** only the `PROCESS_APPLICATION/MAVEN` combination job runs; the other 5 combinations are excluded from this run
-
-**Given** each affected-combination job in the smart matrix
-**When** it runs
-**Then** it: (1) generates a project for its combination, (2) builds the generated project (`mvn verify` or `./gradlew build`), (3) starts the application and polls `GET /actuator/health` until `200 OK` (timeout: 60 seconds); all three steps must pass for the job to succeed
-
-**Given** any smart matrix job fails
-**When** the PR is reviewed
-**Then** the PR is blocked from merging — this is a hard merge block
-
-**Given** a PR that modifies no template files (e.g. documentation changes only)
-**When** the smart matrix workflow triggers
-**Then** it emits zero matrix jobs and completes with a green status immediately — no generation or build steps run
+**Given** the UC-03 `README.md.jte`
+**When** a "REST API" section is added
+**Then** it contains `curl` examples for:
+- `POST /engine-rest/process-definition/key/incident-management/start` with a realistic variable payload
+- `GET /engine-rest/task` filtered by process definition key
+- `POST /engine-rest/signal` with body `{"name": "EscalationSignal"}` to demonstrate signal sending
+- `POST /engine-rest/task/{id}/complete` for the triage task
 
 ---
 
-## Epic 3: REST API — Programmatic Project Generation
+## Epic 3: UC-02 Loan Application — Email Integration & Business Keys
 
-Any developer with internet access can generate an Operaton project via `POST /api/v1/generate`, inspect all configuration options via the metadata endpoint, and read the OpenAPI spec — making the service usable from any tool, script, or integration.
+Developers see Operaton integrate with external services: rejection triggers a real email visible in Mailpit, and business keys show how to correlate external IDs to process instances.
 
-### Story 3.1: Wire Generation Engine into REST API (`POST /api/v1/generate`)
+### Story 3.1: Add Mailpit Infrastructure to UC-02
 
-As a **developer or tool author**,
-I want to generate an Operaton project archive by posting a configuration JSON to the REST API,
-So that I can automate project generation from any HTTP client, script, or integration without using a browser.
-
-**Acceptance Criteria:**
-
-**Given** a valid `POST /api/v1/generate` request with `Accept: application/zip` and a correct configuration JSON body
-**When** the endpoint is called
-**Then** it returns `200 OK` with `Content-Type: application/zip`, `Content-Disposition: attachment; filename="{artifactId}.zip"`, and a ZIP body produced by `GenerationEngine.generate(config)`
-
-**Given** the `starter-server` controller
-**When** inspected
-**Then** it uses the OpenAPI-generated server stub (from Story 1.2) as its interface — no hand-written request/response DTOs exist; a `ProjectConfigMapper` class in `starter-server` translates the generated DTO to `ProjectConfig`; no mapping logic exists in the controller itself
-
-**Given** a request body with a missing required field (e.g. no `groupId`)
-**When** `POST /api/v1/generate` is called
-**Then** it returns `400 Bad Request` with `Content-Type: application/problem+json` and an RFC 7807 Problem Details body naming the invalid field; no stack trace is included in the response
-
-**Given** a request with `projectType=PROCESS_ARCHIVE` and no `deploymentTarget`
-**When** `POST /api/v1/generate` is called
-**Then** it returns `400 Bad Request` with a Problem Details body explaining that `deploymentTarget` is required for Process Archive projects
-
-**Given** a request body containing an unknown `projectType` enum value
-**When** `POST /api/v1/generate` is called
-**Then** it returns `400 Bad Request` with a Problem Details body — not `500 Internal Server Error`; the deserialization error is caught by the `@ControllerAdvice`
-
-**Given** a single `@ControllerAdvice` in `starter-server`
-**When** any domain or validation exception is thrown
-**Then** it translates all exceptions to RFC 7807 Problem Details responses; no try/catch exists in the controller itself; the `@ControllerAdvice` logs at `ERROR` level with full stack trace while the client receives no stack trace
-
-**Given** a successful generation request
-**When** the request completes
-**Then** `starter-server` emits a structured JSON log entry at `INFO` level containing: `projectType`, `buildSystem`, `javaVersion`; no IP address is included in the log body
-
-**Given** a `@Test` that calls `POST /api/v1/generate` 10 times concurrently
-**When** the test runs
-**Then** the median response time is under 1 second; no request fails or times out
-
-**Given** `starter-server`
-**When** inspected
-**Then** CORS is configured to allow browser requests from `start.operaton.org` and `localhost`; self-hosted instances can override allowed origins via environment variable
-
-**Given** a `POST /api/v1/generate` request that includes an optional `useCaseId` field
-**When** the `useCaseId` matches a known use case example
-**Then** the server resolves the parameter bundle for that use case and uses those values for generation; if `useCaseId` is absent the request body is used as-is; if `useCaseId` is unknown the endpoint returns `400 Bad Request` with a Problem Details body naming the invalid value
-
-**Given** the `docker-compose.dev.yml` at the project root
-**When** expanded in this story to include the backend service
-**Then** a `starter-web` developer can run `docker compose -f docker-compose.dev.yml up` to start the backend API at `http://localhost:8080`; the Vite dev server in `starter-web` proxies API calls to this backend — no Epic 6 work is required for local frontend development to function
-
-### Story 3.2: Metadata Endpoint (`GET /api/v1/metadata`)
-
-As a **developer or tool author consuming the API**,
-I want to retrieve all supported configuration options and template manifests from a single endpoint,
-So that I can build clients and previews driven entirely by the API without hardcoding any option lists.
+As a developer evaluating Operaton,
+I want a local mail server ready when I run the UC-02 Docker Compose stack,
+So that I can observe email notifications without configuring an external SMTP server.
 
 **Acceptance Criteria:**
 
-**Given** a `GET /api/v1/metadata` request
-**When** the endpoint is called
-**Then** it returns `200 OK` with `Content-Type: application/json` and a response body matching the metadata schema defined in `openapi.yaml` (Story 1.2): `projectTypes[]`, `buildSystems[]`, `globalOptions.javaVersions`
+**Given** the UC-02 `docker-compose.yml.jte`
+**When** a Mailpit service is added
+**Then** it uses image `axllent/mailpit:latest`, exposes SMTP on port 1025 and web UI on port 8025, and includes `restart: unless-stopped`
 
-**Given** the `projectTypes` array in the response
-**When** inspected
-**Then** it contains entries for `PROCESS_APPLICATION` and `PROCESS_ARCHIVE`; each entry includes `id`, `displayName`, `description`, `tags`, `personaHint`, and `templateManifest[]`
+**Given** `application.properties.jte` and `application-docker.properties.jte` for UC-02
+**When** Spring Mail is configured
+**Then** `spring.mail.host=localhost` and `spring.mail.port=1025` are present
 
-**Given** each `templateManifest` entry
-**When** inspected
-**Then** it contains `path`, `condition` (string or null), and `templateId`; the manifest accurately reflects the files generated for that project type by the engine — no hardcoded lists exist in any channel
+**Given** `pom.xml.jte` (or Gradle equivalent) for UC-02
+**When** the mail dependency is added
+**Then** `spring-boot-starter-mail` is the only new dependency introduced
 
-**Given** the `globalOptions.javaVersions` field
-**When** inspected
-**Then** it returns `{ "options": [17, 21, 25], "default": 17 }`
+**Given** `docker compose up` is run for UC-02
+**When** the stack starts
+**Then** the Mailpit web UI is accessible at `http://localhost:8025` with no authentication required
 
-**Given** no hardcoded option lists exist in `starter-web`, CLI, or MCP
-**When** those channels need configuration options
-**Then** they fetch from `GET /api/v1/metadata` — the metadata endpoint is the single source of truth for all channels
+### Story 3.2: Implement Email Rejection via BPMN Send Task
 
-**Given** the metadata response
-**When** inspected for use case examples
-**Then** it includes a `useCaseExamples[]` array; each entry contains `useCaseId`, `displayName`, `description`, `tags[]`, and a `parameterBundle` (the fixed configuration values to pre-fill); all four MVP examples (UC-01 through UC-04) are present
-
-**Given** the metadata response
-**When** measured
-**Then** `GET /api/v1/metadata` responds within 200ms under normal load — it serves a static in-memory data structure, not a database query
-
-### Story 3.3: Rate Limiting, Error Handling & Health Endpoint
-
-As a **service operator**,
-I want the API to enforce rate limits per IP, expose a health endpoint, and return consistent structured errors,
-So that the public instance is protected from abuse and operational monitoring works out of the box.
+As a developer evaluating Operaton,
+I want loan rejections to send an email via a BPMN Send Task backed by a Spring Mail delegate,
+So that I see how Operaton models external notification as a first-class process element.
 
 **Acceptance Criteria:**
 
-**Given** a client sending more than 10 requests per minute from the same IP
-**When** the 11th request arrives within the rate-limit window
-**Then** the API returns `429 Too Many Requests` with a `Retry-After` header specifying the retry interval in seconds and a Problem Details body with `type: "https://start.operaton.org/errors/rate-limit-exceeded"`
+**Given** `loan-application.bpmn.jte`
+**When** the high-risk rejection path is updated
+**Then** the `Auto-Reject Notify` service task is replaced with a Send Task named "Send Rejection Email" using delegate expression `${rejectionEmailDelegate}`
 
-**Given** the rate limiting implementation
-**When** inspected
-**Then** it uses Bucket4j in-memory per-IP token buckets; the rate limit window and request cap are configurable via properties (e.g. `rate-limit.requests-per-minute=10`) enabling tests to use a short window (e.g. 1 second, 2 requests) to validate 429 responses without slow tests
+**Given** `RejectionEmailDelegate.java.jte` is implemented
+**When** the Send Task executes
+**Then** it reads `applicantEmail` from the process instance variables, sends a plain-text email with subject "Loan Application — Decision" containing the applicant name and reason, using `JavaMailSender`
 
-**Given** the service is deployed behind a reverse proxy
-**When** a request arrives with an `X-Forwarded-For` header
-**Then** rate limiting keys on the real client IP extracted from `X-Forwarded-For`; falls back to the direct connection IP if the header is absent; the proxy IP is never used as the bucket key
+**Given** `DataInitializer.java.jte` for UC-02
+**When** a loan application process is started
+**Then** `applicantEmail` is available as a process variable (populated from the start form or resolved from the identity service)
 
-**Given** a rate-limited request
-**When** the server logs are inspected
-**Then** a `WARN` level structured JSON log entry is emitted; the log entry does not include the client IP address in the log body
+**Given** `LoanApplicationIT`
+**When** a high-risk application completes the rejection path
+**Then** the test verifies the Send Task executed and the process reaches the rejection end event without exception; mail sending verified via `JavaMailSender` mock or Mailpit integration
 
-**Given** `GET /actuator/health`
-**When** called and the service is healthy
-**Then** it returns `200 OK` with `{ "status": "UP" }`
+### Story 3.3: Add Business Key Pattern to Loan Application
 
-**Given** `GET /actuator/health`
-**When** called and the service is unhealthy
-**Then** it returns `503 Service Unavailable` — compatible with load balancer health checks; only the health endpoint is exposed via Actuator by default
-
-**Given** any unhandled server-side exception
-**When** it reaches the `@ControllerAdvice`
-**Then** it returns `500 Internal Server Error` with a Problem Details body; no stack trace or internal detail is included in the response body; the full exception is logged at `ERROR` level server-side
-
-**Given** the service deployed horizontally across multiple instances
-**When** requests are distributed across instances
-**Then** each instance enforces rate limiting independently from its own in-memory bucket — no cross-instance coordination required; explicitly accepted as best-effort behaviour
-
-### Story 3.4: OpenAPI Docs Endpoint & Spec Freeze Enforcement
-
-As a **developer integrating with the REST API**,
-I want to browse interactive API documentation and have CI enforce that client code never drifts from the spec,
-So that the API contract is always trustworthy and integration is friction-free.
+As a developer evaluating Operaton,
+I want the loan application process to be started with a business key,
+So that I understand how to correlate an external application ID to a process instance.
 
 **Acceptance Criteria:**
 
-**Given** `GET /api/v1/docs` in a browser
-**When** the page loads
-**Then** it renders the Scalar API reference UI loaded from CDN, pointing at the static `openapi.yaml` served from `/api/v1/openapi.yaml`; the page is functional with no Spring Boot version coupling; the Scalar page applies operaton.org brand colours where Scalar's theming API permits
+**Given** `LoanApplicationIT` starts a loan application
+**When** `runtimeService.startProcessInstanceByKey(key, businessKey, variables)` is called
+**Then** the business key follows the pattern `"LOAN-" + UUID` and is stored on the process instance
 
-**Given** `GET /api/v1/openapi.yaml`
-**When** called
-**Then** it returns the current `openapi.yaml` as a static resource with `Content-Type: application/yaml`
+**Given** a running loan application process instance
+**When** `runtimeService.createProcessInstanceQuery().processInstanceBusinessKey(businessKey).singleResult()` is called
+**Then** the correct process instance is returned
 
-**Given** `openapi.yaml` is modified in a PR
-**When** the `contract-check` CI job runs
-**Then** it regenerates all client stubs from the updated `openapi.yaml` and diffs them against the committed `src/generated/` files in all modules; any diff fails the job and posts a **hard block** merge status (promoted from warning-level in Story 1.3 — spec is now stable)
+**Given** the UC-02 README
+**When** the business key section is read
+**Then** it explains what business keys are, why they matter for external system correlation, and shows the query API example
 
-**Given** any file in `src/generated/` in any module
-**When** a PR attempts to modify it manually
-**Then** the `contract-check` job detects the diff and fails — generated files must only be updated by re-running the OpenAPI generator, never hand-edited
+### Story 3.4: Mailpit Documentation and REST API Examples for UC-02
 
-**Given** the Scalar docs page
-**When** a developer uses the interactive try-it feature to send `POST /api/v1/generate`
-**Then** the request reaches the live API and returns a valid ZIP — works against both the production instance (`start.operaton.org`) and local dev (`localhost`) via the CORS configuration from Story 3.1
+As a developer evaluating Operaton,
+I want the loan application README to explain email testing and show REST API usage,
+So that I can explore the full use case without needing additional guidance.
+
+**Acceptance Criteria:**
+
+**Given** the UC-02 `README.md.jte`
+**When** an "Email Testing with Mailpit" section is added
+**Then** it states the web UI URL `http://localhost:8025`, lists all sample user email addresses from `DataInitializer`, and explains that high-risk applications trigger a rejection email to the applicant
+
+**Given** the UC-02 `README.md.jte`
+**When** a "REST API" section is added
+**Then** it contains `curl` examples for:
+- `POST /engine-rest/process-definition/key/loan-application/start` with a realistic variable payload including `applicantEmail`
+- `GET /engine-rest/task` filtered by process definition key
+- `POST /engine-rest/task/{id}/complete` for the underwriter review task
 
 ---
 
-Does this look right? Any adjustments before saving and completing Epic 3?
+## Epic 2: UC-01 Leave Request — Rich Task Experience
+
+Developers experience a complete human workflow: task forms surface all relevant data, timer escalation handles non-response, and the History API shows how variable state is audited.
+
+### Story 2.1: Set Leave Request Process Variables and Add Embedded Task Forms
+
+As a developer evaluating Operaton,
+I want the leave request task forms to display all relevant leave data,
+So that I understand how process variables drive task form content in Operaton Tasklist.
+
+**Acceptance Criteria:**
+
+**Given** a leave request is started with `startDate`, `endDate`, and requester identity
+**When** the process start listener or service task runs
+**Then** process variables `startDate` (ISO-8601 string), `endDate` (ISO-8601 string), `days` (int, calendar days inclusive), and `remainingVacationDays` (int, fetched from `VacationBalanceService` before any deduction) are set on the process instance
+
+**Given** the "Manager Reviews Request" user task
+**When** a manager opens the task in Operaton Tasklist
+**Then** an embedded HTML form (referenced via `operaton:formKey`) displays read-only fields: Requester, Start Date, End Date, Days Requested, Remaining Vacation Days
+
+**Given** the "HR Records Approved Leave" user task
+**When** HR opens the task in Operaton Tasklist
+**Then** the same five fields are displayed read-only in an embedded HTML form
+
+**Given** `LeaveRequestIT`
+**When** the process is started with known dates
+**Then** the test asserts all four variables are present on the process instance with correct values
+
+### Story 2.2: Add Timer Boundary Escalation to Manager Review Task
+
+As a developer evaluating Operaton,
+I want to see a non-responding manager task escalate automatically via a timer,
+So that I understand how non-interrupting timer boundary events handle time-based escalation.
+
+**Acceptance Criteria:**
+
+**Given** the "Manager Reviews Request" user task in `leave-request.bpmn.jte`
+**When** a non-interrupting timer boundary event is added with duration defaulting to `PT72H`
+**Then** the timer duration is overridable via process variable `managerReviewTimeout` at process start
+
+**Given** the timer fires
+**When** the escalation path executes
+**Then** a reminder service task delegate runs and sets process variable `escalated = true`; the manager task remains active and claimable
+
+**Given** `LeaveRequestIT` sets `managerReviewTimeout = PT1S` at process start
+**When** the test executes the timer job via `managementService.executeJob`
+**Then** the test asserts `escalated = true` is set and the manager task is still active
+
+### Story 2.3: Demonstrate Task-Local Variables and History API
+
+As a developer evaluating Operaton,
+I want to see how task-local variables are scoped and how the History API retrieves past variable state,
+So that I understand variable scoping and process auditing patterns.
+
+**Acceptance Criteria:**
+
+**Given** the manager completes "Manager Reviews Request"
+**When** `taskService.setVariableLocal(taskId, "approvalComment", comment)` is called before `taskService.complete(taskId)`
+**Then** `approvalComment` is stored scoped to that task instance and does not appear as a process-level variable
+
+**Given** `LeaveRequestIT` completes the manager task with a comment
+**When** `historyService.createHistoricVariableInstanceQuery().taskIdIn(taskId).list()` is called
+**Then** the query returns `approvalComment` with the value that was set
+
+**Given** `LeaveRequestIT` runs the full approved path through to HR completion
+**When** `historyService.createHistoricVariableInstanceQuery().variableName("remainingVacationDays").singleResult()` is called
+**Then** the historic value of `remainingVacationDays` recorded at process start is greater than the balance after the `VacationBalanceService` deduction
+
+### Story 2.4: Add REST API Documentation to Leave Request README
+
+As a developer evaluating Operaton,
+I want the leave request README to show how to drive the process via REST,
+So that I know I can automate and script Operaton without using the Tasklist UI.
+
+**Acceptance Criteria:**
+
+**Given** the leave request `README.md.jte`
+**When** a "REST API" section is added
+**Then** it contains working `curl` examples for:
+- `POST /engine-rest/process-definition/key/leave-request/start` with a realistic variable payload (startDate, endDate, days)
+- `GET /engine-rest/task` filtered by process definition key
+- `POST /engine-rest/task/{id}/complete` with an approval decision variable
+
+**Given** the curl examples reference user credentials
+**When** they are read
+**Then** they use alice's credentials and the correct process key `leave-request`
 
 ---
 
-## Epic 4: Web UI — Browser-Based Project Generation
+## Epic 1: Authorization Foundation
 
-Practitioners complete configuration and download a ZIP in under 30 seconds. Explorers discover their project type through a visual gallery. Both enjoy a professional, keyboard-accessible, operaton.org-consistent interface with live preview, IDE deep-links, and shareable config URLs — benchmarked against start.spring.io and code.quarkus.io.
+Developers see realistic role-based access enforced by the engine, with process state visible in Cockpit without reading a BPMN. Story 1.1 must complete before 1.2.
 
-### Story 4.1: Design Token Extraction & Vue App Foundation
+### Story 1.1: Add Process Start Authorization to All Use Cases
 
-As a **developer visiting `start.operaton.org`**,
-I want the web app to load with operaton.org's visual identity — colours, typography, and spacing — and have working navigation between the gallery and configuration views,
-So that the tool feels like a first-class part of the Operaton ecosystem from the very first screen.
-
-**Acceptance Criteria:**
-
-**Given** the `github.com/operaton/operaton.org` Jekyll source
-**When** inspected before `starter-web` implementation begins
-**Then** CSS design tokens (colours, typography scale, spacing scale) are extracted and documented; `tailwind.config.js` in `starter-web` maps these tokens as a custom Tailwind theme — colour palette, font families, and spacing values match the operaton.org design system
-
-**Given** `starter-web` with Tailwind configured
-**When** any component is inspected
-**Then** all Tailwind class names are static strings — no dynamic class construction via template literals or string concatenation; this ensures Tailwind's JIT purge does not remove used classes in production builds
-
-**Given** the app shell
-**When** rendered in a browser
-**Then** it displays a header and footer visually consistent with `operaton.org`; before Story 4.1 is marked complete, a visual review confirms the app shell matches the operaton.org aesthetic and is not overbloated — a peer screenshot comparison against `start.spring.io` is the acceptance gate
-
-**Given** Vue Router configured with two routes
-**When** a user navigates to `/`
-**Then** `GalleryView.vue` renders (empty shell at this stage, populated in Story 4.2)
-
-**Given** Vue Router configured
-**When** a user navigates to `/configure`
-**Then** `ConfigureView.vue` renders (empty shell at this stage, populated in Story 4.3)
-
-**Given** the `useMetadata` composable in `starter-web/src/composables/useMetadata.ts`
-**When** the app loads
-**Then** it calls `GET /api/v1/metadata` using the OpenAPI-generated client from `src/generated/`; it exposes `{ data: Ref<MetadataResponse | null>, isLoading: Ref<boolean>, error: Ref<ProblemDetail | null> }`
-
-**Given** a shared `<ErrorBanner>` component in `starter-web/src/components/`
-**When** any composable exposes a non-null `error`
-**Then** `<ErrorBanner>` displays a user-facing error message — no inline error handling exists in individual view components
-
-**Given** Vite build configuration in `starter-web/vite.config.ts`
-**When** `npm run build` executes
-**Then** build output is written directly to `starter-server/src/main/resources/static/`; running `mvn verify` from the project root produces a Spring Boot JAR containing the latest web build
-
-**Given** `npm run build` and `npm run test:unit` in `starter-web`
-**When** executed
-**Then** both complete with zero errors and zero lint warnings
-
-### Story 4.2: Project Gallery View
-
-As a **developer exploring Operaton for the first time**,
-I want to browse available project types as visual gallery cards with descriptions, tags, and persona hints,
-So that I can discover the right project type for my use case without consulting external documentation.
+As a developer evaluating Operaton,
+I want each use case process to only be startable by the designated role,
+So that I understand how `candidateStarterGroups` enforces role-based access at the engine level.
 
 **Acceptance Criteria:**
 
-**Given** a user navigates to `/` (GalleryView)
-**When** the page loads
-**Then** a hero section is shown at the top with a headline ("Start your Operaton project"), a one-sentence subtitle, and two CTAs: "Configure Now →" (navigates directly to `/configure`, bypassing the gallery) and "Browse Project Types ↓" (scrolls to the gallery cards section); the hero allows Practitioners to skip gallery discovery entirely
+**Given** the leave-request, loan-application, and incident-management BPMNs
+**When** `operaton:candidateStarterGroups` is declared on each `<process>` element with value `employees`
+**Then** only users in the `employees` group can start those three processes in Operaton Tasklist
 
-**Given** the gallery section below the hero
-**When** the page loads
-**Then** it fetches metadata from `useMetadata` and renders one card per `projectType` entry; cards display `displayName`, `description`, `tags` as badges, and `personaHint` as a contextual positioning statement; no project type is hardcoded in the component
+**Given** the order-fulfillment BPMN
+**When** `operaton:candidateStarterGroups="sales"` is declared and UC-04 `DataInitializer` creates group `sales` and user `frank` (frank@example.com, password `frank`) assigned to `sales`
+**Then** only frank can start the order fulfillment process
 
-**Given** metadata is loading
-**When** the gallery renders
-**Then** skeleton placeholder cards are shown during the loading state — no layout shift when cards appear
+**Given** a user not in the designated starter group (e.g. bob trying to start order fulfillment)
+**When** they attempt to start the process via Tasklist
+**Then** the process is not listed as startable for that user
 
-**Given** a gallery card
-**When** a user clicks it
-**Then** they are navigated to `/configure` with the selected `projectType` pre-selected in the form
+**Given** each use case README
+**When** the README is read
+**Then** it documents which user to log in as to start the process
 
-**Given** the gallery layout
-**When** rendered at desktop width
-**Then** cards are displayed in a grid; the layout is clean and not overbloated — consistent with the code.quarkus.io extension gallery as the visual reference for discovery UX
+### Story 1.2: Audit User Task Authorization and Add Cockpit Status Variables
 
-**Given** the gallery layout
-**When** rendered at mobile width (< 768px)
-**Then** the card grid collapses to a single column; cards are full-width; no horizontal scrolling occurs
-
-**Given** a user hovering over a project type card
-**When** the `?` help icon is present
-**Then** inline contextual help expands explaining the project type in plain language — no navigation away from the page required (covers FR41)
-
-**Given** `useMetadata` returns an error
-**When** the gallery renders
-**Then** `<ErrorBanner>` is shown; no broken layout or unhandled exception occurs
-
-**Given** the gallery page
-**When** navigated to via keyboard (Tab, Enter)
-**Then** every card and interactive element is reachable and activatable via keyboard alone; visible focus indicators are present on all focusable elements
-
-### Story 4.3: Configuration Form Rendering
-
-As a **Practitioner who knows exactly what they want to build**,
-I want a direct configuration form pre-populated with sensible defaults where I can select project type, build system, and identity fields,
-So that I can configure my project without hunting through documentation.
+As a developer evaluating Operaton,
+I want every user task to have a declared candidate group and every process to set a readable status variable,
+So that I see complete authorization coverage and can read process state in Cockpit without opening the BPMN.
 
 **Acceptance Criteria:**
 
-**Given** a user is on `/configure`
-**When** they want to return to the gallery
-**Then** a "← Back to gallery" link is visible in the header area and navigates to `/` without losing the current form state in the URL
-
-**Given** a user navigates to `/configure`
-**When** the page loads
-**Then** the form renders with all configuration options populated from `useMetadata` — no option list is hardcoded; defaults are applied: `projectType=PROCESS_APPLICATION`, `buildSystem=MAVEN`, `javaVersion=17`, `dependencyUpdater=RENOVATE`, `dockerCompose=false`, `githubActions=true`
-
-**Given** a user arriving from the gallery with a pre-selected project type
-**When** the form renders
-**Then** the project type is displayed as read-only context (e.g. a badge or summary line: "Project type: Process Application") — it is not rendered as an editable form field; a "← Change project type" link returns the user to the gallery (covers FR45)
-
-**Given** a user navigating directly to `/configure` without a gallery selection
-**When** the form renders
-**Then** the project type is presented as an editable selector with all available types; this is the Practitioner path where project type is a first-class form option
-
-**Given** `buildSystem` selection on the form
-**When** a user interacts with it
-**Then** it is a two-step control: first a choice between Maven and Gradle (radio or segmented control); if Gradle is chosen, a DSL sub-option (Groovy DSL / Kotlin DSL) appears immediately below with a smooth transition; the DSL sub-option is hidden when Maven is selected; the sub-option must be selected before generation is enabled (covers FR10)
-
-**Given** `projectType=PROCESS_ARCHIVE` is selected
-**When** the form updates
-**Then** a `deploymentTarget` selector appears with a smooth transition; it is absent for all other project types
-
-**Given** the form layout
-**When** rendered at desktop width
-**Then** it follows a clean single-column or two-column structure with clear visual grouping of related fields (identity, build options, extras) — `start.spring.io` is the visual benchmark; no sprawling multi-panel layout; related fields are grouped with `<fieldset>` + `<legend>` for semantic structure; all labels are positioned above their inputs (no floating labels or placeholder-as-label patterns)
-
-**Given** the form layout
-**When** rendered at mobile width (< 768px)
-**Then** the layout is a single column with the form above and the preview panel collapsed to a `<details>` disclosure element below; the full form is accessible without horizontal scrolling
-
-**Given** any configuration option on the form (project type, build system, Java version, deployment target, dependency updater, Docker Compose, GitHub Actions)
-**When** the user clicks or hovers over its `?` help icon
-**Then** inline contextual help text expands explaining the option in plain language — without leaving the page; every configuration field has a help icon (covers FR20, UX-DR3)
-
-**Given** a required field is empty or invalid (e.g. `groupId` with spaces, `artifactId` not matching the spec pattern)
-**When** the user interacts with the field
-**Then** client-side validation displays inline error messages; field constraints and regex patterns mirror the OpenAPI spec exactly — no independently invented validation rules
-
-**Given** the configuration form
-**When** navigated entirely by keyboard
-**Then** every field, selector, and toggle is reachable via Tab and operable via keyboard; visible focus rings are present throughout
-
-### Story 4.4: Project Generation & Download
-
-As a **Practitioner who has configured their project**,
-I want to click "Generate & Download" and receive my ZIP in under 30 seconds,
-So that I can move immediately from configuration to working with my new project.
-
-**Acceptance Criteria:**
-
-**Given** all required fields are filled and valid
-**When** the user clicks "Generate & Download"
-**Then** the form calls `POST /api/v1/generate` via `useGenerate` composable; on success the browser triggers a ZIP download named `{artifactId}.zip` using `URL.createObjectURL` and a temporary anchor element — not `window.open` or a redirect; `isGenerating` is `true` during the request and `false` after
-
-**Given** a Practitioner who knows their inputs
-**When** they land on `/configure` with defaults and fill in their identity fields
-**Then** a timed walkthrough from page load to ZIP download completing finishes in under 30 seconds — this is a manual acceptance gate before the story is marked complete
-
-**Given** the `useGenerate` composable
-**When** inspected
-**Then** it exposes `{ data: Ref<Blob | null>, isLoading: Ref<boolean>, error: Ref<ProblemDetail | null> }` — consistent composable shape per architecture
-
-**Given** the API returns an error response
-**When** generation fails
-**Then** `<ErrorBanner>` displays the Problem Details message; the form remains filled so the user can correct and retry without re-entering all fields
-
-**Given** generation succeeds
-**When** the ZIP download starts
-**Then** a transient success message "Downloaded {artifactId}.zip" is shown to confirm the download initiated; the message disappears automatically after a short delay
-
-**Given** the "Generate & Download" button
-**When** navigated by keyboard
-**Then** it is reachable via Tab and triggerable via Enter; a visible loading state is shown during generation
-
-### Story 4.5: Live File Tree Preview
-
-As a **developer configuring a project**,
-I want to see a live file tree preview that updates as I change configuration options,
-So that I know exactly what files will be generated before I download the ZIP.
-
-**Acceptance Criteria:**
-
-**Given** the configuration form with a project type and build system selected
-**When** the form renders
-**Then** a file tree preview panel is visible alongside the form, populated from `metadata.projectTypes[selected].templateManifest` for the current configuration — no server round-trip is made per configuration change
-
-**Given** a user changes any configuration option (e.g. switches build system, toggles Docker Compose)
-**When** the change is applied
-**Then** the file tree preview updates within 200ms; files conditioned on the changed option appear or disappear immediately; the update is a pure client-side computation — `GET /api/v1/metadata` is called only once on page load
-
-**Given** `templateManifest` entries with a non-null `condition`
-**When** the preview renders
-**Then** a file is shown only if its condition evaluates to `true` given the current form state (e.g. `docker-compose.yml` shown only when `dockerCompose=true`); condition evaluation is a pure function of form state and manifest data
-
-**Given** the preview panel
-**When** a file path is displayed
-**Then** it reflects identity propagation — e.g. the BPMN file name shows `{artifactId}.bpmn`, the Java package path shows `{groupId}/{artifactId}/`, using the current form values
-
-**Given** the preview is a pure function of metadata and form state
-**When** tested in Vitest
-**Then** a unit test covers: switching build system changes the build file shown, toggling `dockerCompose` shows/hides `docker-compose.yml`, toggling `githubActions` shows/hides `.github/workflows/ci.yml`, identity values propagate into displayed file names
-
-**Given** the preview panel layout
-**When** rendered at desktop width
-**Then** it is visually distinct from the form but does not dominate the layout — clean, readable, not overbloated; consistent with how `start.spring.io` presents its file tree
-
-**Given** the preview panel
-**When** rendered at mobile width (< 768px)
-**Then** it is shown as a `<details>` disclosure element below the form with summary text "File Structure Preview"; it is collapsed by default and expands on click; the file tree is still fully navigable when expanded
-
-### Story 4.6: Shareable Config URLs
-
-As a **developer who has configured their project**,
-I want to share my configuration with teammates as a URL,
-So that colleagues can reproduce my exact setup instantly.
-
-**Acceptance Criteria:**
-
-**Given** a user has configured the form with non-default values
-**When** they click the "Copy Shareable Link" button in the action panel
-**Then** the full URL with query parameters encoding the current configuration is copied to the clipboard; a brief confirmation ("Link copied!") is shown; opening this URL in a new tab restores and pre-fills the form with the same configuration
-
-**Given** a shareable config URL is opened
-**When** the page loads
-**Then** the form is pre-filled from URL query parameters before the user interacts with it; `useMetadata` is still called to populate option lists — query params only set selected values, not option lists
-
-**Given** a shareable URL with an invalid or unknown parameter value
-**When** the form loads
-**Then** the invalid value is silently ignored and the default for that field is applied — no error state, no broken layout
-
-**Given** the share URL
-**When** inspected
-**Then** it uses only URL-safe characters and is human-readable enough to identify the configuration at a glance (e.g. `?projectType=PROCESS_APPLICATION&buildSystem=GRADLE_KOTLIN`)
-
-### Story 4.7: Keyboard Navigation & WCAG 2.1 AA Accessibility
-
-As a **developer who relies on keyboard navigation or assistive technology**,
-I want the full configuration and download flow to be operable without a mouse and to meet WCAG 2.1 AA standards,
-So that the tool is inclusive and accessible to all developers regardless of input method.
-
-**Acceptance Criteria:**
-
-**Given** the app shell
-**When** rendered
-**Then** a visually hidden skip link "Skip to main content" is the first focusable element; it becomes visible on keyboard focus and navigates to the `#main-content` landmark, bypassing the header navigation
-
-**Given** the full user journey from `/` (gallery) to `/configure` (form) to "Generate & Download"
-**When** navigated using only Tab, Shift+Tab, Enter, Space, and arrow keys
-**Then** every interactive element is reachable and operable; no step in the journey requires a mouse; the tab order is logical and follows the visual layout
-
-**Given** any focusable element (button, input, link, card)
-**When** it receives keyboard focus
-**Then** a visible focus ring is displayed using the operaton.org brand colour; the focus ring meets WCAG 2.1 AA minimum contrast requirements
-
-**Given** all form inputs, buttons, and gallery cards
-**When** inspected
-**Then** every element has an appropriate ARIA label or accessible name; images and icons have descriptive `alt` text or `aria-label`; no interactive element relies on colour alone to convey state
-
-**Given** the axe-core accessibility validator is integrated into the `lint-web` CI job
-**When** the job runs on every PR
-**Then** zero WCAG 2.1 AA violations are reported for the gallery view and configuration form; any violation blocks merge
-
-**Given** the live preview panel updates dynamically
-**When** a screen reader user changes a configuration option
-**Then** the preview region is marked with `aria-live="polite"` so changes are announced without interrupting the current focus
-
-**Given** error messages displayed by `<ErrorBanner>` or inline field validation
-**When** they appear
-**Then** they are announced by screen readers via `role="alert"` or `aria-live="assertive"`; focus is not forcibly moved away from the current field
-
-### Story 4.8: Conditional Form Rendering & Gallery-to-Form Context Handoff (FR45, FR46)
-
-As a **developer arriving from the project gallery**,
-I want the configuration details page to display my pre-selected project type as read-only context and hide options that don't apply,
-So that the form is focused, unambiguous, and never presents irrelevant configuration choices.
-
-**Acceptance Criteria:**
-
-**Given** a user clicks a gallery card (e.g. "Process Application")
-**When** they land on `/configure`
-**Then** the project type is displayed as a read-only context banner (e.g. "Configuring: Process Application") at the top of the form — not as an editable field; a "← Change project type" link navigates back to the gallery without losing any other form state stored in the URL
-
-**Given** the project type is pre-set from a gallery selection
-**When** the form renders
-**Then** the project type field is absent from the editable form fields entirely — no disabled selector, no greyed-out option; the read-only context banner is the only place the project type appears
-
-**Given** `projectType=PROCESS_APPLICATION` is pre-set (from gallery or URL)
-**When** the form renders
-**Then** the `deploymentTarget` selector is hidden entirely; the `dockerCompose` and `githubActions` toggles are visible; no label, placeholder, or empty space indicates a hidden `deploymentTarget` field
-
-**Given** `projectType=PROCESS_ARCHIVE` is pre-set
-**When** the form renders
-**Then** the `deploymentTarget` selector is visible and required; the `githubActions` toggle is hidden entirely; `dockerCompose` remains visible
-
-**Given** the user navigates back to the gallery and selects a different project type
-**When** they arrive on `/configure` with the new type
-**Then** the visible option set updates to match the new project type — options that did not apply to the previous type but apply to the new one appear; options that no longer apply disappear; all other previously entered field values are preserved where they still apply
-
-**Given** a shareable URL encoding a `projectType` query parameter
-**When** the form loads
-**Then** it applies the conditional rendering rules for that project type as if the user had arrived from the gallery — the same hidden/visible logic applies regardless of how the project type was set
-
-**Given** a Vitest unit test for the conditional rendering composable
-**When** the test runs
-**Then** it covers: `PROCESS_APPLICATION` hides `deploymentTarget` and shows `githubActions`; `PROCESS_ARCHIVE` shows `deploymentTarget` and hides `githubActions`; switching project type updates the visible option set correctly
-
----
-
-## Epic 5: CLI & MCP — Terminal and AI-Native Access
-
-Developers generate projects from `npx operaton-starter` in scriptable or interactive mode. AI assistants (Claude, GitHub Copilot, Cursor) generate projects mid-conversation via the `operaton-starter-mcp` npm tool. All four access channels are live.
-
-### Story 5.1: CLI — `npx operaton-starter` (Flag Mode & Pipe Mode)
-
-As a **developer working in a terminal or writing shell scripts**,
-I want to generate an Operaton project archive using `npx operaton-starter` with command-line flags,
-So that I can automate project generation in scripts and CI pipelines without opening a browser.
-
-**Acceptance Criteria:**
-
-**Given** `starter-cli` is a new Maven module in the monorepo
-**When** inspected
-**Then** it uses `frontend-maven-plugin` with the same pinned Node.js/npm versions as `starter-mcp`; it is published as the `operaton-starter` npm package (distinct from `operaton-starter-mcp`); its `src/generated/` contains the OpenAPI-generated API client generated independently from the same `openapi.yaml`
-
-**Given** a developer runs `npx operaton-starter` with the full flag set: `--groupId`, `--artifactId`, `--projectName`, `--projectType`, `--buildSystem`, `--javaVersion`, `--deploymentTarget`, `--dependencyUpdater`, `--dockerCompose`, `--githubActions`
-**When** stdout is a terminal
-**Then** the CLI downloads the generated ZIP and saves it to the current directory as `{artifactId}.zip`; a success message is printed to stdout
-
-**Given** a developer runs `npx operaton-starter [flags] > my-app.zip`
-**When** stdout is a pipe
-**Then** the CLI outputs raw ZIP bytes to stdout with no other output; all status output goes to stderr only
-
-**Given** the `--output <dir>` flag is provided
-**When** generation succeeds
-**Then** the CLI extracts the ZIP into the specified directory; the directory is created if it does not exist
-
-**Given** the `--extract` flag is provided without `--output`
-**When** generation succeeds
-**Then** the CLI extracts the ZIP into a directory named `{artifactId}` in the current working directory
-
-**Given** the CLI implementation
-**When** inspected
-**Then** it uses the OpenAPI-generated client from `src/generated/` to call `POST /api/v1/generate`; no hand-written HTTP client code exists; no generation logic is duplicated from `starter-templates`; interactive/prompt mode is explicitly out of scope for MVP — flag-only
-
-**Given** the CLI base URL
-**When** not overridden
-**Then** it defaults to `https://start.operaton.org`; overridable via `OPERATON_STARTER_URL` environment variable for self-hosted instances
-
-**Given** a required flag is missing
-**When** the CLI is invoked
-**Then** it prints a clear usage error to stderr and exits with a non-zero exit code; no partial generation is attempted
-
-**Given** the API returns an error
-**When** the CLI handles it
-**Then** the Problem Details error message is printed to stderr; the CLI exits with a non-zero exit code
-
-**Given** `npm publish` for the `starter-cli` package
-**When** executed via the `npm-publish` CI job on a tagged release
-**Then** it publishes as `operaton-starter` on npm — enabling `npx operaton-starter` without prior installation
-
-### Story 5.2: MCP npm Package — `operaton-starter-mcp`
-
-As a **developer using an AI coding assistant** (Claude, GitHub Copilot, Cursor),
-I want to generate an Operaton project mid-conversation by asking my AI assistant,
-So that I receive a ready-to-use project archive without leaving my development environment or opening a browser.
-
-**Acceptance Criteria:**
-
-**Given** the `starter-mcp` module
-**When** inspected
-**Then** it exposes a single MCP tool named `generate_project`; the tool's input schema is generated from `openapi.yaml` — no hand-written schema definition exists independently of the API contract
-
-**Given** an AI assistant with `operaton-starter-mcp` registered
-**When** it invokes `generate_project` with a valid configuration
-**Then** the MCP tool calls `POST /api/v1/generate` via the OpenAPI-generated client and returns the ZIP as a response that the AI assistant can present to the user
-
-**Given** the MCP package base URL
-**When** not overridden
-**Then** it defaults to `https://start.operaton.org`; overridable via `OPERATON_STARTER_URL` environment variable — enabling use against a self-hosted instance (FR32)
-
-**Given** the AI assistant invokes `generate_project` with an invalid configuration
-**When** the API returns a `400` Problem Details response
-**Then** the MCP tool returns the error detail as a readable string to the AI assistant — enabling the assistant to explain the error and suggest corrections
-
-**Given** `npm publish` for the `starter-mcp` package
-**When** executed via the `npm-publish` CI job on a tagged release
-**Then** it publishes as `operaton-starter-mcp` on npm with correct `main` (compiled JS) and `types` (`.d.ts`) fields; the package is independently versioned from `starter-cli`
-
-**Given** an AI assistant user registers `operaton-starter-mcp` and asks "generate a Process Application with Gradle Kotlin DSL, group com.acme, artifact loan-approval"
-**When** the assistant invokes `generate_project`
-**Then** it returns a valid ZIP for the described configuration — this end-to-end scenario is the acceptance gate for the story
-
----
-
-## Epic 6: Self-Hosting & Production Operations
-
-Platform engineers and enterprise teams run a private Operaton Starter instance behind their firewall — configured entirely via environment variables, deployed from a published Docker image, with zero external dependencies at startup and automated release pipelines.
-
-### Story 6.1: Docker Image — Build, Configure & Publish
-
-As a **platform engineer deploying Operaton Starter behind a firewall**,
-I want a published Docker image that starts with zero external network calls and runs identically to the public instance,
-So that my team can run a private Operaton Starter instance with no SaaS dependencies.
-
-**Acceptance Criteria:**
-
-**Given** the `Dockerfile` at the project root
-**When** inspected
-**Then** it uses `eclipse-temurin:25-jre-alpine` as the base image; it uses Spring Boot's layered JAR extraction to separate dependencies, Spring Boot internals, and application code into distinct Docker layers — maximising cache reuse on incremental builds; it exposes port 8080; no secrets or environment-specific values are baked into the image
-
-**Given** `docker build` runs after `mvn verify`
-**When** the build completes
-**Then** the image is produced with zero errors; the image contains the Spring Boot fat JAR with the compiled `starter-web` assets embedded at `BOOT-INF/classes/static/`
-
-**Given** `docker run operaton/operaton-starter`
-**When** the container starts
-**Then** it makes zero outbound network calls at startup; `GET /actuator/health` returns `200 OK { "status": "UP" }` within 30 seconds — verified by a CI smoke test that polls the endpoint and fails if not ready within that window
-
-**Given** the running Docker container is started then put into network-isolated mode (`--network none`)
-**When** `GET /actuator/health` is called
-**Then** it returns `200 OK` — proving the service has no runtime external network dependency
-
-**Given** the running Docker container
-**When** `POST /api/v1/generate` is called with a valid configuration
-**Then** it returns a valid ZIP — the full generation pipeline works inside the container with no external dependencies
-
-**Given** the `docker-compose.dev.yml` at the project root
-**When** `docker compose -f docker-compose.dev.yml up` is run by a contributor
-**Then** the service starts and is accessible at `http://localhost:8080`
-
-**Given** a tagged release (e.g. `v1.0.0`)
-**When** the `docker-publish` CI job runs
-**Then** it builds the image and pushes it to `docker.io/operaton/operaton-starter` with both the version tag (e.g. `1.0.0`) and `latest`; no image is pushed on non-tagged commits
-
-**Given** the published image on Docker Hub
-**When** an operator runs `docker pull operaton/operaton-starter`
-**Then** the image is publicly accessible without authentication
-
-### Story 6.2: Environment Variable Configuration & Self-Hosting Validation
-
-As a **platform engineer running a private Operaton Starter instance**,
-I want to configure default values and registry URLs via environment variables,
-So that generated projects automatically use my organisation's standards without developers needing to override anything.
-
-**Acceptance Criteria:**
-
-**Given** `starter-server` Spring Boot configuration
-**When** inspected
-**Then** all self-hosting defaults are bound via `@ConfigurationProperties` with the `starter.defaults.*` and `starter.cors.*` namespaces; no custom environment variable parsing exists; Spring's relaxed binding maps env vars to properties automatically
-
-**Given** the Docker container is started with `DEFAULT_GROUP_ID=com.bank`
-**When** `GET /api/v1/metadata` is called
-**Then** the metadata response includes `defaultGroupId: "com.bank"` so that the web UI, CLI, and MCP can pre-fill the `groupId` field with the org default; a developer can still override it
-
-**Given** the Docker container is started with `MAVEN_REGISTRY=https://nexus.bank.internal/repository/maven-public`
-**When** a project is generated
-**Then** the generated `pom.xml` or Gradle build file references the configured Maven registry URL; no reference to Maven Central appears when a custom registry is configured
-
-**Given** the Docker container is started with `OPERATON_VERSION=2.0.0`
-**When** a project is generated
-**Then** the generated project targets the specified pinned Operaton version; the public instance at `start.operaton.org` does not expose this override — it always uses the BOM version baked at build time; `OPERATON_VERSION` is a self-hosted-only operator configuration
-
-**Given** the Docker container is started with `CORS_ALLOWED_ORIGINS=https://start.operaton.internal`
-**When** a browser at `https://start.operaton.internal` calls the API
-**Then** the CORS response headers permit the request; requests from unlisted origins are rejected
-
-**Given** the Docker container is started with no environment variables
-**When** `POST /api/v1/generate` is called
-**Then** generation succeeds using built-in defaults — no env var is required for the service to function
-
-**Given** the Klaus self-hosting acceptance scenario
-**When** an operator runs the image with `DEFAULT_GROUP_ID=com.bank`, `MAVEN_REGISTRY=https://nexus.bank.internal/repository/maven-public`, and `OPERATON_VERSION=2.0.0`
-**Then** the web UI shows `com.bank` pre-filled in the `groupId` field; a generated `pom.xml` references the Nexus registry; the generated project targets Operaton 2.0.0 — this three-env-var end-to-end scenario is the manual acceptance gate for this story
-
-**Given** the Docker image documentation (README or `docker-compose.dev.yml`)
-**When** inspected
-**Then** all supported environment variables are listed with their default values and descriptions; no undocumented env vars affect behaviour
-
-### Story 6.3: MCP Self-Hosting Documentation (FR48)
-
-As a **developer running a self-hosted Operaton Starter instance**,
-I want clear documentation on how to connect the `operaton-starter-mcp` npm package to my private instance,
-So that AI assistants in my team can generate projects against our internal deployment without pointing at the public instance.
-
-**Acceptance Criteria:**
-
-**Given** the root `README.md` (or a dedicated `docs/self-hosting.md`)
-**When** inspected
-**Then** it contains a "Self-Hosting with MCP" section that explains: (1) how to start the Docker image, (2) how to set `OPERATON_STARTER_URL=http://localhost:8080` (or the appropriate host) when registering `operaton-starter-mcp` in an AI assistant's MCP config, (3) a complete working example MCP config JSON snippet that a developer can copy-paste
-
-**Given** the self-hosting documentation section
-**When** inspected
-**Then** it documents the Docker build prerequisite explicitly: `mvn verify` must complete before `docker build` is run; the Docker build itself requires no Maven or internet access once the JAR is present; a one-liner command sequence is provided
-
-**Given** the `docker-compose.dev.yml`
-**When** expanded in this story
-**Then** it includes a commented-out `operaton-starter-mcp` service entry showing the `BASE_URL` environment variable wired to the backend service — a developer can uncomment it to run the full MCP stack locally
-
-**Given** the documentation
-**When** a developer follows it from zero
-**Then** they can have a locally running self-hosted instance accessible from their AI assistant's MCP client in under 5 minutes — this is the manual acceptance gate
-
-### Story 6.4: Submodule READMEs (NFR22)
-
-As a **new contributor to operaton-starter**,
-I want each submodule to have its own `README.md` covering role, prerequisites, build, and run instructions,
-So that I can build and exercise any submodule in isolation without consulting other documentation sources.
-
-**Acceptance Criteria:**
-
-**Given** each of the five submodules: `starter-server`, `starter-templates`, `starter-archetypes`, `starter-mcp`, `starter-web`
-**When** their root directories are inspected
-**Then** each contains a `README.md` with these sections: (1) **Role** — one paragraph describing what this module does within the overall system, (2) **Prerequisites** — exact versions of Java/Node.js/Maven/npm required, (3) **Build in isolation** — the exact command to build this module alone (e.g. `mvn verify -pl starter-templates`), (4) **Run / Use locally** — how to start or exercise the module locally, (5) **Example** — at least one concrete usage example (a curl command, a code snippet, or a CLI invocation)
-
-**Given** `starter-templates/README.md`
-**When** inspected
-**Then** the example section shows a Java code snippet invoking `GenerationEngine.generate(config)` in-process and asserting the returned ZIP is non-empty — demonstrating the zero-Spring, no-server-required nature of the module
-
-**Given** `starter-server/README.md`
-**When** inspected
-**Then** the run section includes the command to start the server standalone (`mvn spring-boot:run -pl starter-server`) and a curl example calling `POST /api/v1/generate` and saving the result to a file
-
-**Given** `starter-web/README.md`
-**When** inspected
-**Then** the run section includes `npm run dev` and notes that the Vite dev server proxies API calls to `http://localhost:8080`; it references that `docker compose -f docker-compose.dev.yml up` is the recommended way to start the backend for local frontend development
-
-**Given** `starter-mcp/README.md`
-**When** inspected
-**Then** the example section contains a complete MCP config JSON snippet for registering the package in Claude Desktop or VS Code Copilot, with the `OPERATON_STARTER_URL` env var documented
-
-**Given** a contributor who has never read the project root README
-**When** they follow any single submodule README
-**Then** they can successfully build and exercise that submodule in isolation — this is the manual acceptance gate for each submodule README
-
----
-
-## Epic 7: Release & Distribution
-
-Every tagged release automatically publishes to all distribution channels — Docker Hub, Maven Central, and npm — via a single JReleaser-orchestrated GitHub Actions workflow. The release process is fully documented including all required secrets.
-
-### Story 7.1: JReleaser Release Workflow (FR49)
-
-As a **maintainer cutting a release**,
-I want a single GitHub Actions workflow using JReleaser to create the GitHub Release and coordinate all distribution publishing,
-So that releasing operaton-starter is a one-click operation with no manual steps across multiple registries.
-
-**Acceptance Criteria:**
-
-**Given** the `.github/workflows/release.yml` file
-**When** inspected
-**Then** it is triggered only on pushed tags matching `v*.*.*`; it uses JReleaser to: (1) create a GitHub Release with auto-generated changelog from conventional commits, (2) coordinate publishing to Docker Hub, Maven Central, and npm in a single orchestrated run; the JReleaser configuration lives in `jreleaser.yml` at the project root
-
-**Given** the `jreleaser.yml` configuration
-**When** inspected
-**Then** it follows the same pattern as the `operaton/operaton` repository's JReleaser config; it defines all three distribution targets (Docker, Maven, npm); changelog generation uses the conventional commits format
-
-**Given** a tagged commit (e.g. `git tag v1.0.0 && git push origin v1.0.0`)
-**When** the release workflow runs
-**Then** a GitHub Release is created at that tag with the generated changelog; the release body lists all published artifacts with their registry coordinates
-
-**Given** the release workflow
-**When** any publishing step fails
-**Then** JReleaser reports the failure clearly and the workflow exits non-zero; no partial release state is silently swallowed; the failed step can be retried independently without re-running the full workflow
-
-**Given** no release workflow run
-**When** a push occurs to `main` (not a tag)
-**Then** the release workflow does not trigger — it is tag-only
-
-### Story 7.2: Artifact Publishing — Docker Hub, Maven Central & npm (FR50, FR51, FR52)
-
-As a **developer or operator**,
-I want every operaton-starter release to be published to Docker Hub, Maven Central, and npm automatically,
-So that I can consume the latest version from my preferred package manager without any manual download.
-
-**Acceptance Criteria:**
-
-**Given** a tagged release runs successfully
-**When** the Docker Hub publish step completes
-**Then** the image `operaton/operaton-starter` is available on Docker Hub with two tags: the semantic version tag (e.g. `1.0.0`) and `latest`; `docker pull operaton/operaton-starter:1.0.0` succeeds without authentication
-
-**Given** a tagged release runs successfully
-**When** the Maven Central publish step completes
-**Then** the following artifacts are available at `central.sonatype.com` and synced to Maven Central within the standard propagation window: `org.operaton.dev:starter-templates`, `org.operaton.dev:starter-archetypes`, `org.operaton.dev:starter-server`; each artifact includes `-sources.jar` and `-javadoc.jar`; all artifacts are signed with the project GPG key
-
-**Given** a tagged release runs successfully
-**When** the npm publish step completes
-**Then** `operaton-starter-mcp` is available on `npmjs.com` at the release version; `npx operaton-starter-mcp@1.0.0` resolves and runs correctly; the `operaton-starter` CLI package is published on the same run at the same version
-
-**Given** the Maven artifacts
-**When** published
-**Then** they pass the Sonatype OSSRH validation checks: valid POM with `<name>`, `<description>`, `<url>`, `<licenses>`, `<developers>`, `<scm>` sections; signed JARs; sources and javadoc JARs present
-
-**Given** the prerequisite from ARCH-14
-**When** this story is implemented
-**Then** `org.operaton.dev` groupId is verified as claimed at `central.sonatype.com` — publishing fails fast with a clear error if the groupId is not yet registered
-
-### Story 7.3: Release Credentials & Secrets Documentation (FR53)
-
-As a **maintainer setting up the release pipeline for the first time**,
-I want complete documentation of every GitHub Actions secret required for the release workflow,
-So that I can configure the repository secrets once and have confidence the release workflow will succeed.
-
-**Acceptance Criteria:**
-
-**Given** the root `README.md` or a `docs/release.md` file
-**When** inspected
-**Then** it contains a "Release Setup" section listing every required GitHub Actions secret with: secret name, what it contains, where to obtain the credential, and which distribution target it enables
-
-**Given** the required secrets documentation
-**When** inspected
-**Then** it lists all of the following: `DOCKER_USERNAME` and `DOCKER_PASSWORD` (Docker Hub credentials for `operaton/operaton-starter` repository); `MAVEN_CENTRAL_USERNAME` and `MAVEN_CENTRAL_TOKEN` (Sonatype OSSRH credentials); `GPG_PRIVATE_KEY` and `GPG_PASSPHRASE` (for signing Maven artifacts); `NPM_TOKEN` (npm automation token for `operaton-starter-mcp` and `operaton-starter` packages); `GITHUB_TOKEN` (used by JReleaser for GitHub Release creation — this is the standard Actions token, not a PAT, unless repo rules require otherwise)
-
-**Given** the documentation
-**When** a new maintainer follows it from zero
-**Then** they can configure all required secrets and successfully trigger a dry-run release (JReleaser `--dry-run` mode) that validates credentials without actually publishing — this is the acceptance gate
-
-**Given** the release documentation
-**When** the prerequisite groupId claim (ARCH-14) is not yet complete
-**Then** the documentation explicitly calls it out as a one-time prerequisite with a link to `central.sonatype.com` and instructions for the claim process
-
----
-
-## Epic 8: Use Case Examples — Self-Contained Generated Projects
-
-Four self-contained, out-of-the-box runnable use case example projects are available in the gallery and generatable via all channels. Each demonstrates a distinct BPMN concept (user tasks, DMN decisions, timer escalation, service task orchestration), seeds realistic user roles via `data.sql`, auto-creates an Operaton admin user at startup, and uses PostgreSQL via Docker Compose as the default datasource — with H2 available as a zero-code-change fallback profile. WireMock examples include Postgres and WireMock as two services in the same compose stack. Every example's README includes a BPMN model image, Bootstrap Data instructions, and a `chmod +x mvnw` step for Mac/Linux users. Every example is validated in the CI matrix alongside the core project types.
-
-### Story 8.1: UC-01 Leave Request — HR Approval Workflow (FR68–71, FR74)
-
-As a **developer new to Operaton**,
-I want a pre-built leave request approval example I can run in under 2 minutes,
-So that I immediately see how Operaton handles multi-role human task workflows using only the built-in Tasklist.
-
-**Acceptance Criteria:**
-
-**Given** the Leave Request example project is generated and extracted
-**When** the developer runs `docker compose up -d && ./mvnw spring-boot:run`
-**Then** the application starts successfully on port 8080 with PostgreSQL as the datasource; the Operaton Tasklist is accessible at `http://localhost:8080/operaton/app/tasklist`
-
-**Given** the `docker-compose.yml`
-**When** inspected
-**Then** it contains a PostgreSQL service with a health check; `depends_on: condition: service_healthy` is set; the Spring Boot app runs on the host, not in Docker
-
-**Given** the started application
-**When** a process instance is started
-**Then** a task appears in the Tasklist inbox of user `bob` (manager group); no other setup is needed to see the task
-
-**Given** the generated `src/main/resources/data.sql`
-**When** inspected
-**Then** it seeds three users (`alice/alice`, `bob/bob`, `carol/carol`) into Operaton's identity tables and assigns them to groups `employees`, `managers`, and `hr` respectively; BPMN `candidateGroups` attributes match these group names exactly; an Operaton admin user is created if it does not already exist (the startup sequence checks and creates it on first boot)
-
-**Given** the BPMN process `leave-request.bpmn`
-**When** inspected
-**Then** it models: `StartEvent → UserTask(manager reviews)[candidateGroups=managers] → ExclusiveGateway → [approved] UserTask(HR records)[candidateGroups=hr] → EndEvent / [rejected] UserTask(employee notified)[candidateGroups=employees] → EndEvent`; all flow elements include valid `BPMNShape`/`BPMNEdge` layout data
-
-**Given** the JUnit integration test
-**When** executed
-**Then** it uses the H2 profile (`@ActiveProfiles("h2")` or `mvn test -Dspring.profiles.active=h2`); it includes an assertion verifying the process definition is deployed and the engine is reachable before any business-logic assertions; the test covers both the approval path (alice starts → bob approves → carol records) and the rejection path; all assertions pass without modification; zero active process instances remain after each path completes
-
-**Given** the project includes `src/main/resources/application-h2.properties`
-**When** the developer runs `./mvnw spring-boot:run --spring.profiles.active=h2`
-**Then** the application starts with the embedded H2 datasource; no Docker Compose or PostgreSQL is required; no code changes are needed to switch profiles
-
-**Given** the generated README
-**When** the developer reads the "Getting Started in 5 Minutes" section
-**Then** it: names alice and bob by name and gives step-by-step Tasklist instructions as those characters; includes a "Bootstrap Data" section explaining what `data.sql` seeds (users, groups, admin account) and how to re-apply it; includes an embedded image of the `leave-request.bpmn` process model; includes a `chmod +x mvnw` instruction for Mac/Linux users immediately before the first run command
-
----
-
-### Story 8.2: UC-02 Loan Application — DMN Decision + Service Tasks (FR68–72, FR74)
-
-As a **developer evaluating Operaton's decision engine**,
-I want a pre-built loan application example that combines DMN business rules with BPMN service tasks,
-So that I can see decision-driven process branching using a stubbed external credit-score API.
-
-**Acceptance Criteria:**
-
-**Given** the Loan Application example project is generated and extracted
-**When** the developer runs `docker compose up -d && ./mvnw spring-boot:run`
-**Then** the application starts successfully; PostgreSQL and WireMock are both running; the application connects to both without errors
-
-**Given** the `docker-compose.yml`
-**When** inspected
-**Then** it contains two services: a PostgreSQL service and a `wiremock/wiremock` service with a pinned minor version (e.g. `3.x.y`, not `3.x` or `latest`); each service has a health check; `depends_on: condition: service_healthy` is set for both; the Spring Boot app runs on the host, not in Docker
-
-**Given** `src/main/resources/wiremock/mappings/`
-**When** inspected
-**Then** it contains at least one committed JSON stub file for the credit-score API; the `docker-compose.yml` mounts this directory into the WireMock container via a bind-mount; no WireMock stubs are configured in Java code
-
-**Given** `src/main/resources/dmn/risk-assessment.dmn`
-**When** inspected
-**Then** it defines a decision table with inputs `creditScore` (integer) and `loanAmount` (integer), output `riskLevel` (string: `low`/`medium`/`high`), and hit policy `FIRST`; all three output values are reachable by distinct input combinations
-
-**Given** the BPMN process `loan-application.bpmn`
-**When** inspected
-**Then** it models: `StartEvent → ServiceTask(credit score check) → BusinessRuleTask(risk assessment DMN) → ExclusiveGateway → [low] ServiceTask(auto-approve notify) → EndEvent / [medium] UserTask(underwriter review)[candidateGroups=underwriters] → EndEvent / [high] ServiceTask(auto-reject notify) → EndEvent`
-
-**Given** the JUnit integration test
-**When** executed
-**Then** it covers all three DMN risk paths using parametrized test cases; the DMN table is also tested in isolation via `decisionService.evaluateDecisionByKey("risk-assessment")`; WireMock is started via Testcontainers (not host Docker Compose) so the test runs in CI without Docker Compose support; all assertions pass
-
-**Given** the DMN engine capability
-**When** a developer adds `operaton-engine-dmn` to the project
-**Then** the dependency is explicitly declared in `pom.xml` / `build.gradle`; the build compiles and all DMN tests pass when the `operaton-spring-boot-starter-dmn` (or equivalent) starter is present; the dependency is not silently provided via transitive resolution from another starter
-
-**Given** the project includes `src/main/resources/application-h2.properties`
-**When** the developer runs `./mvnw spring-boot:run --spring.profiles.active=h2`
-**Then** the application starts with embedded H2; WireMock is still required (external API stubs); no code changes are needed to switch the datasource; integration tests use `@ActiveProfiles("h2")` so CI requires no PostgreSQL
-
-**Given** the generated README
-**When** read
-**Then** it includes a "Bootstrap Data" section, an embedded image of the `loan-application.bpmn` process model, and a `chmod +x mvnw` instruction for Mac/Linux users immediately before the first run command; the character-narrated section names jack and kate by name and walks through each DMN risk path
-
----
-
-### Story 8.3: UC-03 Incident Management — Timer Boundary + Escalation (FR68–72, FR74)
-
-As a **developer learning BPMN event handling**,
-I want a pre-built incident management example with a timer boundary event that escalates unresolved tickets,
-So that I can see how Operaton handles SLA enforcement and task escalation out of the box.
-
-**Acceptance Criteria:**
-
-**Given** the Incident Management example project is generated and extracted
-**When** the developer runs `docker compose up -d && ./mvnw spring-boot:run`
-**Then** the application starts successfully; WireMock is available; a process instance can be started
-
-**Given** the BPMN process `incident-management.bpmn`
-**When** inspected
-**Then** it models: `StartEvent → UserTask(first-line triage)[candidateGroups=first-line, BoundaryTimerEvent PT1H → escalate] → ExclusiveGateway → [resolved] ServiceTask(close ticket [REST]) → EndEvent / [timer fired] UserTask(second-line engineer)[candidateGroups=second-line] → ServiceTask(post-mortem notify [REST]) → EndEvent`
-
-**Given** `src/main/resources/application-test.properties`
-**When** inspected
-**Then** it overrides the timer duration to `PT5S` so integration tests do not wait one hour for escalation to fire; the `test` Spring profile is activated automatically during `mvn test` (e.g. via `maven-surefire-plugin` `systemPropertyVariables` or `@ActiveProfiles` on the test class) — a developer must not add any manual configuration to run the test
-
-**Given** the JUnit integration test for the escalation path
-**When** the timer is tested
-**Then** `ClockUtil.setCurrentTime(...)` advances Operaton's internal clock past the timer boundary; `Thread.sleep` is never used for timer advancement; `ClockUtil.reset()` is called in `@AfterEach` to prevent test pollution; the test asserts the task is reassigned to the `second-line` candidate group after escalation
-
-**Given** `managementService.createJobQuery().timers()`
-**When** queried after process start
-**Then** exactly one timer job exists (confirms timer registration); this assertion appears in the test
-
-**Given** the `docker-compose.yml`
-**When** inspected
-**Then** it contains two services: a PostgreSQL service and a `wiremock/wiremock` service with a pinned minor version (e.g. `3.x.y`, not `3.x` or `latest`); each service has a health check; `depends_on: condition: service_healthy` is set for both; the Spring Boot app runs on the host
-
-**Given** the project includes `src/main/resources/application-h2.properties`
-**When** the developer runs `./mvnw spring-boot:run --spring.profiles.active=h2`
-**Then** the application starts with embedded H2; WireMock is still required for API stubs; integration tests use `@ActiveProfiles("h2")` so CI requires no PostgreSQL
-
-**Given** the generated README
-**When** read
-**Then** it includes a "Bootstrap Data" section, an embedded image of the `incident-management.bpmn` process model, and a `chmod +x mvnw` instruction for Mac/Linux users immediately before the first run command; the character-narrated section names henry and iris and walks through both the normal resolution and the escalation paths
-
----
-
-### Story 8.4: UC-04 Order Fulfillment — Service Task Orchestration (FR68–72, FR74)
-
-As a **developer building service-oriented processes**,
-I want a pre-built order fulfillment example with multiple service tasks calling stubbed REST APIs,
-So that I can see how Operaton orchestrates multi-step external service calls with conditional routing.
-
-**Acceptance Criteria:**
-
-**Given** the Order Fulfillment example project is generated and extracted
-**When** the developer runs `docker compose up -d && ./mvnw spring-boot:run`
-**Then** the application starts; WireMock is serving inventory, payment, and notification stubs; a process instance can be started
-
-**Given** the BPMN process `order-fulfillment.bpmn`
-**When** inspected
-**Then** it models: `StartEvent(order placed) → ServiceTask(validate inventory [REST]) → ExclusiveGateway → [in stock] ServiceTask(charge payment [REST]) → UserTask(pack & ship)[candidateGroups=warehouse] → ServiceTask(notify customer [REST]) → EndEvent(shipped) / [out of stock] ServiceTask(notify backorder [REST]) → EndEvent(backordered)`
-
-**Given** `src/main/resources/wiremock/mappings/`
-**When** inspected
-**Then** it contains committed stub files for inventory (in-stock response), payment (success response), customer notification, and backorder notification; a second inventory stub with an out-of-stock response demonstrates the alternative path; no stubs are defined in Java code
-
-**Given** the JUnit integration test
-**When** executed via Testcontainers
-**Then** it covers both the in-stock path (inventory → payment → human task → notify) and the out-of-stock path (inventory → backorder notify); WireMock container startup uses `waitFor(http("/__admin/mappings"))` before the first service task assertion; all assertions pass
-
-**Given** the `docker-compose.yml`
-**When** inspected
-**Then** it contains two services: a PostgreSQL service and a `wiremock/wiremock` service with a pinned minor version (e.g. `3.x.y`, not `3.x` or `latest`); the `./wiremock` bind-mount path points to `src/main/resources/wiremock`; health checks and `depends_on: condition: service_healthy` are present for both; the Spring Boot app runs on the host
-
-**Given** `data.sql`
-**When** inspected
-**Then** it seeds one user `dave/dave` in group `warehouse`; an Operaton admin user is created at startup if absent; the warehouse UserTask `candidateGroups` attribute matches exactly
-
-**Given** the project includes `src/main/resources/application-h2.properties`
-**When** the developer runs `./mvnw spring-boot:run --spring.profiles.active=h2`
-**Then** the application starts with embedded H2; WireMock is still required for API stubs; integration tests use `@ActiveProfiles("h2")` so CI requires no PostgreSQL
-
-**Given** the generated README
-**When** read
-**Then** it includes a "Bootstrap Data" section, an embedded image of the `order-fulfillment.bpmn` process model, and a `chmod +x mvnw` instruction for Mac/Linux users immediately before the first run command; the character-narrated section names dave and walks through both the in-stock and out-of-stock paths
-
----
-
-### Story 8.5: Use Case Example Gallery Cards (FR67, UX-DR12)
-
-As a **developer browsing the gallery**,
-I want to see use case example cards in the gallery's second section below the project types,
-So that I can recognise a real-world scenario and jump straight to a pre-configured form without manual setup.
-
-**Acceptance Criteria:**
-
-**Given** the gallery landing page (`/`)
-**When** rendered
-**Then** a second section labelled (e.g.) "Use Case Examples" appears below the "Project Types" section; the section contains exactly four cards in MVP: Leave Request, Loan Application, Incident Management, Order Fulfillment
-
-**Given** a use case example card
-**When** inspected visually
-**Then** it displays: a title, a one-sentence scenario description (e.g., "A manager approves employee leave — two roles, one process, zero infrastructure overhead"), and at least two capability tags from the set: `multi-role`, `docker-compose`, `DMN`, `timer`, `service-tasks`, `human-tasks`
-
-**Given** a use case example card that requires Docker Compose
-**When** rendered
-**Then** a `docker-compose` tag is present and visually distinct from functional tags, signalling to the developer that an external service is required
-
-**Given** a developer clicks a use case example card
-**When** navigated
-**Then** the details page (`/configure`) opens with the form pre-filled with the example's default values (project type, artifact ID, extras); the project type is shown as read-only context as per FR45; the `useCaseId` is passed to the generate endpoint so the server resolves the full parameter bundle server-side
-
-**Given** the use case example card content
-**When** driven from the metadata endpoint
-**Then** the card title, description, tags, pre-fill values, and `useCaseId` are returned by `GET /api/v1/metadata` as part of the `useCaseExamples[]` array; no card content is hardcoded in the frontend
-
-**Given** `POST /api/v1/generate` is called with an optional `useCaseId` parameter
-**When** a valid `useCaseId` is provided
-**Then** the server resolves the parameter bundle associated with that use case and uses it for generation; no client-side parameter expansion is required
+**Given** all four use case BPMNs
+**When** audited for `operaton:candidateGroups` on every `<userTask>`
+**Then** all existing tasks carry the correct groups (audit confirms no gaps); any gap found must be filled before the story is complete
+
+**Given** each use case reaches a key state transition
+**When** `execution.setVariable()` is called in the appropriate delegate or listener
+**Then** the status variable is visible in Cockpit's variable view with a human-readable value:
+- UC-01: `leaveStatus` → `PENDING` on start, `APPROVED` or `REJECTED` on decision
+- UC-02: `loanDecision` → `PENDING` on start, `APPROVED` or `REJECTED` on outcome
+- UC-03: `incidentPriority` → `LOW` on start, `HIGH` on signal escalation
+- UC-04: `orderStatus` → `RECEIVED` on start, `FULFILLED` or `FAILED` on outcome
+
+**Given** an integration test for any one use case
+**When** the process reaches its terminal state
+**Then** the test asserts the status variable holds the expected final value

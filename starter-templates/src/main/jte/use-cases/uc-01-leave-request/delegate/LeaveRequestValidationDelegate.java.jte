@@ -25,23 +25,29 @@ public class LeaveRequestValidationDelegate implements JavaDelegate {
 
     @Override
     public void execute(DelegateExecution execution) {
+        execution.setVariable("leaveStatus", "PENDING");
         String requester = readRequester(execution);
         LocalDate startDate = readStartDate(execution.getVariable("startDate"));
         int durationDays = readDurationDays(execution.getVariable("durationDays"));
         Integer remainingVacationDays = vacationBalanceService.findRemainingVacationDays(requester);
+        execution.setVariable("requester", requester);
+        execution.setVariable("startDate", startDate.toString());
+        execution.setVariable("durationDays", durationDays);
+        execution.setVariable("remainingVacationDays", remainingVacationDays == null ? 0 : remainingVacationDays.intValue());
+
+        if (startDate.isAfter(LocalDate.MAX.minusDays(durationDays - 1L))) {
+            reject(execution, "Requested range extends beyond the supported calendar range.");
+            return;
+        }
+
+        LocalDate endDate = startDate.plusDays(durationDays - 1L);
+        execution.setVariable("endDate", endDate.toString());
+
         if (remainingVacationDays == null) {
-            execution.setVariable("requester", requester);
-            execution.setVariable("startDate", startDate.toString());
-            execution.setVariable("durationDays", durationDays);
-            execution.setVariable("remainingVacationDays", 0);
             reject(execution, "No vacation balance is configured for requester '" + requester + "'.");
             return;
         }
 
-        execution.setVariable("requester", requester);
-        execution.setVariable("startDate", startDate.toString());
-        execution.setVariable("durationDays", durationDays);
-        execution.setVariable("remainingVacationDays", remainingVacationDays.intValue());
         execution.setVariable("validationPassed", true);
         execution.removeVariable("rejectionReason");
 
@@ -99,5 +105,6 @@ public class LeaveRequestValidationDelegate implements JavaDelegate {
     private void reject(DelegateExecution execution, String rejectionReason) {
         execution.setVariable("validationPassed", false);
         execution.setVariable("rejectionReason", rejectionReason);
+        execution.setVariable("leaveStatus", "REJECTED");
     }
 }

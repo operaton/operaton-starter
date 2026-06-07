@@ -15,14 +15,10 @@ public class NotificationDelegate implements JavaDelegate {
 
     @Override
     public void execute(DelegateExecution execution) throws Exception {
-        String activityId = execution.getCurrentActivityId();
         Object riskLevel = execution.getVariable("riskLevel");
         Object creditScore = execution.getVariable("creditScore");
 
-        if (activityId != null && activityId.contains("Reject")) {
-            log.info("Loan application REJECTED. Risk level: {}, Credit score: {}", riskLevel, creditScore);
-        } else {
-            log.info("Loan application APPROVED. Risk level: {}, Credit score: {}", riskLevel, creditScore);
-        }
+        execution.setVariable("loanDecision", "APPROVED");
+        log.info("Loan application APPROVED. Risk level: {}, Credit score: {}", riskLevel, creditScore);
     }
 }

@@ -121,6 +121,9 @@ public class GenerationEngine {
         addTemplateEntry(zos,
                 "src/main/java/" + pkgPath + "/delegate/FinalizeLeaveApprovalDelegate.java",
                 templateDir + "delegate/FinalizeLeaveApprovalDelegate.java.jte", config);
+        addTemplateEntry(zos,
+                "src/main/java/" + pkgPath + "/delegate/EscalationReminderDelegate.java",
+                templateDir + "delegate/EscalationReminderDelegate.java.jte", config);
 
         addTemplateEntry(zos,
                 "src/main/resources/application.properties",
@@ -142,6 +145,13 @@ public class GenerationEngine {
                 "src/test/java/" + pkgPath + "/LeaveRequestIT.java",
                 templateDir + "LeaveRequestIT.java.jte", config);
 
+        addClasspathResource(zos,
+                "src/main/resources/static/forms/manager-review-form.html",
+                "use-cases/uc-01-leave-request/forms/manager-review-form.html");
+        addClasspathResource(zos,
+                "src/main/resources/static/forms/hr-record-form.html",
+                "use-cases/uc-01-leave-request/forms/hr-record-form.html");
+
         addTemplateEntry(zos, "docker-compose.yml", templateDir + "docker-compose.yml.jte", config);
         addTemplateEntry(zos, "README.md", templateDir + "README.md.jte", config);
     }
@@ -162,6 +172,9 @@ public class GenerationEngine {
         addTemplateEntry(zos,
                 "src/main/java/" + pkgPath + "/delegate/NotificationDelegate.java",
                 templateDir + "NotificationDelegate.java.jte", config);
+        addTemplateEntry(zos,
+                "src/main/java/" + pkgPath + "/delegate/RejectionEmailDelegate.java",
+                templateDir + "RejectionEmailDelegate.java.jte", config);
 
         addTemplateEntry(zos,
                 "src/main/resources/application.properties",

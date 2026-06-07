@@ -146,3 +146,58 @@ development_status:
   8-5-use-case-example-gallery-cards: done
 
   epic-8-retrospective: optional
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Epic 9: Authorization Foundation
+  # ─────────────────────────────────────────────────────────────────────────
+  epic-9: done
+
+  9-1-add-process-start-authorization: done
+  9-2-audit-task-authorization-and-cockpit-status-variables: done
+
+  epic-9-retrospective: optional
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Epic 10: UC-01 Leave Request — Rich Task Experience
+  # ─────────────────────────────────────────────────────────────────────────
+  epic-10: done
+
+  10-1-set-leave-request-variables-and-embedded-forms: done
+  10-2-add-timer-boundary-escalation-manager-review: done
+  10-3-task-local-variables-and-history-api: done
+  10-4-rest-api-documentation-leave-request: done
+
+  epic-10-retrospective: optional
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Epic 11: UC-02 Loan Application — Email Integration & Business Keys
+  # ─────────────────────────────────────────────────────────────────────────
+  epic-11: done
+
+  11-1-add-mailpit-infrastructure-uc-02: done
+  11-2-implement-email-rejection-send-task: done
+  11-3-business-key-loan-application: done
+  11-4-mailpit-docs-and-rest-api-uc-02: done
+
+  epic-11-retrospective: optional
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Epic 12: UC-03 Incident Management — Signal Event & Escalation
+  # ─────────────────────────────────────────────────────────────────────────
+  epic-12: done
+
+  12-1-signal-event-escalation-incident-management: done
+  12-2-rest-api-documentation-incident-management: done
+
+  epic-12-retrospective: optional
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Epic 13: UC-04 Order Fulfillment — Advanced Resilience Patterns
+  # ─────────────────────────────────────────────────────────────────────────
+  epic-13: done
+
+  13-1-payment-failure-path-and-job-retry: done
+  13-2-process-suspension-and-activation-demo: done
+  13-3-rest-api-documentation-order-fulfillment: done
+
+  epic-13-retrospective: optional

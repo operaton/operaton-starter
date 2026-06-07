@@ -11,7 +11,10 @@
              exporter="operaton modeler"
              exporterVersion="1.0">
 
-  <process id="order-fulfillment" name="Order Fulfillment" isExecutable="true">
+  <error id="PaymentFailed" errorCode="PAYMENT_FAILED" name="Payment Failed"/>
+
+  <process id="order-fulfillment" name="Order Fulfillment" isExecutable="true"
+           operaton:candidateStarterGroups="sales,operaton-admin">
 
     <startEvent id="StartEvent_1" name="Order Placed">
       <outgoing>Flow_start_to_inventory</outgoing>
@@ -30,10 +33,19 @@
     </exclusiveGateway>
 
     <serviceTask id="Task_ChargePayment" name="Charge Payment"
-                 operaton:delegateExpression="${'$'}{paymentDelegate}">
+                 operaton:delegateExpression="${'$'}{paymentDelegate}"
+                 operaton:asyncBefore="true">
+      <extensionElements>
+        <operaton:failedJobRetryTimeCycle>R3/PT10S</operaton:failedJobRetryTimeCycle>
+      </extensionElements>
       <incoming>Flow_in_stock</incoming>
       <outgoing>Flow_payment_to_pack</outgoing>
     </serviceTask>
+
+    <boundaryEvent id="ErrorBoundary_Payment" attachedToRef="Task_ChargePayment">
+      <outgoing>Flow_error_to_failed</outgoing>
+      <errorEventDefinition errorRef="PaymentFailed"/>
+    </boundaryEvent>
 
     <userTask id="Task_PackShip" name="Pack &amp; Ship"
               operaton:candidateGroups="warehouse">
@@ -61,6 +73,10 @@
       <incoming>Flow_backorder_to_end</incoming>
     </endEvent>
 
+    <endEvent id="EndEvent_Failed" name="Notify Customer of Failure">
+      <incoming>Flow_error_to_failed</incoming>
+    </endEvent>
+
     <sequenceFlow id="Flow_start_to_inventory" sourceRef="StartEvent_1" targetRef="Task_ValidateInventory"/>
     <sequenceFlow id="Flow_inventory_to_gw" sourceRef="Task_ValidateInventory" targetRef="Gateway_InStock"/>
     <sequenceFlow id="Flow_in_stock" name="in stock" sourceRef="Gateway_InStock" targetRef="Task_ChargePayment">
@@ -73,6 +89,11 @@
     <sequenceFlow id="Flow_pack_to_notify" sourceRef="Task_PackShip" targetRef="Task_NotifyCustomer"/>
     <sequenceFlow id="Flow_notify_to_shipped" sourceRef="Task_NotifyCustomer" targetRef="EndEvent_Shipped"/>
     <sequenceFlow id="Flow_backorder_to_end" sourceRef="Task_NotifyBackorder" targetRef="EndEvent_Backordered"/>
+    <sequenceFlow id="Flow_error_to_failed" sourceRef="ErrorBoundary_Payment" targetRef="EndEvent_Failed">
+      <extensionElements>
+        <operaton:executionListener event="take" expression="${'$'}{execution.setVariable('orderStatus', 'FAILED')}"/>
+      </extensionElements>
+    </sequenceFlow>
 
   </process>
 
@@ -144,6 +165,19 @@
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_backorder_to_end_di" bpmnElement="Flow_backorder_to_end">
         <di:waypoint x="640" y="290"/><di:waypoint x="702" y="290"/>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNShape id="ErrorBoundary_Payment_di" bpmnElement="ErrorBoundary_Payment">
+        <dc:Bounds x="562" y="142" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="EndEvent_Failed_di" bpmnElement="EndEvent_Failed">
+        <dc:Bounds x="562" y="222" width="36" height="36"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="536" y="265" width="89" height="27"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNEdge id="Flow_error_to_failed_di" bpmnElement="Flow_error_to_failed">
+        <di:waypoint x="580" y="178"/><di:waypoint x="580" y="222"/>
       </bpmndi:BPMNEdge>
 
     </bpmndi:BPMNPlane>

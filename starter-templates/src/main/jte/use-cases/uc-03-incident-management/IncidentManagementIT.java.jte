@@ -150,4 +150,49 @@ class IncidentManagementIT {
                 .count();
         assertEquals(0, activeCount, "No active instances should remain after escalation path");
     }
+
+    @Test
+    @Order(4)
+    void signalEscalation_createsSecondLineTask_whileTriageRemainsActive() {
+        RuntimeService runtimeService = processEngine.getRuntimeService();
+        TaskService taskService = processEngine.getTaskService();
+
+        ProcessInstance instance = runtimeService.startProcessInstanceByKey(
+                "incident-management",
+                Variables.putValue("incidentId", "INC-003"));
+
+        String pid = instance.getId();
+
+        // Verify triage task is active before signal
+        List<Task> triageBefore = taskService.createTaskQuery()
+                .processInstanceId(pid)
+                .taskDefinitionKey("Task_FirstLineTriage")
+                .list();
+        assertFalse(triageBefore.isEmpty(), "First-line triage task must exist before signal");
+
+        // Send escalation signal scoped to this instance's execution
+        org.operaton.bpm.engine.runtime.Execution signalExecution = runtimeService.createExecutionQuery()
+                .processInstanceId(pid)
+                .signalEventSubscriptionName("EscalationSignal")
+                .singleResult();
+        runtimeService.signalEventReceived("EscalationSignal", signalExecution.getId());
+
+        // Triage task must still be active (non-interrupting)
+        long triageCount = taskService.createTaskQuery()
+                .processInstanceId(pid)
+                .taskDefinitionKey("Task_FirstLineTriage")
+                .count();
+        assertEquals(1, triageCount, "First-line triage task must remain active after signal");
+
+        // Second-line task must have been created
+        long secondLineCount = taskService.createTaskQuery()
+                .processInstanceId(pid)
+                .taskDefinitionKey("Task_SecondLine")
+                .count();
+        assertEquals(1, secondLineCount, "Second-line task must be created after signal");
+
+        // incidentPriority must be HIGH
+        Object priority = runtimeService.getVariable(pid, "incidentPriority");
+        assertEquals("HIGH", priority, "incidentPriority must be HIGH after signal escalation");
+    }
 }

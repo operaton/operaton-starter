@@ -17,3 +17,8 @@ operaton.bpm.auto-deployment-enabled=true
 
 # WireMock credit score service URL (override for tests or local dev)
 credit.score.service.url=http://localhost:8089
+
+# Spring Mail — Mailpit SMTP (start with: docker compose up -d)
+spring.mail.host=localhost
+spring.mail.port=1025
+spring.mail.protocol=smtp

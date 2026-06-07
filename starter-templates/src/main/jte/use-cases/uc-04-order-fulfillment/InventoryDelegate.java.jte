@@ -31,6 +31,7 @@ public class InventoryDelegate implements JavaDelegate {
         boolean available = json.path("available").asBoolean(true);
 
         execution.setVariable("available", available);
+        execution.setVariable("orderStatus", "RECEIVED");
         log.info("Inventory check for order {}: available={}", id, available);
     }
 }

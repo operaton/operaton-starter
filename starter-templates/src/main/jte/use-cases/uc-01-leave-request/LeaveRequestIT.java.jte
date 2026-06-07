@@ -5,12 +5,14 @@ package ${config.javaPackage()};
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.operaton.bpm.engine.FormService;
+import org.operaton.bpm.engine.HistoryService;
 import org.operaton.bpm.engine.IdentityService;
 import org.operaton.bpm.engine.ProcessEngine;
 import org.operaton.bpm.engine.RepositoryService;
 import org.operaton.bpm.engine.RuntimeService;
 import org.operaton.bpm.engine.TaskService;
 import org.operaton.bpm.engine.form.FormField;
+import org.operaton.bpm.engine.history.HistoricVariableInstance;
 import org.operaton.bpm.engine.runtime.ProcessInstance;
 import org.operaton.bpm.engine.task.Task;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,6 +46,9 @@ class LeaveRequestIT {
 
     @Autowired
     private IdentityService identityService;
+
+    @Autowired
+    private HistoryService historyService;
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
@@ -95,6 +100,7 @@ class LeaveRequestIT {
 
         assertThat(runtimeService.getVariable(instance.getId(), "requester")).isEqualTo("alice");
         assertThat(runtimeService.getVariable(instance.getId(), "startDate")).isEqualTo(requestedStartDate.toString());
+        assertThat(runtimeService.getVariable(instance.getId(), "endDate")).isEqualTo(requestedStartDate.plusDays(4).toString());
         assertThat(runtimeService.getVariable(instance.getId(), "durationDays")).isEqualTo(5);
         assertThat(runtimeService.getVariable(instance.getId(), "remainingVacationDays")).isEqualTo(30);
         assertThat(runtimeService.getVariable(instance.getId(), "validationPassed")).isEqualTo(true);
@@ -105,8 +111,21 @@ class LeaveRequestIT {
                 .singleResult();
         assertThat(managerTask).isNotNull();
 
+        // Story 10-3: set task-local approvalComment before completing
         taskService.claim(managerTask.getId(), "bob");
+        taskService.setVariableLocal(managerTask.getId(), "approvalComment", "Approved for annual leave");
         taskService.complete(managerTask.getId(), Map.of("approved", true));
+
+        // Story 10-3: approvalComment is task-local — not visible as process variable
+        assertThat(runtimeService.getVariables(instance.getId())).doesNotContainKey("approvalComment");
+
+        // Story 10-3: approvalComment is in history for the task
+        HistoricVariableInstance hvi = historyService.createHistoricVariableInstanceQuery()
+                .taskIdIn(managerTask.getId())
+                .variableName("approvalComment")
+                .singleResult();
+        assertThat(hvi).isNotNull();
+        assertThat(hvi.getValue()).isEqualTo("Approved for annual leave");
 
         Task hrTask = taskService.createTaskQuery()
                 .processInstanceId(instance.getId())
@@ -119,6 +138,25 @@ class LeaveRequestIT {
 
         assertThat(activeProcessInstances(instance.getId())).isZero();
         assertThat(readBalance("alice")).isEqualTo(25);
+        assertThat(historyService.createHistoricVariableInstanceQuery()
+                .processInstanceId(instance.getId())
+                .variableName("leaveStatus")
+                .singleResult().getValue()).isEqualTo("APPROVED");
+
+        // Story 10-3: historic remainingVacationDays (at start) greater than post-deduction balance
+        HistoricVariableInstance historicBalance = historyService.createHistoricVariableInstanceQuery()
+                .processInstanceId(instance.getId())
+                .variableName("remainingVacationDays")
+                .singleResult();
+        assertThat(historicBalance).isNotNull();
+        assertThat((Integer) historicBalance.getValue()).isGreaterThan(readBalance("alice"));
+
+        // Story 10-2: assert Task_ManagerReview was completed (history)
+        assertThat(historyService.createHistoricActivityInstanceQuery()
+                .processInstanceId(instance.getId())
+                .activityId("Task_ManagerReview")
+                .finished()
+                .count()).isEqualTo(1);
     }
 
     @Test
@@ -220,12 +258,18 @@ class LeaveRequestIT {
     }
 
     private ProcessInstance startLeaveRequest(String userId, LocalDate startDate, int durationDays) {
+        return startLeaveRequest(userId, startDate, durationDays, Map.of());
+    }
+
+    private ProcessInstance startLeaveRequest(String userId, LocalDate startDate, int durationDays,
+                                               Map<String, Object> extraVariables) {
         identityService.setAuthenticatedUserId(userId);
         try {
-            return runtimeService.startProcessInstanceByKey("leave-request", Map.of(
-                    "startDate", startDate.toString(),
-                    "durationDays", durationDays
-            ));
+            java.util.HashMap<String, Object> vars = new java.util.HashMap<>();
+            vars.put("startDate", startDate.toString());
+            vars.put("durationDays", durationDays);
+            vars.putAll(extraVariables);
+            return runtimeService.startProcessInstanceByKey("leave-request", vars);
         } finally {
             identityService.clearAuthentication();
         }

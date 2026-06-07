@@ -24,8 +24,8 @@ public class FinalizeLeaveApprovalDelegate implements JavaDelegate {
         }
         int durationDays = readDurationDays(execution.getVariable("durationDays"));
 
-        int remainingVacationDays = vacationBalanceService.deductVacationDays(requester, durationDays);
-        execution.setVariable("remainingVacationDays", remainingVacationDays);
+        vacationBalanceService.deductVacationDays(requester, durationDays);
+        execution.setVariable("leaveStatus", "APPROVED");
     }
 
     private int readDurationDays(Object durationValue) {

@@ -22,6 +22,7 @@ public class NotifyCustomerDelegate implements JavaDelegate {
     public void execute(DelegateExecution execution) throws Exception {
         String url = notificationServiceUrl + "/notifications/customer";
         new RestTemplate().postForObject(url, null, String.class);
+        execution.setVariable("orderStatus", "FULFILLED");
         log.info("Customer notified for order {}", execution.getVariable("orderId"));
     }
 }

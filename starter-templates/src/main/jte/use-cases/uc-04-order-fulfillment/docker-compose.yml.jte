@@ -4,7 +4,7 @@ services:
   postgres:
     image: postgres:16
     environment:
-      POSTGRES_DB: ${config.artifactId()}
+      POSTGRES_DB: operaton
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:

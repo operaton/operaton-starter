@@ -11,9 +11,9 @@
 
   <process id="leave-request" name="Leave Request Approval" isExecutable="true"
            operaton:historyTimeToLive="P90D"
-           operaton:initiator="requester">
+           operaton:candidateStarterGroups="employees,operaton-admin">
 
-    <startEvent id="StartEvent_1" name="Leave Requested">
+    <startEvent id="StartEvent_1" name="Leave Requested" operaton:initiator="requester">
       <extensionElements>
         <operaton:formData>
           <operaton:formField id="startDate" label="Start date" type="date"/>
@@ -47,7 +47,28 @@
     </sequenceFlow>
 
     <userTask id="Task_ManagerReview" name="Manager Reviews Request"
-              operaton:candidateGroups="managers">
+              operaton:candidateGroups="managers"
+              operaton:formKey="embedded:app:forms/manager-review-form.html">
+      <extensionElements>
+        <operaton:formData>
+          <operaton:formField id="requester" label="Requester" type="string">
+            <operaton:properties><operaton:property id="readonly" value="true"/></operaton:properties>
+          </operaton:formField>
+          <operaton:formField id="startDate" label="Start Date" type="string">
+            <operaton:properties><operaton:property id="readonly" value="true"/></operaton:properties>
+          </operaton:formField>
+          <operaton:formField id="endDate" label="End Date" type="string">
+            <operaton:properties><operaton:property id="readonly" value="true"/></operaton:properties>
+          </operaton:formField>
+          <operaton:formField id="durationDays" label="Days Requested" type="long">
+            <operaton:properties><operaton:property id="readonly" value="true"/></operaton:properties>
+          </operaton:formField>
+          <operaton:formField id="remainingVacationDays" label="Remaining Vacation Days" type="long">
+            <operaton:properties><operaton:property id="readonly" value="true"/></operaton:properties>
+          </operaton:formField>
+          <operaton:formField id="approved" label="Approved?" type="boolean"/>
+        </operaton:formData>
+      </extensionElements>
       <incoming>Flow_valid_request</incoming>
       <outgoing>Flow_manager_to_gw</outgoing>
     </userTask>
@@ -64,10 +85,34 @@
       <conditionExpression xsi:type="tFormalExpression">${'$'}{approved == true}</conditionExpression>
     </sequenceFlow>
 
-    <sequenceFlow id="Flow_rejected" name="rejected" sourceRef="Gateway_Decision" targetRef="Task_EmployeeNotified"/>
+    <sequenceFlow id="Flow_rejected" name="rejected" sourceRef="Gateway_Decision" targetRef="Task_EmployeeNotified">
+      <extensionElements>
+        <operaton:executionListener event="take" expression="${'$'}{execution.setVariable('leaveStatus', 'REJECTED')}"/>
+      </extensionElements>
+    </sequenceFlow>
 
     <userTask id="Task_HRRecord" name="HR Records Approved Leave"
-              operaton:candidateGroups="hr">
+              operaton:candidateGroups="hr"
+              operaton:formKey="embedded:app:forms/hr-record-form.html">
+      <extensionElements>
+        <operaton:formData>
+          <operaton:formField id="requester" label="Requester" type="string">
+            <operaton:properties><operaton:property id="readonly" value="true"/></operaton:properties>
+          </operaton:formField>
+          <operaton:formField id="startDate" label="Start Date" type="string">
+            <operaton:properties><operaton:property id="readonly" value="true"/></operaton:properties>
+          </operaton:formField>
+          <operaton:formField id="endDate" label="End Date" type="string">
+            <operaton:properties><operaton:property id="readonly" value="true"/></operaton:properties>
+          </operaton:formField>
+          <operaton:formField id="durationDays" label="Days Requested" type="long">
+            <operaton:properties><operaton:property id="readonly" value="true"/></operaton:properties>
+          </operaton:formField>
+          <operaton:formField id="remainingVacationDays" label="Remaining Vacation Days" type="long">
+            <operaton:properties><operaton:property id="readonly" value="true"/></operaton:properties>
+          </operaton:formField>
+        </operaton:formData>
+      </extensionElements>
       <incoming>Flow_approved</incoming>
       <outgoing>Flow_hr_to_finalize</outgoing>
     </userTask>

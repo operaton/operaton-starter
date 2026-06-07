@@ -19,6 +19,7 @@ public class CreditScoreDelegate implements JavaDelegate {
         Object existingScore = execution.getVariable("creditScore");
         if (existingScore instanceof Number score) {
             execution.setVariable("creditScore", score.intValue());
+            execution.setVariable("loanDecision", "PENDING");
             ensureLoanAmount(execution);
             return;
         }
@@ -31,6 +32,7 @@ public class CreditScoreDelegate implements JavaDelegate {
 
         int score = response.score();
         execution.setVariable("creditScore", score);
+        execution.setVariable("loanDecision", "PENDING");
 
         ensureLoanAmount(execution);
     }

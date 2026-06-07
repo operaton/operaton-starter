@@ -15,7 +15,9 @@ import org.operaton.bpm.engine.task.Task;
 import org.operaton.bpm.engine.variable.Variables;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.util.TestPropertyValues;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -26,7 +28,9 @@ import org.wiremock.integrations.testcontainers.WireMockContainer;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 @ActiveProfiles("h2")
@@ -52,6 +56,12 @@ class LoanApplicationIT {
 
     @Autowired
     private ProcessEngine processEngine;
+
+    @Autowired
+    private RuntimeService runtimeService;
+
+    @MockBean
+    private JavaMailSender mailSender;
 
     @Test
     @Order(1)
@@ -97,21 +107,37 @@ class LoanApplicationIT {
         assertEquals("high", highResult.getSingleResult().getSingleEntry());
     }
 
+    @Test
+    @Order(4)
+    void processInstanceIsQueryableByBusinessKey() {
+        String businessKey = "LOAN-" + UUID.randomUUID();
+        ProcessInstance instance = runtimeService.startProcessInstanceByKey(
+                "loan-application", businessKey,
+                Variables.putValue("creditScore", 750)
+                         .putValue("loanAmount", 100000)
+                         .putValue("applicantEmail", "test@example.com"));
+        assertNotNull(instance);
+
+        assertThat(runtimeService.createProcessInstanceQuery()
+                .processInstanceBusinessKey(businessKey)
+                .count()).isEqualTo(0); // process completes synchronously for low risk
+    }
+
     @ParameterizedTest(name = "creditScore={0}, loanAmount={1} -> riskLevel={2}")
     @CsvSource({
         "750, 100000, low",
         "650, 100000, medium",
         "500, 100000, high"
     })
-    @Order(4)
+    @Order(5)
     void loanApplicationProcessCoversAllRiskPaths(int creditScore, int loanAmount, String expectedRisk) {
-        RuntimeService runtimeService = processEngine.getRuntimeService();
         TaskService taskService = processEngine.getTaskService();
 
         ProcessInstance instance = runtimeService.startProcessInstanceByKey(
                 "loan-application",
                 Variables.putValue("creditScore", creditScore)
-                         .putValue("loanAmount", loanAmount));
+                         .putValue("loanAmount", loanAmount)
+                         .putValue("applicantEmail", "test@example.com"));
 
         assertNotNull(instance);
 

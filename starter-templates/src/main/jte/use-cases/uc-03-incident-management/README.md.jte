@@ -12,10 +12,14 @@ The process starts when a caller reports an `incidentId`. First-line support get
 
 | Actor | Username | Group | Responsibility |
 |------|----------|-------|----------------|
-| Incident reporter | external caller | n/a | Starts the incident process |
+| Incident reporter | `alice` / `alice` | `employees` | Starts the incident process |
 | First-line support | `frank` / `frank` | `first-line` | Performs initial triage and can resolve the incident before the SLA fires |
 | Second-line engineer | `grace` / `grace` | `second-line` | Handles escalated incidents after the timer interrupts first-line work |
 | Automation | system | n/a | Calls ticket-close and post-mortem notification endpoints |
+
+## Starting the Process
+
+Log in as **alice / alice** (group: `employees`) in Tasklist to start this process. Only members of the `employees` group can report an incident — this is enforced by `candidateStarterGroups` on the process definition.
 
 ## Main Flow
 
@@ -119,10 +123,52 @@ src/
       IncidentManagementIT.java
 ```
 
+## REST API
+
+All process interactions are available through the Operaton REST API. The examples below use the default port `8080`.
+
+### Start a process instance
+
+```bash
+curl -u alice:alice -X POST \
+  http://localhost:8080/engine-rest/process-definition/key/incident-management/start \
+  -H 'Content-Type: application/json' \
+  -d '{"variables": {"incidentId": {"value": "INC-001", "type": "String"}}}'
+```
+
+### List active tasks
+
+```bash
+curl -u alice:alice \
+  'http://localhost:8080/engine-rest/task?processDefinitionKey=incident-management'
+```
+
+### Send a signal to escalate in parallel (key pattern)
+
+The `EscalationSignal` triggers the non-interrupting boundary signal event on the First-Line Triage task. The triage task **remains active** while a Second-Line Engineer task is created concurrently and `incidentPriority` is set to `HIGH`.
+
+```bash
+curl -u alice:alice -X POST \
+  http://localhost:8080/engine-rest/signal \
+  -H 'Content-Type: application/json' \
+  -d '{"name": "EscalationSignal"}'
+```
+
+### Complete the first-line triage task
+
+Replace `{taskId}` with the ID returned by the task list call above.
+
+```bash
+curl -u frank:frank -X POST \
+  http://localhost:8080/engine-rest/task/{taskId}/complete \
+  -H 'Content-Type: application/json' \
+  -d '{"variables": {"resolved": {"value": true, "type": "Boolean"}}}'
+```
+
 ## Running Tests
 
 ```bash
 ./mvnw verify
 ```
 
-`IncidentManagementIT` verifies deployment, the resolved path, and timer-driven escalation to second-line support.
+`IncidentManagementIT` verifies deployment, the resolved path, timer-driven escalation to second-line support, and signal-driven parallel escalation.

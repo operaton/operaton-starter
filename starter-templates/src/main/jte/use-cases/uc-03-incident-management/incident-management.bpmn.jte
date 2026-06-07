@@ -11,9 +11,15 @@
              exporter="operaton modeler"
              exporterVersion="1.0">
 
-  <process id="incident-management" name="Incident Management" isExecutable="true">
+  <signal id="EscalationSignal" name="EscalationSignal"/>
+
+  <process id="incident-management" name="Incident Management" isExecutable="true"
+           operaton:candidateStarterGroups="employees,operaton-admin">
 
     <startEvent id="StartEvent_1" name="Incident Reported">
+      <extensionElements>
+        <operaton:executionListener event="end" expression="${'$'}{execution.setVariable('incidentPriority', 'LOW')}"/>
+      </extensionElements>
       <outgoing>Flow_start_to_triage</outgoing>
     </startEvent>
 
@@ -22,6 +28,13 @@
       <incoming>Flow_start_to_triage</incoming>
       <outgoing>Flow_triage_to_gw</outgoing>
     </userTask>
+
+    <!-- Non-interrupting boundary signal: parallel escalation to second-line -->
+    <boundaryEvent id="Signal_Escalation" name="Escalation Signal"
+                   attachedToRef="Task_FirstLineTriage" cancelActivity="false">
+      <outgoing>Flow_signal_to_priority</outgoing>
+      <signalEventDefinition signalRef="EscalationSignal"/>
+    </boundaryEvent>
 
     <!-- Interrupting boundary timer: escalates to second-line after SLA duration -->
     <boundaryEvent id="BoundaryTimer_Escalate" name="SLA Timer"
@@ -45,10 +58,18 @@
       <outgoing>Flow_close_end</outgoing>
     </serviceTask>
 
+    <serviceTask id="Task_SetHighPriority" name="Set High Priority"
+                 operaton:expression="${'$'}{execution.setVariable('incidentPriority', 'HIGH')}"
+                 operaton:resultVariable="_ignored">
+      <incoming>Flow_signal_to_priority</incoming>
+      <outgoing>Flow_priority_to_secondline</outgoing>
+    </serviceTask>
+
     <userTask id="Task_SecondLine" name="Second-Line Engineer"
               operaton:candidateGroups="second-line">
       <incoming>Flow_timer_to_secondline</incoming>
       <incoming>Flow_not_resolved</incoming>
+      <incoming>Flow_priority_to_secondline</incoming>
       <outgoing>Flow_secondline_postmortem</outgoing>
     </userTask>
 
@@ -66,6 +87,8 @@
       <incoming>Flow_postmortem_end</incoming>
     </endEvent>
 
+    <sequenceFlow id="Flow_signal_to_priority" sourceRef="Signal_Escalation" targetRef="Task_SetHighPriority"/>
+    <sequenceFlow id="Flow_priority_to_secondline" sourceRef="Task_SetHighPriority" targetRef="Task_SecondLine"/>
     <sequenceFlow id="Flow_start_to_triage" sourceRef="StartEvent_1" targetRef="Task_FirstLineTriage"/>
     <sequenceFlow id="Flow_triage_to_gw" sourceRef="Task_FirstLineTriage" targetRef="Gateway_Resolved"/>
     <sequenceFlow id="Flow_timer_to_secondline" sourceRef="BoundaryTimer_Escalate" targetRef="Task_SecondLine"/>
@@ -91,6 +114,15 @@
 
       <bpmndi:BPMNShape id="Task_FirstLineTriage_di" bpmnElement="Task_FirstLineTriage">
         <dc:Bounds x="240" y="150" width="120" height="80"/>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Signal_Escalation_di" bpmnElement="Signal_Escalation">
+        <dc:Bounds x="322" y="132" width="36" height="36"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="300" y="105" width="80" height="14"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Task_SetHighPriority_di" bpmnElement="Task_SetHighPriority">
+        <dc:Bounds x="240" y="60" width="120" height="80"/>
       </bpmndi:BPMNShape>
 
       <bpmndi:BPMNShape id="BoundaryTimer_Escalate_di" bpmnElement="BoundaryTimer_Escalate">
@@ -125,6 +157,12 @@
         <bpmndi:BPMNLabel><dc:Bounds x="858" y="255" width="84" height="14"/></bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
 
+      <bpmndi:BPMNEdge id="Flow_signal_to_priority_di" bpmnElement="Flow_signal_to_priority">
+        <di:waypoint x="340" y="132"/><di:waypoint x="340" y="100"/><di:waypoint x="300" y="100"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_priority_to_secondline_di" bpmnElement="Flow_priority_to_secondline">
+        <di:waypoint x="360" y="100"/><di:waypoint x="580" y="100"/><di:waypoint x="580" y="190"/>
+      </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_start_to_triage_di" bpmnElement="Flow_start_to_triage">
         <di:waypoint x="188" y="190"/><di:waypoint x="240" y="190"/>
       </bpmndi:BPMNEdge>
