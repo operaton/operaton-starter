@@ -16,3 +16,4 @@ spring.sql.init.mode=always
 
 # Operaton configuration
 operaton.bpm.auto-deployment-enabled=true
+operaton.bpm.application.context-path=/
