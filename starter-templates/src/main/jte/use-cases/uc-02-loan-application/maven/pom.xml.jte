@@ -9,7 +9,7 @@
 
   <groupId>${config.groupId()}</groupId>
   <artifactId>${config.artifactId()}</artifactId>
-  <version>${VersionConstants.INITIAL_PROJECT_VERSION}</version>
+  <version>${config.version()}</version>
   <name>${config.projectName()}</name>
 
   <properties>

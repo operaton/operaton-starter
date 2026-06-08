@@ -1,9 +1,17 @@
+export type TagCategory = 'BPMN_CONCEPT' | 'TECHNOLOGY' | 'PLATFORM' | 'STANDARD'
+
+export interface Tag {
+  label: string
+  category: TagCategory
+}
+
 export interface ProjectConfig {
   projectType: 'PROCESS_APPLICATION' | 'PROCESS_ARCHIVE' | 'DMN_PROJECT'
   buildSystem: 'MAVEN' | 'GRADLE_GROOVY' | 'GRADLE_KOTLIN'
   groupId: string
   artifactId: string
   projectName: string
+  version?: string
   javaVersion?: 17 | 21 | 25
   deploymentTarget?: 'TOMCAT' | 'STANDALONE_ENGINE'
   dependencyUpdater?: 'DEPENDABOT' | 'RENOVATE'
@@ -16,7 +24,7 @@ export interface UseCaseExample {
   useCaseId: string
   title: string
   description: string
-  tags: string[]
+  tags: Tag[]
   projectType: string
   buildSystem: 'MAVEN' | 'GRADLE_GROOVY' | 'GRADLE_KOTLIN'
   defaultArtifactId: string
@@ -42,7 +50,7 @@ export interface ProjectTypeInfo {
   displayName: string
   description: string
   detailedDescription?: string
-  tags: string[]
+  tags: Tag[]
   personaHint: string
   templateManifest: TemplateManifestEntry[]
 }

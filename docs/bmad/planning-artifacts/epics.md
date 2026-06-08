@@ -7,6 +7,7 @@ inputDocuments:
   - 'docs/bmad/planning-artifacts/architecture.md'
   - 'docs/bmad/planning-artifacts/ux-design-specification.md'
   - 'docs/bmad/planning-artifacts/prds/prd-operaton-starter-uc-enhancements-2026-06-06/prd.md'
+  - 'docs/bmad/planning-artifacts/prds/prd-operaton-starter-2026-06-08/prd.md'
 project_name: operaton-starter
 ---
 
@@ -1038,3 +1039,159 @@ So that I can drive the full process flow from the command line without the Task
 **Given** all four curl example sets
 **When** run against a locally started instance
 **Then** they produce the expected responses (HTTP 200/201); variable payloads are drawn from each use case's DataInitializer values
+
+---
+
+## Epic 7: UI Enhancements — Navigation, Tag Colors, Footer, and Project Configuration
+
+Improve the operaton-starter web UI with better first-time-user defaults, cleaner navigation, a build-stamped footer version, and color-coded tag chips backed by a structured tag data model. Source: PRD `docs/bmad/planning-artifacts/prds/prd-operaton-starter-2026-06-08/prd.md`.
+
+### Story 7.1: Default Project Coordinates and Configurable Version Field
+
+As a developer generating a new Operaton project,
+I want the defaults to use a proper example groupId, a name without "example", and a version field I can set,
+So that the generated project is usable as-is without immediately editing coordinates.
+
+**Acceptance Criteria:**
+
+**Given** the Configure page loads without `groupId` in the query string
+**When** the form initializes
+**Then** `form.groupId` is set to `org.operaton.example` (sourced from `metadata.defaultGroupId`)
+
+**Given** the backend metadata endpoint
+**When** `GET /api/v1/metadata` is called
+**Then** the response includes `"defaultGroupId": "org.operaton.example"`
+
+**Given** a use-case card is selected (e.g. Leave Request)
+**When** the Configure page loads with `artifactId` and `projectName` from the query
+**Then** neither value contains the word "example" (case-insensitive)
+
+**Given** all project type default artifact IDs and project names in the backend metadata
+**When** inspected
+**Then** none contain the word "example" (case-insensitive)
+
+**Given** the Configure page form
+**When** rendered
+**Then** a "Version" input field is present, labelled "Version", with default value `1.0.0-SNAPSHOT`
+
+**Given** the Version field contains an invalid value (empty string or value containing whitespace)
+**When** the user attempts to generate
+**Then** an inline validation error is shown on the Version field and the Generate button is disabled
+
+**Given** a valid version string (e.g. `2.0.0`)
+**When** the user submits the form
+**Then** the `version` field is included in the `POST /api/v1/generate` request body and propagated to the generated `pom.xml` or `build.gradle`
+
+---
+
+### Story 7.2: "Configure Now" Direct-to-Preview Flow
+
+As a new user landing on the operaton-starter home page,
+I want "Configure Now" to take me directly to the configuration form with a sensible project type pre-selected and the ability to change it,
+So that I can start configuring immediately without first having to browse project types.
+
+**Acceptance Criteria:**
+
+**Given** a user clicks "Configure Now" on the hero section
+**When** navigation occurs
+**Then** the browser navigates to `/configure` with no `projectType` query parameter
+
+**Given** `/configure` is loaded without a `projectType` query parameter (including direct URL entry and bookmarks)
+**When** the form initializes
+**Then** `form.projectType` is set to `PROCESS_APPLICATION` and the project type selector is rendered as an editable `<select>` (or equivalent interactive control)
+
+**Given** the project type selector is editable
+**When** the user changes the selection to a different project type
+**Then** the form reflects the new project type and the file tree preview updates accordingly
+
+**Given** `PROCESS_APPLICATION` is absent from the metadata response
+**When** `/configure` loads without a `projectType` query parameter
+**Then** the first project type in `metadata.projectTypes` is pre-selected
+
+**Given** a user arrives at `/configure` via a project type card ("Configure →" button) with `?projectType=PROCESS_APPLICATION` in the URL
+**When** the form renders
+**Then** the project type field is read-only (existing behavior preserved)
+
+**Given** a user arrives at `/configure` via a use-case card with `projectType` and `useCaseId` in the query
+**When** the form renders
+**Then** the project type field is read-only (existing behavior preserved)
+
+---
+
+### Story 7.3: Navigation Button Reorder and Footer Version Display
+
+As a user on the operaton-starter home page,
+I want "Project Types" to appear before "Browse Use Cases" in the hero navigation and share its style, and I want to see the running version in the footer,
+So that the page hierarchy is clearer and I can identify the build at a glance.
+
+**Acceptance Criteria:**
+
+**Given** the GalleryView hero section
+**When** rendered
+**Then** the three buttons appear in this order: (1) "Configure Now →", (2) "Project Types ↓", (3) "Browse Use Cases ↓"
+
+**Given** the "Project Types" button
+**When** inspected
+**Then** it uses the outlined style classes `border border-primary text-primary` (identical to the "Browse Use Cases" button)
+
+**Given** the Vite build is run with `VITE_APP_VERSION=0.1.0-SNAPSHOT` set via Maven resource filtering
+**When** the footer renders
+**Then** it displays `operaton-starter 0.1.0` (suffix stripped) alongside the Apache 2.0 and operaton.org links
+
+**Given** the Vite build is run with `VITE_APP_VERSION=1.2.3-RC1`
+**When** the footer renders
+**Then** it displays `operaton-starter 1.2.3` (any pre-release suffix stripped)
+
+**Given** `VITE_APP_VERSION` is absent or empty at build time
+**When** the footer renders
+**Then** it displays `operaton-starter` without any version token; it does NOT display `undefined` or an empty string fragment
+
+**Given** the Maven build is run via `mvn package` (standard, no extra flags)
+**When** the resulting artifact is inspected
+**Then** `VITE_APP_VERSION` was injected automatically from the POM version without manual intervention
+
+---
+
+### Story 7.4: Structured Tag Type and Color-Coded Chips
+
+As a developer browsing use cases and project types,
+I want tag chips to be color-coded by category,
+So that I can quickly scan for projects using specific technologies, platforms, BPMN concepts, or standards.
+
+**Acceptance Criteria:**
+
+**Given** the OpenAPI spec and generated TypeScript types
+**When** the `tags` field on `ProjectTypeInfo` and `UseCaseExample` is inspected
+**Then** it is typed as `Tag[]` where `Tag = { label: string, category: TagCategory }` and `TagCategory` is an enum of `BPMN_CONCEPT | TECHNOLOGY | PLATFORM | STANDARD`
+
+**Given** the backend metadata endpoint `GET /api/v1/metadata`
+**When** called
+**Then** all `tags` arrays on project types and use case examples return objects with `label` and `category` fields; no tag is a bare string
+
+**Given** the backend metadata
+**When** all tag objects are inspected
+**Then** every tag has a non-null `category` value that is one of the four supported values
+
+**Given** a tag chip with `category: BPMN_CONCEPT`
+**When** rendered on any card (ProjectTypeCard, UseCaseCard, UseCaseGalleryCard)
+**Then** it uses the BPMN concept color (defined by UX; meets WCAG AA contrast)
+
+**Given** a tag chip with `category: TECHNOLOGY`
+**When** rendered
+**Then** it uses the Technology color (distinct from BPMN_CONCEPT, PLATFORM, STANDARD)
+
+**Given** a tag chip with `category: PLATFORM`
+**When** rendered
+**Then** it uses the Platform color
+
+**Given** a tag chip with `category: STANDARD`
+**When** rendered
+**Then** it uses the Standard color; the label includes the version string where applicable (e.g. "BPMN 2.0", "DMN 1.3", "CMMN 1.1")
+
+**Given** a tag object arrives from the API with a null or unrecognized `category` value
+**When** the chip renders
+**Then** it uses a neutral grey fallback style and does not throw a runtime error
+
+**Given** existing snapshot or component tests that reference tag rendering
+**When** the structured tag type is adopted
+**Then** all tests pass (update test fixtures to use the new `Tag` object shape)

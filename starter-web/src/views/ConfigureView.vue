@@ -32,14 +32,26 @@ function toggleHelp(field: string) {
   helpOpen.value[field] = !helpOpen.value[field]
 }
 
-// Initialize from query params; redirect to gallery when no projectType provided (FR45)
+// Initialize from query params.
+// With a projectType param (card/use-case arrival): lock project type as read-only.
+// Without projectType param (Configure Now, direct URL, bookmark): pre-select PROCESS_APPLICATION
+// and leave project type editable.
 onMounted(() => {
-  if (!route.query.projectType) {
-    router.replace('/')
-    return
-  }
   initFromQuery(route.query as Record<string, string>)
 })
+
+// FR-2.4: if PROCESS_APPLICATION is absent from metadata, fall back to the first available type
+watch(
+  () => metadata.value?.projectTypes,
+  (types) => {
+    if (!types?.length || isProjectTypeFromQuery.value) return
+    const valid = types.some((pt) => pt.id === form.projectType)
+    if (!valid) {
+      form.projectType = types[0].id as typeof form.projectType
+    }
+  },
+  { immediate: true }
+)
 
 watch(
   () => metadata.value?.defaultGroupId,
@@ -47,7 +59,7 @@ watch(
     if (!defaultGroupId || hasGroupIdQuery.value) {
       return
     }
-    if (form.groupId === 'com.example') {
+    if (form.groupId === 'org.operaton.example' || form.groupId === 'com.example') {
       form.groupId = defaultGroupId
     }
   },
@@ -167,6 +179,16 @@ const helpText: Record<string, string> = {
                      :class="errors.projectName ? 'border-red-400' : 'border-neutral-200'"
                      :aria-describedby="errors.projectName ? 'projectName-error' : undefined" />
               <p v-if="errors.projectName" id="projectName-error" role="alert" class="text-xs text-red-600 mt-1">{{ errors.projectName }}</p>
+            </div>
+
+            <!-- Version -->
+            <div>
+              <label for="version" class="text-sm font-medium text-neutral-900 block mb-1">Version</label>
+              <input id="version" v-model="form.version" type="text" autocomplete="off"
+                     class="w-full px-3 py-2 text-sm border rounded-s font-mono focus:outline-none focus:ring-2 focus:ring-primary/20"
+                     :class="errors.version ? 'border-red-400' : 'border-neutral-200'"
+                     :aria-describedby="errors.version ? 'version-error' : undefined" />
+              <p v-if="errors.version" id="version-error" role="alert" class="text-xs text-red-600 mt-1">{{ errors.version }}</p>
             </div>
           </fieldset>
 

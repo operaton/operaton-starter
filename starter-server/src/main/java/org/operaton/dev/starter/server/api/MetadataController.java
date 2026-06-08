@@ -2,6 +2,8 @@ package org.operaton.dev.starter.server.api;
 
 import org.operaton.dev.starter.server.config.StarterProperties;
 import org.operaton.dev.starter.server.model.*;
+import org.operaton.dev.starter.server.model.Tag;
+import org.operaton.dev.starter.server.model.TagCategory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.Resource;
@@ -58,11 +60,17 @@ public class MetadataController {
                 .useCaseId("uc-01-leave-request")
                 .title("Leave Request")
                 .description("Employee leave approval with automatic validation, persisted balances, manager review, and HR finalization.")
-                .tags(List.of("multi-role", "human-tasks", "validation", "postgresql", "docker-compose"))
+                .tags(List.of(
+                    tag("multi-role", TagCategory.BPMN_CONCEPT),
+                    tag("human-tasks", TagCategory.BPMN_CONCEPT),
+                    tag("validation", TagCategory.BPMN_CONCEPT),
+                    tag("PostgreSQL", TagCategory.PLATFORM),
+                    tag("Docker Compose", TagCategory.TECHNOLOGY)
+                ))
                 .projectType("PROCESS_APPLICATION")
                 .buildSystem("MAVEN")
-                .defaultArtifactId("leave-request-example")
-                .defaultProjectName("Leave Request Example")
+                .defaultArtifactId("leave-request")
+                .defaultProjectName("Leave Request")
                 .dockerCompose(true)
                 .processSummary("An employee submits a leave request, which is validated against their remaining balance. A manager then approves or rejects it. If approved, HR finalizes the booking and an email confirmation is sent; if rejected, the employee receives a rejection notification.")
                 .bpmnConcepts(List.of("User Task", "Exclusive Gateway", "Service Task", "Boundary Event"))
@@ -78,11 +86,16 @@ public class MetadataController {
                 .useCaseId("uc-02-loan-application")
                 .title("Loan Application")
                 .description("Credit scoring via DMN decision table with WireMock-stubbed external API — covers low/medium/high risk routing.")
-                .tags(List.of("DMN", "service-tasks", "wiremock", "docker-compose"))
+                .tags(List.of(
+                    tag("DMN", TagCategory.STANDARD),
+                    tag("Service Tasks", TagCategory.BPMN_CONCEPT),
+                    tag("WireMock", TagCategory.TECHNOLOGY),
+                    tag("Docker Compose", TagCategory.TECHNOLOGY)
+                ))
                 .projectType("PROCESS_APPLICATION")
                 .buildSystem("MAVEN")
-                .defaultArtifactId("loan-application-example")
-                .defaultProjectName("Loan Application Example")
+                .defaultArtifactId("loan-application")
+                .defaultProjectName("Loan Application")
                 .dockerCompose(true)
                 .processSummary("A loan application is submitted and routed through a credit scoring step that calls an external API. The score feeds into a DMN decision table that classifies the applicant as low, medium, or high risk, and the process branches accordingly — approving, queuing for manual review, or rejecting.")
                 .bpmnConcepts(List.of("Service Task", "DMN Business Rule Task", "Exclusive Gateway"))
@@ -98,11 +111,17 @@ public class MetadataController {
                 .useCaseId("uc-03-incident-management")
                 .title("Incident Management")
                 .description("SLA timer boundary event that escalates unresolved tickets from first-line to second-line engineering.")
-                .tags(List.of("timer", "boundary-event", "escalation", "wiremock", "docker-compose"))
+                .tags(List.of(
+                    tag("Timer", TagCategory.BPMN_CONCEPT),
+                    tag("Boundary Event", TagCategory.BPMN_CONCEPT),
+                    tag("Escalation", TagCategory.BPMN_CONCEPT),
+                    tag("WireMock", TagCategory.TECHNOLOGY),
+                    tag("Docker Compose", TagCategory.TECHNOLOGY)
+                ))
                 .projectType("PROCESS_APPLICATION")
                 .buildSystem("MAVEN")
-                .defaultArtifactId("incident-management-example")
-                .defaultProjectName("Incident Management Example")
+                .defaultArtifactId("incident-management")
+                .defaultProjectName("Incident Management")
                 .dockerCompose(true)
                 .processSummary("An incident ticket is opened and assigned to first-line engineering. If not resolved within the SLA window, a timer boundary event triggers automatic escalation to second-line. Once resolved, the ticket is closed and a post-mortem record is created via an external API call.")
                 .bpmnConcepts(List.of("User Task", "Timer Boundary Event", "Escalation", "Service Task"))
@@ -117,11 +136,17 @@ public class MetadataController {
                 .useCaseId("uc-04-order-fulfillment")
                 .title("Order Fulfillment")
                 .description("Multi-service-task orchestration with inventory, payment, and notification REST calls stubbed via WireMock.")
-                .tags(List.of("service-tasks", "rest", "wiremock", "conditional-routing", "docker-compose"))
+                .tags(List.of(
+                    tag("Service Tasks", TagCategory.BPMN_CONCEPT),
+                    tag("REST", TagCategory.TECHNOLOGY),
+                    tag("WireMock", TagCategory.TECHNOLOGY),
+                    tag("Conditional Routing", TagCategory.BPMN_CONCEPT),
+                    tag("Docker Compose", TagCategory.TECHNOLOGY)
+                ))
                 .projectType("PROCESS_APPLICATION")
                 .buildSystem("MAVEN")
-                .defaultArtifactId("order-fulfillment-example")
-                .defaultProjectName("Order Fulfillment Example")
+                .defaultArtifactId("order-fulfillment")
+                .defaultProjectName("Order Fulfillment")
                 .dockerCompose(true)
                 .processSummary("An order is received and the process orchestrates three external systems: it checks inventory, processes payment, and sends a customer notification. If inventory is insufficient, the order is routed to a backorder path instead of proceeding to payment.")
                 .bpmnConcepts(List.of("Service Task", "Exclusive Gateway", "Conditional Sequence Flow"))
@@ -224,7 +249,12 @@ public class MetadataController {
                 "PROCESS_APPLICATION",
                 "Process Application",
                 "A Spring Boot application with an embedded Operaton engine. Includes a skeleton BPMN process, a JavaDelegate implementation stub, and an end-to-end integration test that passes on first run.",
-                List.of("Spring Boot", "Embedded Engine", "Java Delegate", "JUnit 5"),
+                List.of(
+                        tag("Spring Boot", TagCategory.PLATFORM),
+                        tag("Embedded Engine", TagCategory.PLATFORM),
+                        tag("Java Delegate", TagCategory.BPMN_CONCEPT),
+                        tag("JUnit 5", TagCategory.TECHNOLOGY)
+                ),
                 "Ideal for Camunda 7 migrators and developers starting fresh",
                 processApplicationManifest()
         );
@@ -246,7 +276,12 @@ public class MetadataController {
                 "DMN_PROJECT",
                 "DMN Decision Project",
                 "A Spring Boot application focused on DMN decision table evaluation. Includes a skeleton decision table (hit policy FIRST), an integration test that evaluates it, and full build tooling — ready to run on first checkout.",
-                List.of("DMN", "Decision Table", "Spring Boot", "JUnit 5"),
+                List.of(
+                        tag("DMN", TagCategory.STANDARD),
+                        tag("Decision Table", TagCategory.STANDARD),
+                        tag("Spring Boot", TagCategory.PLATFORM),
+                        tag("JUnit 5", TagCategory.TECHNOLOGY)
+                ),
                 "Ideal for teams building rules engines, approval logic, or pricing models",
                 dmnProjectManifest()
         );
@@ -267,7 +302,13 @@ public class MetadataController {
                 "PROCESS_ARCHIVE",
                 "Process Archive",
                 "A deployable WAR or JAR archive for a shared Operaton engine (Tomcat or Standalone). No embedded engine — process definitions are deployed to an existing engine via processes.xml.",
-                List.of("Shared Engine", "WAR/JAR Deploy", "processes.xml", "Tomcat", "Standalone"),
+                List.of(
+                        tag("Shared Engine", TagCategory.PLATFORM),
+                        tag("WAR/JAR Deploy", TagCategory.PLATFORM),
+                        tag("processes.xml", TagCategory.PLATFORM),
+                        tag("Tomcat", TagCategory.PLATFORM),
+                        tag("Standalone", TagCategory.PLATFORM)
+                ),
                 "Ideal for teams running a shared Operaton engine",
                 processArchiveManifest()
         );
@@ -347,6 +388,10 @@ public class MetadataController {
         var globalOptions = new GlobalOptions();
         globalOptions.setJavaVersions(javaVersions);
         return globalOptions;
+    }
+
+    private static Tag tag(String label, TagCategory category) {
+        return new Tag().label(label).category(category);
     }
 
     private TemplateManifestEntry entry(String path, String condition, String templateId) {

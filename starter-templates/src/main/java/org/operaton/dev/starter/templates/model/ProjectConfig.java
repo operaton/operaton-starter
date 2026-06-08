@@ -15,6 +15,7 @@ public record ProjectConfig(
         String groupId,
         String artifactId,
         String projectName,
+        String version,
         ProjectType projectType,
         BuildSystem buildSystem,
         int javaVersion,
@@ -27,6 +28,8 @@ public record ProjectConfig(
         int serverPort,
         String useCaseId
 ) {
+
+    public static final String DEFAULT_PROJECT_VERSION = "1.0.0-SNAPSHOT";
 
     /** Default Java version used when not specified by the user. */
     public static final int DEFAULT_JAVA_VERSION = 17;
@@ -73,6 +76,7 @@ public record ProjectConfig(
                 groupId,
                 artifactId,
                 projectName,
+                version,
                 projectType,
                 buildSystem,
                 javaVersion,
@@ -96,6 +100,7 @@ public record ProjectConfig(
                 groupId,
                 artifactId,
                 projectName,
+                version,
                 projectType,
                 buildSystem,
                 javaVersion,
@@ -119,6 +124,7 @@ public record ProjectConfig(
         private String groupId;
         private String artifactId;
         private String projectName;
+        private String version = DEFAULT_PROJECT_VERSION;
         private ProjectType projectType = ProjectType.PROCESS_APPLICATION;
         private BuildSystem buildSystem = BuildSystem.MAVEN;
         private int javaVersion = DEFAULT_JAVA_VERSION;
@@ -136,6 +142,7 @@ public record ProjectConfig(
         public Builder groupId(String groupId) { this.groupId = groupId; return this; }
         public Builder artifactId(String artifactId) { this.artifactId = artifactId; return this; }
         public Builder projectName(String projectName) { this.projectName = projectName; return this; }
+        public Builder version(String version) { this.version = version; return this; }
         public Builder projectType(ProjectType projectType) { this.projectType = projectType; return this; }
         public Builder buildSystem(BuildSystem buildSystem) { this.buildSystem = buildSystem; return this; }
         public Builder javaVersion(int javaVersion) { this.javaVersion = javaVersion; return this; }
@@ -183,6 +190,7 @@ public record ProjectConfig(
             }
             return new ProjectConfig(
                     groupId, artifactId, projectName,
+                    version == null || version.isBlank() ? DEFAULT_PROJECT_VERSION : version,
                     projectType, buildSystem, javaVersion,
                     deploymentTarget, dependencyUpdater,
                     dockerCompose, githubActions,

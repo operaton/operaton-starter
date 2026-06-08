@@ -10,7 +10,7 @@
 
   <groupId>${config.groupId()}</groupId>
   <artifactId>${config.artifactId()}</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
+  <version>${config.version()}</version>
   <packaging>${packaging}</packaging>
   <name>${config.projectName()}</name>
 

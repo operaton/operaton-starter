@@ -16,7 +16,7 @@
 
   <groupId>${config.groupId()}</groupId>
   <artifactId>${config.artifactId()}</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
+  <version>${config.version()}</version>
   <name>${config.projectName()}</name>
 
   <properties>

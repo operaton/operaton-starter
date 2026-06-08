@@ -211,6 +211,12 @@ components:
           type: string
           description: Human-readable project name
           example: My Process
+        version:
+          type: string
+          description: Project version used in pom.xml or build.gradle
+          pattern: "^\\S+$"
+          example: 1.0.0-SNAPSHOT
+          default: 1.0.0-SNAPSHOT
         javaVersion:
           type: integer
           description: Java version to target (17, 21, or 25)
@@ -296,9 +302,8 @@ components:
         tags:
           type: array
           items:
-            type: string
+            $ref: '#/components/schemas/Tag'
           description: Capability badges displayed on gallery cards
-          example: ["Spring Boot", "Embedded Engine", "Java Delegate"]
         personaHint:
           type: string
           description: Contextual positioning for the project type
@@ -350,6 +355,28 @@ components:
               type: integer
               description: Default Java version
               example: 17
+
+    TagCategory:
+      type: string
+      enum:
+        - BPMN_CONCEPT
+        - TECHNOLOGY
+        - PLATFORM
+        - STANDARD
+      description: Category used to color-code tag chips in the UI
+
+    Tag:
+      type: object
+      required:
+        - label
+        - category
+      properties:
+        label:
+          type: string
+          description: Human-readable tag text
+          example: Spring Boot
+        category:
+          $ref: '#/components/schemas/TagCategory'
 
     TemplateManifestEntry:
       type: object
@@ -409,9 +436,8 @@ components:
         tags:
           type: array
           items:
-            type: string
+            $ref: '#/components/schemas/Tag'
           description: Capability tags displayed on the gallery card
-          example: ["multi-role", "human-tasks"]
         projectType:
           type: string
           description: Base project type for generation

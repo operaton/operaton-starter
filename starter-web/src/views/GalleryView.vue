@@ -61,16 +61,16 @@ function handleUseCaseSelect(entry: UseCaseExample) {
         <button
           type="button"
           class="border border-primary text-primary px-6 py-3 rounded-s font-semibold text-base hover:bg-primary/5 transition-colors"
-          @click="scrollToUseCases"
-        >
-          Browse Use Cases ↓
-        </button>
-        <button
-          type="button"
-          class="border border-neutral-300 text-neutral-600 px-6 py-3 rounded-s font-semibold text-base hover:bg-neutral-100 transition-colors"
           @click="scrollToGallery"
         >
           Project Types ↓
+        </button>
+        <button
+          type="button"
+          class="border border-primary text-primary px-6 py-3 rounded-s font-semibold text-base hover:bg-primary/5 transition-colors"
+          @click="scrollToUseCases"
+        >
+          Browse Use Cases ↓
         </button>
       </div>
     </section>

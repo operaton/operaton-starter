@@ -10,7 +10,7 @@ plugins {
 }
 
 group = '${config.groupId()}'
-version = '0.0.1-SNAPSHOT'
+version = "${config.version()}"
 
 java {
     toolchain {

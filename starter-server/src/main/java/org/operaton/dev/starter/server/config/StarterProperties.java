@@ -23,7 +23,7 @@ public record StarterProperties(
 ) {
 
     public record Defaults(
-            @DefaultValue("com.example") String groupId,
+            @DefaultValue("org.operaton.example") String groupId,
             @DefaultValue("") String mavenRegistry,
             @DefaultValue("") String operatonVersion
     ) {}

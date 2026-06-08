@@ -5,9 +5,10 @@ import type { ProjectConfig } from '@/generated/types'
 const DEFAULTS: ProjectConfig = {
   projectType: 'PROCESS_APPLICATION',
   buildSystem: 'MAVEN',
-  groupId: 'com.example',
+  groupId: 'org.operaton.example',
   artifactId: 'my-process-app',
   projectName: 'My Process App',
+  version: '1.0.0-SNAPSHOT',
   javaVersion: 17,
   dependencyUpdater: undefined,
   dockerCompose: false,
@@ -28,6 +29,7 @@ interface FormErrors {
   groupId?: string
   artifactId?: string
   projectName?: string
+  version?: string
   projectType?: string
   buildSystem?: string
   javaVersion?: string
@@ -185,6 +187,7 @@ export function useProjectForm() {
     if (!ARTIFACT_ID_RE.test(form.artifactId))
       e.artifactId = 'Use letters, numbers, and hyphens only'
     if (!form.projectName?.trim()) e.projectName = 'Project name is required'
+    if (!form.version?.trim() || /\s/.test(form.version)) e.version = 'Version is required and must not contain whitespace'
     if (!isOneOf(form.projectType, PROJECT_TYPES)) {
       e.projectType = 'Select a supported project type'
     }

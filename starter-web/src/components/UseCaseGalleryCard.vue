@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import type { UseCaseExample } from '@/generated/types'
+import { tagChipClasses } from '@/utils/tagColors'
 
 const props = defineProps<{ entry: UseCaseExample }>()
 const emit = defineEmits<{ select: [entry: UseCaseExample] }>()
@@ -30,15 +31,10 @@ function handleSelect() {
     <div class="flex flex-wrap gap-2 mb-4">
       <span
         v-for="tag in entry.tags"
-        :key="tag"
-        :class="[
-          'inline-flex text-xs font-medium px-2 py-1 rounded-full',
-          tag === 'docker-compose'
-            ? 'bg-amber-100 text-amber-700 border border-amber-300'
-            : 'bg-secondary/20 text-primary',
-        ]"
+        :key="tag.label"
+        :class="['inline-flex text-xs font-medium px-2 py-1 rounded-full', tagChipClasses(tag.category)]"
       >
-        {{ tag }}
+        {{ tag.label }}
       </span>
     </div>
 

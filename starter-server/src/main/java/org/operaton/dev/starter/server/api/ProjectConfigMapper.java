@@ -21,6 +21,7 @@ public class ProjectConfigMapper {
                 .groupId(dto.getGroupId())
                 .artifactId(dto.getArtifactId())
                 .projectName(dto.getProjectName())
+                .version(dto.getVersion())
                 .projectType(mapProjectType(dto.getProjectType()))
                 .buildSystem(mapBuildSystem(dto.getBuildSystem()))
                 .javaVersion(dto.getJavaVersion() != null ? dto.getJavaVersion().getValue()

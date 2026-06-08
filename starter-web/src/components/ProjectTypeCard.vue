@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import type { ProjectTypeInfo } from '@/generated/types'
+import { tagChipClasses } from '@/utils/tagColors'
 
 const props = defineProps<{ projectType: ProjectTypeInfo }>()
 const router = useRouter()
@@ -24,9 +25,9 @@ function handleSelect() {
     <p class="text-sm text-neutral-500 leading-relaxed mb-3 flex-1">{{ projectType.description }}</p>
 
     <div class="flex flex-wrap gap-2 mb-3">
-      <span v-for="tag in projectType.tags" :key="tag"
-            class="inline-flex bg-secondary/20 text-primary text-xs font-medium px-2 py-1 rounded-full">
-        {{ tag }}
+      <span v-for="tag in projectType.tags" :key="tag.label"
+            :class="['inline-flex text-xs font-medium px-2 py-1 rounded-full', tagChipClasses(tag.category)]">
+        {{ tag.label }}
       </span>
     </div>
 
