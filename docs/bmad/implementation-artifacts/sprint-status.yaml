@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-03-28
-last_updated: 2026-06-05  # updated by code-review workflow
+last_updated: 2026-06-08  # updated by code-review workflow
 project: operaton-starter
 project_key: NOKEY
 tracking_system: file-system
@@ -68,6 +68,7 @@ development_status:
   2-7-ci-test-matrix-validate-all-6-combinations: done
   2-8-smart-ci-matrix-affected-combinations-only-validation: done
   2-9-build-tool-wrappers: done
+  2-10-operaton-banner-in-process-application: done
 
   epic-2-retrospective: optional
 
@@ -201,3 +202,13 @@ development_status:
   13-3-rest-api-documentation-order-fulfillment: done
 
   epic-13-retrospective: optional
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Epic 14: Use Case Visual Clarity — Swimlanes and Email Notification
+  # ─────────────────────────────────────────────────────────────────────────
+  epic-14: in-progress
+
+  14-1-bpmn-swimlane-restructuring: done
+  14-2-uc-01-email-rejection-mailpit: done
+
+  epic-14-retrospective: optional

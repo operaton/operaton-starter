@@ -15,3 +15,10 @@ services:
       timeout: 3s
       retries: 10
       start_period: 5s
+
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    restart: unless-stopped

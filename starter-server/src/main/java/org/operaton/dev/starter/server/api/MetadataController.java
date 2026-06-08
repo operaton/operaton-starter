@@ -109,6 +109,8 @@ public class MetadataController {
         e.add(entry("src/main/java/{package}/VacationBalanceService.java", null, d + "VacationBalanceService.java.jte"));
         e.add(entry("src/main/java/{package}/delegate/LeaveRequestValidationDelegate.java", null, d + "delegate/LeaveRequestValidationDelegate.java.jte"));
         e.add(entry("src/main/java/{package}/delegate/FinalizeLeaveApprovalDelegate.java", null, d + "delegate/FinalizeLeaveApprovalDelegate.java.jte"));
+        e.add(entry("src/main/java/{package}/delegate/EscalationReminderDelegate.java", null, d + "delegate/EscalationReminderDelegate.java.jte"));
+        e.add(entry("src/main/java/{package}/delegate/LeaveRejectionEmailDelegate.java", null, d + "delegate/LeaveRejectionEmailDelegate.java.jte"));
         e.add(entry("src/main/resources/leave-request.bpmn", null, d + "leave-request.bpmn.jte"));
         e.add(entry("src/main/resources/application.properties", null, d + "application.properties.jte"));
         e.add(entry("src/main/resources/application-h2.properties", null, d + "application-h2.properties.jte"));

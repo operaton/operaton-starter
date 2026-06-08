@@ -13,8 +13,31 @@
 
   <error id="PaymentFailed" errorCode="PAYMENT_FAILED" name="Payment Failed"/>
 
+  <collaboration id="Collaboration_OrderFulfillment">
+    <participant id="Pool_OrderFulfillment" name="Order Fulfillment" processRef="order-fulfillment"/>
+  </collaboration>
+
   <process id="order-fulfillment" name="Order Fulfillment" isExecutable="true"
            operaton:candidateStarterGroups="sales,operaton-admin">
+
+    <laneSet id="LaneSet_1">
+      <lane id="Lane_Sales" name="sales">
+        <flowNodeRef>StartEvent_1</flowNodeRef>
+      </lane>
+      <lane id="Lane_Warehouse" name="warehouse">
+        <flowNodeRef>Task_PackShip</flowNodeRef>
+      </lane>
+      <lane id="Lane_System" name="System">
+        <flowNodeRef>Task_ValidateInventory</flowNodeRef>
+        <flowNodeRef>Gateway_InStock</flowNodeRef>
+        <flowNodeRef>Task_ChargePayment</flowNodeRef>
+        <flowNodeRef>Task_NotifyCustomer</flowNodeRef>
+        <flowNodeRef>Task_NotifyBackorder</flowNodeRef>
+        <flowNodeRef>EndEvent_Shipped</flowNodeRef>
+        <flowNodeRef>EndEvent_Backordered</flowNodeRef>
+        <flowNodeRef>EndEvent_Failed</flowNodeRef>
+      </lane>
+    </laneSet>
 
     <startEvent id="StartEvent_1" name="Order Placed">
       <outgoing>Flow_start_to_inventory</outgoing>
@@ -98,86 +121,117 @@
   </process>
 
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
-    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="order-fulfillment">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Collaboration_OrderFulfillment">
 
-      <bpmndi:BPMNShape id="StartEvent_1_di" bpmnElement="StartEvent_1">
-        <dc:Bounds x="152" y="172" width="36" height="36"/>
-        <bpmndi:BPMNLabel><dc:Bounds x="138" y="215" width="65" height="14"/></bpmndi:BPMNLabel>
+      <!-- Pool -->
+      <bpmndi:BPMNShape id="Pool_OrderFulfillment_di" bpmnElement="Pool_OrderFulfillment" isHorizontal="true">
+        <dc:Bounds x="160" y="40" width="1220" height="440"/>
       </bpmndi:BPMNShape>
 
+      <!-- Lane: sales (y=40, h=80) -->
+      <bpmndi:BPMNShape id="Lane_Sales_di" bpmnElement="Lane_Sales" isHorizontal="true">
+        <dc:Bounds x="190" y="40" width="1190" height="80"/>
+      </bpmndi:BPMNShape>
+
+      <!-- Lane: warehouse (y=120, h=120) -->
+      <bpmndi:BPMNShape id="Lane_Warehouse_di" bpmnElement="Lane_Warehouse" isHorizontal="true">
+        <dc:Bounds x="190" y="120" width="1190" height="120"/>
+      </bpmndi:BPMNShape>
+
+      <!-- Lane: System (y=240, h=240) -->
+      <bpmndi:BPMNShape id="Lane_System_di" bpmnElement="Lane_System" isHorizontal="true">
+        <dc:Bounds x="190" y="240" width="1190" height="240"/>
+      </bpmndi:BPMNShape>
+
+      <!-- StartEvent (sales, center y=80) -->
+      <bpmndi:BPMNShape id="StartEvent_1_di" bpmnElement="StartEvent_1">
+        <dc:Bounds x="252" y="62" width="36" height="36"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="238" y="105" width="65" height="14"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+
+      <!-- Task_PackShip (warehouse, center y=180) -->
+      <bpmndi:BPMNShape id="Task_PackShip_di" bpmnElement="Task_PackShip">
+        <dc:Bounds x="820" y="140" width="140" height="80"/>
+      </bpmndi:BPMNShape>
+
+      <!-- System lane elements (center y=360) -->
       <bpmndi:BPMNShape id="Task_ValidateInventory_di" bpmnElement="Task_ValidateInventory">
-        <dc:Bounds x="240" y="150" width="120" height="80"/>
+        <dc:Bounds x="310" y="320" width="140" height="80"/>
       </bpmndi:BPMNShape>
 
       <bpmndi:BPMNShape id="Gateway_InStock_di" bpmnElement="Gateway_InStock" isMarkerVisible="true">
-        <dc:Bounds x="415" y="165" width="50" height="50"/>
-        <bpmndi:BPMNLabel><dc:Bounds x="410" y="222" width="60" height="14"/></bpmndi:BPMNLabel>
+        <dc:Bounds x="505" y="335" width="50" height="50"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="500" y="392" width="60" height="14"/></bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
 
       <bpmndi:BPMNShape id="Task_ChargePayment_di" bpmnElement="Task_ChargePayment">
-        <dc:Bounds x="520" y="80" width="120" height="80"/>
+        <dc:Bounds x="620" y="320" width="140" height="80"/>
       </bpmndi:BPMNShape>
 
-      <bpmndi:BPMNShape id="Task_PackShip_di" bpmnElement="Task_PackShip">
-        <dc:Bounds x="700" y="80" width="120" height="80"/>
+      <bpmndi:BPMNShape id="ErrorBoundary_Payment_di" bpmnElement="ErrorBoundary_Payment">
+        <dc:Bounds x="682" y="382" width="36" height="36"/>
       </bpmndi:BPMNShape>
 
       <bpmndi:BPMNShape id="Task_NotifyCustomer_di" bpmnElement="Task_NotifyCustomer">
-        <dc:Bounds x="880" y="80" width="120" height="80"/>
+        <dc:Bounds x="1000" y="320" width="140" height="80"/>
       </bpmndi:BPMNShape>
 
       <bpmndi:BPMNShape id="Task_NotifyBackorder_di" bpmnElement="Task_NotifyBackorder">
-        <dc:Bounds x="520" y="250" width="120" height="80"/>
+        <dc:Bounds x="620" y="410" width="140" height="80"/>
       </bpmndi:BPMNShape>
 
       <bpmndi:BPMNShape id="EndEvent_Shipped_di" bpmnElement="EndEvent_Shipped">
-        <dc:Bounds x="1062" y="102" width="36" height="36"/>
-        <bpmndi:BPMNLabel><dc:Bounds x="1042" y="145" width="77" height="14"/></bpmndi:BPMNLabel>
+        <dc:Bounds x="1202" y="342" width="36" height="36"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="1182" y="385" width="77" height="14"/></bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
 
       <bpmndi:BPMNShape id="EndEvent_Backordered_di" bpmnElement="EndEvent_Backordered">
-        <dc:Bounds x="702" y="272" width="36" height="36"/>
-        <bpmndi:BPMNLabel><dc:Bounds x="678" y="315" width="84" height="14"/></bpmndi:BPMNLabel>
-      </bpmndi:BPMNShape>
-
-      <bpmndi:BPMNEdge id="Flow_start_to_inventory_di" bpmnElement="Flow_start_to_inventory">
-        <di:waypoint x="188" y="190"/><di:waypoint x="240" y="190"/>
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_inventory_to_gw_di" bpmnElement="Flow_inventory_to_gw">
-        <di:waypoint x="360" y="190"/><di:waypoint x="415" y="190"/>
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_in_stock_di" bpmnElement="Flow_in_stock">
-        <di:waypoint x="440" y="165"/><di:waypoint x="440" y="120"/><di:waypoint x="520" y="120"/>
-        <bpmndi:BPMNLabel><dc:Bounds x="448" y="140" width="42" height="14"/></bpmndi:BPMNLabel>
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_out_of_stock_di" bpmnElement="Flow_out_of_stock">
-        <di:waypoint x="440" y="215"/><di:waypoint x="440" y="290"/><di:waypoint x="520" y="290"/>
-        <bpmndi:BPMNLabel><dc:Bounds x="445" y="249" width="65" height="14"/></bpmndi:BPMNLabel>
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_payment_to_pack_di" bpmnElement="Flow_payment_to_pack">
-        <di:waypoint x="640" y="120"/><di:waypoint x="700" y="120"/>
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_pack_to_notify_di" bpmnElement="Flow_pack_to_notify">
-        <di:waypoint x="820" y="120"/><di:waypoint x="880" y="120"/>
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_notify_to_shipped_di" bpmnElement="Flow_notify_to_shipped">
-        <di:waypoint x="1000" y="120"/><di:waypoint x="1062" y="120"/>
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_backorder_to_end_di" bpmnElement="Flow_backorder_to_end">
-        <di:waypoint x="640" y="290"/><di:waypoint x="702" y="290"/>
-      </bpmndi:BPMNEdge>
-
-      <bpmndi:BPMNShape id="ErrorBoundary_Payment_di" bpmnElement="ErrorBoundary_Payment">
-        <dc:Bounds x="562" y="142" width="36" height="36"/>
+        <dc:Bounds x="822" y="432" width="36" height="36"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="798" y="475" width="84" height="14"/></bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
 
       <bpmndi:BPMNShape id="EndEvent_Failed_di" bpmnElement="EndEvent_Failed">
-        <dc:Bounds x="562" y="222" width="36" height="36"/>
-        <bpmndi:BPMNLabel><dc:Bounds x="536" y="265" width="89" height="27"/></bpmndi:BPMNLabel>
+        <dc:Bounds x="822" y="382" width="36" height="36"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="796" y="425" width="89" height="27"/></bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
 
+      <!-- Edges -->
+      <bpmndi:BPMNEdge id="Flow_start_to_inventory_di" bpmnElement="Flow_start_to_inventory">
+        <di:waypoint x="270" y="98"/><di:waypoint x="270" y="360"/><di:waypoint x="310" y="360"/>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_inventory_to_gw_di" bpmnElement="Flow_inventory_to_gw">
+        <di:waypoint x="450" y="360"/><di:waypoint x="505" y="360"/>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_in_stock_di" bpmnElement="Flow_in_stock">
+        <di:waypoint x="555" y="360"/><di:waypoint x="620" y="360"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="563" y="340" width="42" height="14"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_out_of_stock_di" bpmnElement="Flow_out_of_stock">
+        <di:waypoint x="530" y="385"/><di:waypoint x="530" y="450"/><di:waypoint x="620" y="450"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="535" y="415" width="65" height="14"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_payment_to_pack_di" bpmnElement="Flow_payment_to_pack">
+        <di:waypoint x="760" y="360"/><di:waypoint x="890" y="360"/><di:waypoint x="890" y="220"/>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_pack_to_notify_di" bpmnElement="Flow_pack_to_notify">
+        <di:waypoint x="960" y="180"/><di:waypoint x="1070" y="180"/><di:waypoint x="1070" y="320"/>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_notify_to_shipped_di" bpmnElement="Flow_notify_to_shipped">
+        <di:waypoint x="1140" y="360"/><di:waypoint x="1202" y="360"/>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_backorder_to_end_di" bpmnElement="Flow_backorder_to_end">
+        <di:waypoint x="760" y="450"/><di:waypoint x="822" y="450"/>
+      </bpmndi:BPMNEdge>
+
       <bpmndi:BPMNEdge id="Flow_error_to_failed_di" bpmnElement="Flow_error_to_failed">
-        <di:waypoint x="580" y="178"/><di:waypoint x="580" y="222"/>
+        <di:waypoint x="700" y="418"/><di:waypoint x="700" y="400"/><di:waypoint x="822" y="400"/>
       </bpmndi:BPMNEdge>
 
     </bpmndi:BPMNPlane>

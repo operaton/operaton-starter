@@ -13,8 +13,32 @@
 
   <signal id="EscalationSignal" name="EscalationSignal"/>
 
+  <collaboration id="Collaboration_IncidentManagement">
+    <participant id="Pool_IncidentManagement" name="Incident Management" processRef="incident-management"/>
+  </collaboration>
+
   <process id="incident-management" name="Incident Management" isExecutable="true"
            operaton:candidateStarterGroups="employees,operaton-admin">
+
+    <laneSet id="LaneSet_1">
+      <lane id="Lane_Employees" name="employees">
+        <flowNodeRef>StartEvent_1</flowNodeRef>
+      </lane>
+      <lane id="Lane_FirstLine" name="first-line">
+        <flowNodeRef>Task_FirstLineTriage</flowNodeRef>
+      </lane>
+      <lane id="Lane_SecondLine" name="second-line">
+        <flowNodeRef>Task_SecondLine</flowNodeRef>
+      </lane>
+      <lane id="Lane_System" name="System">
+        <flowNodeRef>Task_SetHighPriority</flowNodeRef>
+        <flowNodeRef>Gateway_Resolved</flowNodeRef>
+        <flowNodeRef>Task_CloseTicket</flowNodeRef>
+        <flowNodeRef>Task_PostMortem</flowNodeRef>
+        <flowNodeRef>EndEvent_Closed</flowNodeRef>
+        <flowNodeRef>EndEvent_PostMortem</flowNodeRef>
+      </lane>
+    </laneSet>
 
     <startEvent id="StartEvent_1" name="Incident Reported">
       <extensionElements>
@@ -23,7 +47,7 @@
       <outgoing>Flow_start_to_triage</outgoing>
     </startEvent>
 
-    <userTask id="Task_FirstLineTriage" name="First-Line Triage"
+    <userTask id="Task_FirstLineTriage" name="Triage"
               operaton:candidateGroups="first-line">
       <incoming>Flow_start_to_triage</incoming>
       <outgoing>Flow_triage_to_gw</outgoing>
@@ -46,6 +70,21 @@
       </timerEventDefinition>
     </boundaryEvent>
 
+    <serviceTask id="Task_SetHighPriority" name="Set High Priority"
+                 operaton:expression="${'$'}{execution.setVariable('incidentPriority', 'HIGH')}"
+                 operaton:resultVariable="_ignored">
+      <incoming>Flow_signal_to_priority</incoming>
+      <outgoing>Flow_priority_to_secondline</outgoing>
+    </serviceTask>
+
+    <userTask id="Task_SecondLine" name="Handle Escalation"
+              operaton:candidateGroups="second-line">
+      <incoming>Flow_timer_to_secondline</incoming>
+      <incoming>Flow_not_resolved</incoming>
+      <incoming>Flow_priority_to_secondline</incoming>
+      <outgoing>Flow_secondline_postmortem</outgoing>
+    </userTask>
+
     <exclusiveGateway id="Gateway_Resolved" name="Resolved?">
       <incoming>Flow_triage_to_gw</incoming>
       <outgoing>Flow_resolved</outgoing>
@@ -57,21 +96,6 @@
       <incoming>Flow_resolved</incoming>
       <outgoing>Flow_close_end</outgoing>
     </serviceTask>
-
-    <serviceTask id="Task_SetHighPriority" name="Set High Priority"
-                 operaton:expression="${'$'}{execution.setVariable('incidentPriority', 'HIGH')}"
-                 operaton:resultVariable="_ignored">
-      <incoming>Flow_signal_to_priority</incoming>
-      <outgoing>Flow_priority_to_secondline</outgoing>
-    </serviceTask>
-
-    <userTask id="Task_SecondLine" name="Second-Line Engineer"
-              operaton:candidateGroups="second-line">
-      <incoming>Flow_timer_to_secondline</incoming>
-      <incoming>Flow_not_resolved</incoming>
-      <incoming>Flow_priority_to_secondline</incoming>
-      <outgoing>Flow_secondline_postmortem</outgoing>
-    </userTask>
 
     <serviceTask id="Task_PostMortem" name="Post-Mortem Notify"
                  operaton:class="${config.javaPackage()}.delegate.PostMortemDelegate">
@@ -105,89 +129,130 @@
   </process>
 
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
-    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="incident-management">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Collaboration_IncidentManagement">
 
+      <!-- Pool -->
+      <bpmndi:BPMNShape id="Pool_IncidentManagement_di" bpmnElement="Pool_IncidentManagement" isHorizontal="true">
+        <dc:Bounds x="160" y="40" width="1060" height="540"/>
+      </bpmndi:BPMNShape>
+
+      <!-- Lane: employees (y=40, h=80) -->
+      <bpmndi:BPMNShape id="Lane_Employees_di" bpmnElement="Lane_Employees" isHorizontal="true">
+        <dc:Bounds x="190" y="40" width="1030" height="80"/>
+      </bpmndi:BPMNShape>
+
+      <!-- Lane: first-line (y=120, h=140) -->
+      <bpmndi:BPMNShape id="Lane_FirstLine_di" bpmnElement="Lane_FirstLine" isHorizontal="true">
+        <dc:Bounds x="190" y="120" width="1030" height="140"/>
+      </bpmndi:BPMNShape>
+
+      <!-- Lane: second-line (y=260, h=120) -->
+      <bpmndi:BPMNShape id="Lane_SecondLine_di" bpmnElement="Lane_SecondLine" isHorizontal="true">
+        <dc:Bounds x="190" y="260" width="1030" height="120"/>
+      </bpmndi:BPMNShape>
+
+      <!-- Lane: System (y=380, h=200) -->
+      <bpmndi:BPMNShape id="Lane_System_di" bpmnElement="Lane_System" isHorizontal="true">
+        <dc:Bounds x="190" y="380" width="1030" height="200"/>
+      </bpmndi:BPMNShape>
+
+      <!-- StartEvent (employees, center y=80) -->
       <bpmndi:BPMNShape id="StartEvent_1_di" bpmnElement="StartEvent_1">
-        <dc:Bounds x="152" y="172" width="36" height="36"/>
-        <bpmndi:BPMNLabel><dc:Bounds x="131" y="215" width="79" height="14"/></bpmndi:BPMNLabel>
+        <dc:Bounds x="252" y="62" width="36" height="36"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="231" y="105" width="79" height="14"/></bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
 
+      <!-- Task_FirstLineTriage (first-line lane, center y=190) -->
       <bpmndi:BPMNShape id="Task_FirstLineTriage_di" bpmnElement="Task_FirstLineTriage">
-        <dc:Bounds x="240" y="150" width="120" height="80"/>
+        <dc:Bounds x="310" y="150" width="140" height="80"/>
       </bpmndi:BPMNShape>
 
+      <!-- Signal boundary (top of Triage task) -->
       <bpmndi:BPMNShape id="Signal_Escalation_di" bpmnElement="Signal_Escalation">
-        <dc:Bounds x="322" y="132" width="36" height="36"/>
-        <bpmndi:BPMNLabel><dc:Bounds x="300" y="105" width="80" height="14"/></bpmndi:BPMNLabel>
+        <dc:Bounds x="362" y="132" width="36" height="36"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="340" y="105" width="80" height="14"/></bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
 
-      <bpmndi:BPMNShape id="Task_SetHighPriority_di" bpmnElement="Task_SetHighPriority">
-        <dc:Bounds x="240" y="60" width="120" height="80"/>
-      </bpmndi:BPMNShape>
-
+      <!-- Timer boundary (bottom of Triage task) -->
       <bpmndi:BPMNShape id="BoundaryTimer_Escalate_di" bpmnElement="BoundaryTimer_Escalate">
-        <dc:Bounds x="282" y="212" width="36" height="36"/>
-        <bpmndi:BPMNLabel><dc:Bounds x="263" y="255" width="74" height="14"/></bpmndi:BPMNLabel>
+        <dc:Bounds x="362" y="212" width="36" height="36"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="343" y="255" width="74" height="14"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+
+      <!-- Task_SecondLine (second-line, center y=320) -->
+      <bpmndi:BPMNShape id="Task_SecondLine_di" bpmnElement="Task_SecondLine">
+        <dc:Bounds x="700" y="280" width="140" height="80"/>
+      </bpmndi:BPMNShape>
+
+      <!-- System lane elements (center y=480) -->
+      <bpmndi:BPMNShape id="Task_SetHighPriority_di" bpmnElement="Task_SetHighPriority">
+        <dc:Bounds x="310" y="440" width="140" height="80"/>
       </bpmndi:BPMNShape>
 
       <bpmndi:BPMNShape id="Gateway_Resolved_di" bpmnElement="Gateway_Resolved" isMarkerVisible="true">
-        <dc:Bounds x="415" y="165" width="50" height="50"/>
-        <bpmndi:BPMNLabel><dc:Bounds x="408" y="222" width="65" height="14"/></bpmndi:BPMNLabel>
+        <dc:Bounds x="515" y="455" width="50" height="50"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="508" y="512" width="65" height="14"/></bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
 
       <bpmndi:BPMNShape id="Task_CloseTicket_di" bpmnElement="Task_CloseTicket">
-        <dc:Bounds x="520" y="80" width="120" height="80"/>
-      </bpmndi:BPMNShape>
-
-      <bpmndi:BPMNShape id="Task_SecondLine_di" bpmnElement="Task_SecondLine">
-        <dc:Bounds x="520" y="190" width="120" height="80"/>
+        <dc:Bounds x="700" y="400" width="140" height="80"/>
       </bpmndi:BPMNShape>
 
       <bpmndi:BPMNShape id="Task_PostMortem_di" bpmnElement="Task_PostMortem">
-        <dc:Bounds x="700" y="190" width="120" height="80"/>
+        <dc:Bounds x="880" y="440" width="140" height="80"/>
       </bpmndi:BPMNShape>
 
       <bpmndi:BPMNShape id="EndEvent_Closed_di" bpmnElement="EndEvent_Closed">
-        <dc:Bounds x="702" y="102" width="36" height="36"/>
-        <bpmndi:BPMNLabel><dc:Bounds x="683" y="145" width="74" height="14"/></bpmndi:BPMNLabel>
+        <dc:Bounds x="902" y="422" width="36" height="36"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="883" y="395" width="74" height="14"/></bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
 
       <bpmndi:BPMNShape id="EndEvent_PostMortem_di" bpmnElement="EndEvent_PostMortem">
-        <dc:Bounds x="882" y="212" width="36" height="36"/>
-        <bpmndi:BPMNLabel><dc:Bounds x="858" y="255" width="84" height="14"/></bpmndi:BPMNLabel>
+        <dc:Bounds x="1082" y="462" width="36" height="36"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="1058" y="505" width="84" height="14"/></bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
 
-      <bpmndi:BPMNEdge id="Flow_signal_to_priority_di" bpmnElement="Flow_signal_to_priority">
-        <di:waypoint x="340" y="132"/><di:waypoint x="340" y="100"/><di:waypoint x="300" y="100"/>
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_priority_to_secondline_di" bpmnElement="Flow_priority_to_secondline">
-        <di:waypoint x="360" y="100"/><di:waypoint x="580" y="100"/><di:waypoint x="580" y="190"/>
-      </bpmndi:BPMNEdge>
+      <!-- Edges -->
       <bpmndi:BPMNEdge id="Flow_start_to_triage_di" bpmnElement="Flow_start_to_triage">
-        <di:waypoint x="188" y="190"/><di:waypoint x="240" y="190"/>
+        <di:waypoint x="270" y="98"/><di:waypoint x="270" y="190"/><di:waypoint x="310" y="190"/>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_triage_to_gw_di" bpmnElement="Flow_triage_to_gw">
-        <di:waypoint x="360" y="190"/><di:waypoint x="415" y="190"/>
+
+      <bpmndi:BPMNEdge id="Flow_signal_to_priority_di" bpmnElement="Flow_signal_to_priority">
+        <di:waypoint x="380" y="132"/><di:waypoint x="380" y="480"/><di:waypoint x="310" y="480"/>
       </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_priority_to_secondline_di" bpmnElement="Flow_priority_to_secondline">
+        <di:waypoint x="450" y="480"/><di:waypoint x="700" y="480"/><di:waypoint x="700" y="360"/><di:waypoint x="700" y="320"/>
+      </bpmndi:BPMNEdge>
+
       <bpmndi:BPMNEdge id="Flow_timer_to_secondline_di" bpmnElement="Flow_timer_to_secondline">
-        <di:waypoint x="300" y="248"/><di:waypoint x="300" y="300"/><di:waypoint x="580" y="300"/><di:waypoint x="580" y="270"/>
+        <di:waypoint x="380" y="248"/><di:waypoint x="380" y="320"/><di:waypoint x="700" y="320"/>
       </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_triage_to_gw_di" bpmnElement="Flow_triage_to_gw">
+        <di:waypoint x="450" y="190"/><di:waypoint x="540" y="190"/><di:waypoint x="540" y="455"/>
+      </bpmndi:BPMNEdge>
+
       <bpmndi:BPMNEdge id="Flow_resolved_di" bpmnElement="Flow_resolved">
-        <di:waypoint x="440" y="165"/><di:waypoint x="440" y="120"/><di:waypoint x="520" y="120"/>
-        <bpmndi:BPMNLabel><dc:Bounds x="449" y="140" width="47" height="14"/></bpmndi:BPMNLabel>
+        <di:waypoint x="540" y="455"/><di:waypoint x="540" y="440"/><di:waypoint x="700" y="440"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="549" y="445" width="47" height="14"/></bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
+
       <bpmndi:BPMNEdge id="Flow_not_resolved_di" bpmnElement="Flow_not_resolved">
-        <di:waypoint x="465" y="190"/><di:waypoint x="520" y="230"/>
-        <bpmndi:BPMNLabel><dc:Bounds x="460" y="215" width="65" height="14"/></bpmndi:BPMNLabel>
+        <di:waypoint x="540" y="505"/><di:waypoint x="540" y="320"/><di:waypoint x="700" y="320"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="549" y="410" width="65" height="14"/></bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
+
       <bpmndi:BPMNEdge id="Flow_close_end_di" bpmnElement="Flow_close_end">
-        <di:waypoint x="640" y="120"/><di:waypoint x="702" y="120"/>
+        <di:waypoint x="840" y="440"/><di:waypoint x="902" y="440"/>
       </bpmndi:BPMNEdge>
+
       <bpmndi:BPMNEdge id="Flow_secondline_postmortem_di" bpmnElement="Flow_secondline_postmortem">
-        <di:waypoint x="640" y="230"/><di:waypoint x="700" y="230"/>
+        <di:waypoint x="840" y="320"/><di:waypoint x="950" y="320"/><di:waypoint x="950" y="440"/>
       </bpmndi:BPMNEdge>
+
       <bpmndi:BPMNEdge id="Flow_postmortem_end_di" bpmnElement="Flow_postmortem_end">
-        <di:waypoint x="820" y="230"/><di:waypoint x="882" y="230"/>
+        <di:waypoint x="1020" y="480"/><di:waypoint x="1082" y="480"/>
       </bpmndi:BPMNEdge>
 
     </bpmndi:BPMNPlane>

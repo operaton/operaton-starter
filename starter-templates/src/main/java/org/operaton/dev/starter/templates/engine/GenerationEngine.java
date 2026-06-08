@@ -124,6 +124,9 @@ public class GenerationEngine {
         addTemplateEntry(zos,
                 "src/main/java/" + pkgPath + "/delegate/EscalationReminderDelegate.java",
                 templateDir + "delegate/EscalationReminderDelegate.java.jte", config);
+        addTemplateEntry(zos,
+                "src/main/java/" + pkgPath + "/delegate/LeaveRejectionEmailDelegate.java",
+                templateDir + "delegate/LeaveRejectionEmailDelegate.java.jte", config);
 
         addTemplateEntry(zos,
                 "src/main/resources/application.properties",
@@ -152,6 +155,7 @@ public class GenerationEngine {
                 "src/main/resources/static/forms/hr-record-form.html",
                 "use-cases/uc-01-leave-request/forms/hr-record-form.html");
 
+        addClasspathResource(zos, "src/main/resources/banner.txt", "process-application/banner.txt");
         addTemplateEntry(zos, "docker-compose.yml", templateDir + "docker-compose.yml.jte", config);
         addTemplateEntry(zos, "README.md", templateDir + "README.md.jte", config);
     }
@@ -199,6 +203,7 @@ public class GenerationEngine {
                 "src/test/java/" + pkgPath + "/LoanApplicationIT.java",
                 templateDir + "LoanApplicationIT.java.jte", config);
 
+        addClasspathResource(zos, "src/main/resources/banner.txt", "process-application/banner.txt");
         addTemplateEntry(zos, "docker-compose.yml", templateDir + "docker-compose.yml.jte", config);
         addTemplateEntry(zos, "README.md", templateDir + "README.md.jte", config);
     }
@@ -246,6 +251,7 @@ public class GenerationEngine {
                 "src/test/java/" + pkgPath + "/IncidentManagementIT.java",
                 templateDir + "IncidentManagementIT.java.jte", config);
 
+        addClasspathResource(zos, "src/main/resources/banner.txt", "process-application/banner.txt");
         addTemplateEntry(zos, "docker-compose.yml", templateDir + "docker-compose.yml.jte", config);
         addTemplateEntry(zos, "README.md", templateDir + "README.md.jte", config);
     }
@@ -305,6 +311,7 @@ public class GenerationEngine {
                 "src/test/java/" + pkgPath + "/OrderFulfillmentIT.java",
                 templateDir + "OrderFulfillmentIT.java.jte", config);
 
+        addClasspathResource(zos, "src/main/resources/banner.txt", "process-application/banner.txt");
         addTemplateEntry(zos, "docker-compose.yml", templateDir + "docker-compose.yml.jte", config);
         addTemplateEntry(zos, "README.md", templateDir + "README.md.jte", config);
     }

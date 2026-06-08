@@ -17,3 +17,10 @@ spring.sql.init.mode=always
 # Operaton configuration
 operaton.bpm.auto-deployment-enabled=true
 operaton.bpm.application.context-path=/
+
+# Spring Mail — Mailpit SMTP (start with: docker compose up -d)
+spring.mail.host=localhost
+spring.mail.port=1025
+spring.mail.protocol=smtp
+spring.mail.test-connection=false
+spring.mail.properties.mail.smtp.from=noreply@example.com

@@ -3,6 +3,7 @@ title: "Use Case Enhancements: Authorization, Email Notifications, and Task Data
 status: final
 created: 2026-06-06
 updated: 2026-06-07
+revision: 2026-06-07 — swimlanes, email send event for UC-01 rejection, task name cleanup
 project: operaton-starter
 ---
 
@@ -18,7 +19,7 @@ The four operaton-starter use cases (Leave Request, Loan Application, Incident M
 
 1. **Authorization gap.** Start events carry no `candidateStarterGroups` restriction. A warehouse picker can start a loan application; an underwriter can start a leave request. This contradicts realistic role-based access control and teaches incorrect authorization patterns.
 
-2. **Silent rejection.** In UC-02 Loan Application, high-risk rejections are handled by `Auto-Reject Notify` — a plain service task. Rejection deserves an explicit send email event as a business-critical step, making the notification intent visible to process modelers.
+2. **Silent rejection.** In UC-02 Loan Application, high-risk rejections are handled by `Auto-Reject Notify` — a plain service task. In UC-01 Leave Request, rejections are handled by an "Employee Notified of Rejection" user task requiring the employee to manually acknowledge dismissal. Both deserve an explicit send email event as a business-critical step, making the notification intent visible to process modelers.
 
 3. **No email test infrastructure.** The Docker Compose stacks include no local mail service, requiring external SMTP configuration to explore email flows. This friction slows adoption of the example.
 
@@ -30,13 +31,15 @@ The four operaton-starter use cases (Leave Request, Loan Application, Incident M
 
 - Every use case process can only be started by users in the designated starter group(s)
 - UC-02 Loan Application rejection path uses a BPMN Send Email event, backed by a Spring Mail delegate
-- UC-02 Docker Compose stack includes a Mailpit service; SMTP is routed to Mailpit in `application.properties`
-- UC-02 README explains how to access Mailpit and view emails per user
-- UC-01 "Manager Reviews Request" and "HR Records Approved Leave" task forms display: requester, start date, end date, number of days, remaining vacation days
+- UC-01 and UC-02 Docker Compose stacks include a Mailpit service; SMTP is routed to Mailpit in `application.properties`
+- UC-01 and UC-02 READMEs explain how to access Mailpit and view emails per user
+- UC-01 "Review Request" and "Record Approved Leave" task forms display: requester, start date, end date, number of days, remaining vacation days
+- UC-01 rejection path uses a BPMN Send Email event replacing the "Employee Notified of Rejection" user task
+- All use case BPMN models use swimlane pools with one lane per actor group; task names omit actor names
 
 ## Non-Goals
 
-- Email notifications in UC-01, UC-03, or UC-04 (UC-02 only in this iteration)
+- Email notifications in UC-03 or UC-04 (UC-01 and UC-02 only in this iteration)
 - Custom task form UI (uses Operaton Tasklist embedded forms)
 - SMTP authentication or TLS for Mailpit (local dev only)
 - Role management UI
@@ -66,13 +69,14 @@ The four operaton-starter use cases (Leave Request, Loan Application, Incident M
 
 | Use Case | Task | Group |
 |----------|------|-------|
-| UC-01 | Manager Reviews Request | `managers` ✓ |
-| UC-01 | HR Records Approved Leave | `hr` ✓ |
-| UC-01 | Employee Notified of Rejection | `employees` ✓ |
+| UC-01 | Review Request | `managers` ✓ |
+| UC-01 | Record Approved Leave | `hr` ✓ |
 | UC-02 | Underwriter Review | `underwriters` ✓ |
-| UC-03 | First-Line Triage | `first-line` ✓ |
-| UC-03 | Second-Line Engineer | `second-line` ✓ |
+| UC-03 | Triage | `first-line` ✓ |
+| UC-03 | Handle Escalation | `second-line` ✓ |
 | UC-04 | Pack & Ship | `warehouse` ✓ |
+
+Note: UC-01 "Employee Notified of Rejection" has been removed as a user task; replaced by the "Send Rejection Email" send event (see FR-3b).
 
 Any tasks without groups found during the audit must be fixed before implementation is considered complete.
 
@@ -92,6 +96,21 @@ Any tasks without groups found during the audit must be fixed before implementat
 spring.mail.host=localhost
 spring.mail.port=1025
 ```
+
+### FR-3b UC-01 Email Rejection via Send Event
+
+**FR-3b.1** Remove the "Employee Notified of Rejection" user task from the UC-01 BPMN. Replace it with a BPMN **Send Task** named "Send Rejection Email" on the rejection path following the manager's decision gateway.
+
+**FR-3b.2** The task must use a Java delegate (`LeaveRejectionEmailDelegate`) that:
+- Reads the requester's email from the identity service using `requester` (set via `operaton:initiator`)
+- Sends a plain-text email with subject "Leave Request — Rejected" and body including requester name, requested dates, and a brief reason
+- Uses Spring `JavaMailSender` (auto-configured via `spring.mail.*` properties)
+
+**FR-3b.3** `application.properties` and `application-docker.properties` must include the same mail host/port settings as FR-3.4.
+
+**FR-3b.4** The UC-01 `docker-compose.yml` must include a Mailpit service (same spec as FR-4.1).
+
+**FR-3b.5** The UC-01 README must include an "Email Testing with Mailpit" section (same coverage as FR-5.1, scoped to leave rejection).
 
 ### FR-4 Mailpit Service in Docker Compose (UC-02)
 
@@ -123,7 +142,7 @@ Acceptance: `docker compose up` succeeds and the Mailpit web UI is accessible at
 - `days` (int — calendar days, inclusive of start and end date)
 - `remainingVacationDays` (int — fetched from `VacationBalanceService` before any deduction)
 
-**FR-6.2** The embedded task form for "Manager Reviews Request" must display (read-only):
+**FR-6.2** The embedded task form for "Review Request" must display (read-only):
 
 | Field | Variable |
 |-------|----------|
@@ -133,7 +152,7 @@ Acceptance: `docker compose up` succeeds and the Mailpit web UI is accessible at
 | Days Requested | `days` |
 | Remaining Vacation Days | `remainingVacationDays` |
 
-**FR-6.3** The same five fields must appear on "HR Records Approved Leave".
+**FR-6.3** The same five fields must appear on "Record Approved Leave".
 
 **FR-6.4** Forms are implemented as embedded HTML files referenced via `operaton:formKey`. Both forms are new — no existing form key is present in the current BPMN.
 
@@ -152,7 +171,7 @@ Acceptance: `docker compose up` succeeds and the Mailpit web UI is accessible at
 
 ### FR-8 Timer Boundary Escalation (UC-01)
 
-**FR-8.1** The "Manager Reviews Request" user task must carry a non-interrupting timer boundary event. Duration defaults to `PT72H`, overridable via process variable `managerReviewTimeout` to support short-circuit testing.
+**FR-8.1** The "Review Request" user task must carry a non-interrupting timer boundary event. Duration defaults to `PT72H`, overridable via process variable `managerReviewTimeout` to support short-circuit testing.
 
 **FR-8.2** On expiry, the escalation path invokes a reminder service task delegate and sets process variable `escalated = true`. The manager task remains active (non-interrupting).
 
@@ -178,9 +197,9 @@ Acceptance: `docker compose up` succeeds and the Mailpit web UI is accessible at
 
 ### FR-11 Signal Event Escalation (UC-03)
 
-**FR-11.1** The "First-Line Triage" user task must carry a non-interrupting boundary signal catch event named `EscalationSignal`.
+**FR-11.1** The "Triage" user task must carry a non-interrupting boundary signal catch event named `EscalationSignal`.
 
-**FR-11.2** When the signal fires, the process routes to the "Second-Line Engineer" task in parallel with the ongoing triage task.
+**FR-11.2** When the signal fires, the process routes to the "Handle Escalation" task in parallel with the ongoing triage task.
 
 **FR-11.3** The integration test must call `runtimeService.signalEventReceived("EscalationSignal")` and assert the second-line task is created.
 
@@ -197,13 +216,33 @@ No BPMN change is required; this is a test-only demonstration of the suspension 
 
 ### FR-13 Task-Local Variables (UC-01)
 
-**FR-13.1** When the manager completes "Manager Reviews Request", the completion call must first set a task-local variable `approvalComment` via `taskService.setVariableLocal(taskId, "approvalComment", comment)`.
+**FR-13.1** When the manager completes "Review Request", the completion call must first set a task-local variable `approvalComment` via `taskService.setVariableLocal(taskId, "approvalComment", comment)`.
 
 **FR-13.2** The integration test must retrieve the comment from history via `historyService.createHistoricVariableInstanceQuery().taskIdIn(taskId)` and assert it is present.
 
 ### FR-14 History API Assertion (UC-01)
 
 **FR-14.1** `LeaveRequestIT` must assert after the HR step that `remainingVacationDays` was decremented: the balance queried via `HistoryService.createHistoricVariableInstanceQuery()` after approval must be lower than the balance recorded at process start.
+
+### FR-16 BPMN Swimlane Layout (all use cases)
+
+**FR-16.1** Every use case BPMN must be restructured to use a **collaboration** with a single **pool** and one **lane per actor group**. Lane names must match the `candidateGroups` / `candidateStarterGroups` values (e.g., `employees`, `managers`, `hr`, `underwriters`, `first-line`, `second-line`, `warehouse`, `sales`).
+
+**FR-16.2** Each flow element (start event, user task, service task, send task, gateway, end event) must be placed in the lane corresponding to its responsible actor. Automated elements with no human actor (service tasks, send tasks, gateways, timers) belong in a dedicated "System" lane.
+
+**FR-16.3** Because the lane already identifies the responsible actor, task names must not repeat the actor. Renamed tasks:
+
+| Use Case | Old Name | New Name |
+|----------|----------|----------|
+| UC-01 | Review Request | Review Request |
+| UC-01 | Record Approved Leave | Record Approved Leave |
+| UC-01 | Employee Notified of Rejection | *(removed — send event, see FR-3b)* |
+| UC-03 | Triage | Triage |
+| UC-03 | Handle Escalation | Handle Escalation |
+
+All other task names that do not contain an actor name are unchanged.
+
+**FR-16.4** Sequence flows must not cross lane boundaries where the lane assignment already makes the actor clear; cross-lane message flows are used only when explicit handoff communication is modeled.
 
 ---
 
@@ -239,8 +278,10 @@ All open questions resolved on 2026-06-06.
 
 - Attempting to start a use case process as the wrong user role results in an authorization error in Operaton Tasklist
 - A high-risk loan application generates a visible email in Mailpit within 5 seconds of process completion
-- Manager and HR task forms in UC-01 display all five fields without leaving the task
+- A rejected leave request generates a visible email in Mailpit within 5 seconds of the manager decision
+- "Review Request" and "Record Approved Leave" task forms in UC-01 display all five fields without leaving the task
+- All four use case BPMNs render as pools with named swimlanes in the Operaton Cockpit and Modeler; no task name contains the responsible actor's role
 - UC-01 timer boundary fires in the integration test when `managerReviewTimeout = PT1S`
 - UC-04 payment failure path is reached and asserted when `simulatePaymentFailure = true`
-- UC-03 signal escalation creates a second-line task when `runtimeService.signalEventReceived` is called in the test
+- UC-03 signal escalation creates a Handle Escalation task when `runtimeService.signalEventReceived` is called in the test
 - All four use case READMEs contain working `curl` examples copy-pasteable against a running instance

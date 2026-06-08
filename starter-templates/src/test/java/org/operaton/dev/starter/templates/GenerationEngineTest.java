@@ -124,6 +124,10 @@ class GenerationEngineTest {
 
         // README always present
         assertTrue(entries.contains("README.md"));
+
+        // Banner present in process-application, not process-archive
+        assertTrue(entries.contains("src/main/resources/banner.txt"),
+                "Process application should contain banner.txt");
     }
 
     static Stream<Arguments> processApplicationCombinations() {
@@ -152,6 +156,10 @@ class GenerationEngineTest {
         assertFalse(entries.stream().anyMatch(e -> e.contains("Application.java")));
         assertFalse(entries.stream().anyMatch(e -> e.contains("SkeletonDelegate.java")));
         assertFalse(entries.stream().anyMatch(e -> e.contains("ProcessIT.java")));
+
+        // Banner belongs only in process-application (standalone Spring Boot), not in archive
+        assertFalse(entries.contains("src/main/resources/banner.txt"),
+                "Process archive should NOT contain banner.txt");
     }
 
     @ParameterizedTest(name = "ProcessArchive {0} / {1}")
