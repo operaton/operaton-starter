@@ -22,6 +22,10 @@ export interface UseCaseExample {
   defaultArtifactId: string
   defaultProjectName: string
   dockerCompose: boolean
+  processSummary?: string
+  bpmnConcepts?: string[]
+  integrations?: string[]
+  learnings?: string[]
   templateManifest?: TemplateManifestEntry[]
 }
 
@@ -37,6 +41,7 @@ export interface ProjectTypeInfo {
   id: string
   displayName: string
   description: string
+  detailedDescription?: string
   tags: string[]
   personaHint: string
   templateManifest: TemplateManifestEntry[]

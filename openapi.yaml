@@ -303,6 +303,11 @@ components:
           type: string
           description: Contextual positioning for the project type
           example: Ideal for Camunda 7 migrators
+        detailedDescription:
+          type: string
+          description: >
+            Extended prose shown in the "More about this project type" accordion.
+            Answers when to choose this type, what it contains, and when not to use it.
         templateManifest:
           type: array
           items:
@@ -427,6 +432,26 @@ components:
           type: boolean
           description: Whether the example requires Docker Compose by default
           example: false
+        processSummary:
+          type: string
+          description: One or two sentence plain-language description of what the process does end-to-end.
+        bpmnConcepts:
+          type: array
+          items:
+            type: string
+          description: BPMN elements and patterns demonstrated in this use case.
+          example: ["User Task", "Timer Boundary Event", "Exclusive Gateway"]
+        integrations:
+          type: array
+          items:
+            type: string
+          description: External systems and technologies integrated in this use case.
+          example: ["PostgreSQL", "WireMock", "Jakarta Mail"]
+        learnings:
+          type: array
+          items:
+            type: string
+          description: What a developer will learn from this example.
         templateManifest:
           type: array
           items:

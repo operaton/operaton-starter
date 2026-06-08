@@ -43,8 +43,8 @@ function handleSelect() {
       More about this project type
     </button>
     <div v-show="helpOpen" :id="`help-${projectType.id}`" role="note"
-         class="text-sm text-neutral-500 border-t border-neutral-200 pt-2 mb-3">
-      {{ projectType.description }}
+         class="text-sm text-neutral-600 border-t border-neutral-200 pt-2 mb-3 leading-relaxed">
+      {{ projectType.detailedDescription ?? projectType.description }}
     </div>
 
     <button

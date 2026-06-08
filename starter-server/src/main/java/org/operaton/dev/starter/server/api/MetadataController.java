@@ -64,6 +64,15 @@ public class MetadataController {
                 .defaultArtifactId("leave-request-example")
                 .defaultProjectName("Leave Request Example")
                 .dockerCompose(true)
+                .processSummary("An employee submits a leave request, which is validated against their remaining balance. A manager then approves or rejects it. If approved, HR finalizes the booking and an email confirmation is sent; if rejected, the employee receives a rejection notification.")
+                .bpmnConcepts(List.of("User Task", "Exclusive Gateway", "Service Task", "Boundary Event"))
+                .integrations(List.of("PostgreSQL (leave balance persistence)", "Jakarta Mail (email notifications)", "H2 (embedded test database)"))
+                .learnings(List.of(
+                    "How to model multi-role approval workflows with sequential human tasks",
+                    "How to persist and query state (leave balances) alongside a running process",
+                    "How to trigger email notifications from a service task",
+                    "How to write an integration test that drives a process end-to-end"
+                ))
                 .templateManifest(uc01LeaveRequestManifest()),
             new UseCaseExample()
                 .useCaseId("uc-02-loan-application")
@@ -75,6 +84,15 @@ public class MetadataController {
                 .defaultArtifactId("loan-application-example")
                 .defaultProjectName("Loan Application Example")
                 .dockerCompose(true)
+                .processSummary("A loan application is submitted and routed through a credit scoring step that calls an external API. The score feeds into a DMN decision table that classifies the applicant as low, medium, or high risk, and the process branches accordingly — approving, queuing for manual review, or rejecting.")
+                .bpmnConcepts(List.of("Service Task", "DMN Business Rule Task", "Exclusive Gateway"))
+                .integrations(List.of("WireMock (stubbed credit score API)", "DMN decision table (risk-assessment.dmn)", "H2 (embedded test database)"))
+                .learnings(List.of(
+                    "How to call an external REST API from a service task and pass the result downstream",
+                    "How to connect a BPMN process to a DMN decision table using a Business Rule Task",
+                    "How to model conditional routing based on a decision table output",
+                    "How to stub external dependencies with WireMock for repeatable integration tests"
+                ))
                 .templateManifest(uc02LoanApplicationManifest()),
             new UseCaseExample()
                 .useCaseId("uc-03-incident-management")
@@ -86,6 +104,14 @@ public class MetadataController {
                 .defaultArtifactId("incident-management-example")
                 .defaultProjectName("Incident Management Example")
                 .dockerCompose(true)
+                .processSummary("An incident ticket is opened and assigned to first-line engineering. If not resolved within the SLA window, a timer boundary event triggers automatic escalation to second-line. Once resolved, the ticket is closed and a post-mortem record is created via an external API call.")
+                .bpmnConcepts(List.of("User Task", "Timer Boundary Event", "Escalation", "Service Task"))
+                .integrations(List.of("WireMock (stubbed close-ticket and post-mortem APIs)", "H2 (embedded test database)"))
+                .learnings(List.of(
+                    "How to implement SLA enforcement with a timer boundary event",
+                    "How to model escalation paths that activate automatically without user intervention",
+                    "How to stub and verify multiple external service calls in a single integration test"
+                ))
                 .templateManifest(uc03IncidentManagementManifest()),
             new UseCaseExample()
                 .useCaseId("uc-04-order-fulfillment")
@@ -97,6 +123,15 @@ public class MetadataController {
                 .defaultArtifactId("order-fulfillment-example")
                 .defaultProjectName("Order Fulfillment Example")
                 .dockerCompose(true)
+                .processSummary("An order is received and the process orchestrates three external systems: it checks inventory, processes payment, and sends a customer notification. If inventory is insufficient, the order is routed to a backorder path instead of proceeding to payment.")
+                .bpmnConcepts(List.of("Service Task", "Exclusive Gateway", "Conditional Sequence Flow"))
+                .integrations(List.of("WireMock (inventory, payment, notification, and backorder APIs)", "H2 (embedded test database)"))
+                .learnings(List.of(
+                    "How to orchestrate multiple external REST calls sequentially from a single process",
+                    "How to model conditional routing based on the result of a service task",
+                    "How to manage a WireMock stub set with multiple mappings for different scenarios",
+                    "How to test both the happy path and an alternative path in the same test suite"
+                ))
                 .templateManifest(uc04OrderFulfillmentManifest())
         );
     }
@@ -185,7 +220,7 @@ public class MetadataController {
     }
 
     private ProjectTypeInfo buildProcessApplication() {
-        return new ProjectTypeInfo(
+        var info = new ProjectTypeInfo(
                 "PROCESS_APPLICATION",
                 "Process Application",
                 "A Spring Boot application with an embedded Operaton engine. Includes a skeleton BPMN process, a JavaDelegate implementation stub, and an end-to-end integration test that passes on first run.",
@@ -193,10 +228,21 @@ public class MetadataController {
                 "Ideal for Camunda 7 migrators and developers starting fresh",
                 processApplicationManifest()
         );
+        info.setDetailedDescription(
+                "A Process Application runs the Operaton engine embedded inside your Spring Boot application — " +
+                "there is no separate engine server to install or manage. The engine starts with your app and lives in the same JVM, " +
+                "giving you the tightest possible integration: process variables are plain Java objects, service tasks are Spring beans, " +
+                "and you can debug the entire flow end-to-end in a single process.\n\n" +
+                "Choose this when you are building a self-contained service that orchestrates its own business logic, " +
+                "or when you are migrating from Camunda 7 and want to keep the same embedded-engine model you already know. " +
+                "It is not the right fit if your organization runs a shared Operaton engine managed centrally — " +
+                "for that deployment model, use a Process Archive instead."
+        );
+        return info;
     }
 
     private ProjectTypeInfo buildDmnProject() {
-        return new ProjectTypeInfo(
+        var info = new ProjectTypeInfo(
                 "DMN_PROJECT",
                 "DMN Decision Project",
                 "A Spring Boot application focused on DMN decision table evaluation. Includes a skeleton decision table (hit policy FIRST), an integration test that evaluates it, and full build tooling — ready to run on first checkout.",
@@ -204,10 +250,20 @@ public class MetadataController {
                 "Ideal for teams building rules engines, approval logic, or pricing models",
                 dmnProjectManifest()
         );
+        info.setDetailedDescription(
+                "A DMN Decision Project applies the Operaton decision engine to evaluate DMN decision tables — without any BPMN process. " +
+                "The generated project is a Spring Boot application with a skeleton decision table using hit policy FIRST, " +
+                "wired to an integration test that sends inputs and asserts the correct output.\n\n" +
+                "This is the right starting point when your domain is rules-heavy: approval criteria, pricing tiers, risk scoring, " +
+                "eligibility checks — anything that can be expressed as a table of conditions and conclusions. " +
+                "You do not need a BPMN process to use DMN; the Operaton engine evaluates decision tables independently. " +
+                "If you also need process orchestration around your decisions, combine this approach with a Process Application."
+        );
+        return info;
     }
 
     private ProjectTypeInfo buildProcessArchive() {
-        return new ProjectTypeInfo(
+        var info = new ProjectTypeInfo(
                 "PROCESS_ARCHIVE",
                 "Process Archive",
                 "A deployable WAR or JAR archive for a shared Operaton engine (Tomcat or Standalone). No embedded engine — process definitions are deployed to an existing engine via processes.xml.",
@@ -215,6 +271,16 @@ public class MetadataController {
                 "Ideal for teams running a shared Operaton engine",
                 processArchiveManifest()
         );
+        info.setDetailedDescription(
+                "A Process Archive is a deployable artifact — WAR or JAR — that contains process definitions and resources " +
+                "to be registered on an already-running Operaton engine. The engine itself lives elsewhere; " +
+                "your archive brings the BPMN files and a processes.xml descriptor that tells the engine what to deploy.\n\n" +
+                "This is the right choice when your organization runs a shared Operaton engine on Tomcat or as a standalone server, " +
+                "and multiple teams deploy their process definitions to it — keeping engine management centralized. " +
+                "This template does not produce a runnable Spring Boot application. " +
+                "If you need a self-contained application that runs its own engine, choose Process Application instead."
+        );
+        return info;
     }
 
     private List<TemplateManifestEntry> dmnProjectManifest() {
