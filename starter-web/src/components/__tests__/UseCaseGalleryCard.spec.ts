@@ -17,9 +17,12 @@ function makeEntry(overrides: Partial<UseCaseExample> = {}): UseCaseExample {
     useCaseId: 'uc-01-leave-request',
     title: 'Leave Request',
     description: 'A manager approves employee leave.',
-    tags: ['multi-role', 'human-tasks'],
+    tags: [
+      { label: 'multi-role', category: 'BPMN_CONCEPT' },
+      { label: 'human-tasks', category: 'BPMN_CONCEPT' },
+    ],
     projectType: 'PROCESS_APPLICATION',
-    defaultArtifactId: 'leave-request-example',
+    defaultArtifactId: 'leave-request',
     ...overrides,
   }
 }
@@ -50,29 +53,34 @@ describe('UseCaseGalleryCard', () => {
     expect(wrapper.text()).toContain('human-tasks')
   })
 
-  it('docker-compose tag has distinct amber class', () => {
-    const entry = makeEntry({ tags: ['multi-role', 'docker-compose'] })
+  it('TECHNOLOGY tags use amber chip classes', () => {
+    const entry = makeEntry({
+      tags: [
+        { label: 'multi-role', category: 'BPMN_CONCEPT' },
+        { label: 'Docker Compose', category: 'TECHNOLOGY' },
+      ],
+    })
     const wrapper = mount(UseCaseGalleryCard, {
       props: { entry },
       global: { plugins: [router] },
     })
     const tags = wrapper.findAll('[class*="rounded-full"]')
-    const dockerTag = tags.find((t) => t.text() === 'docker-compose')
-    expect(dockerTag).toBeDefined()
-    expect(dockerTag!.classes()).toContain('bg-amber-100')
-    expect(dockerTag!.classes()).toContain('text-amber-700')
+    const technologyTag = tags.find((t) => t.text() === 'Docker Compose')
+    expect(technologyTag).toBeDefined()
+    expect(technologyTag!.classes()).toContain('bg-amber-100')
+    expect(technologyTag!.classes()).toContain('text-amber-800')
   })
 
-  it('non-docker-compose tags use primary colour class', () => {
+  it('BPMN_CONCEPT tags use blue chip classes', () => {
     const wrapper = mount(UseCaseGalleryCard, {
       props: { entry: makeEntry() },
       global: { plugins: [router] },
     })
     const tags = wrapper.findAll('[class*="rounded-full"]')
-    const regularTag = tags.find((t) => t.text() === 'multi-role')
-    expect(regularTag).toBeDefined()
-    expect(regularTag!.classes()).toContain('text-primary')
-    expect(regularTag!.classes()).not.toContain('bg-amber-100')
+    const bpmnTag = tags.find((t) => t.text() === 'multi-role')
+    expect(bpmnTag).toBeDefined()
+    expect(bpmnTag!.classes()).toContain('bg-blue-100')
+    expect(bpmnTag!.classes()).toContain('text-blue-800')
   })
 
   it('click emits select event', async () => {

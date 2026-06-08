@@ -188,149 +188,150 @@
 
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
     <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Collaboration_LeaveRequest">
-
-      <!-- Pool -->
       <bpmndi:BPMNShape id="Pool_LeaveRequest_di" bpmnElement="Pool_LeaveRequest" isHorizontal="true">
-        <dc:Bounds x="160" y="40" width="1420" height="680"/>
+        <dc:Bounds x="170" y="70" width="1310" height="680" />
       </bpmndi:BPMNShape>
-
-      <!-- Lane: employees (y=40, h=100) -->
-      <bpmndi:BPMNShape id="Lane_Employees_di" bpmnElement="Lane_Employees" isHorizontal="true">
-        <dc:Bounds x="190" y="40" width="1390" height="100"/>
-      </bpmndi:BPMNShape>
-
-      <!-- Lane: managers (y=140, h=120) -->
-      <bpmndi:BPMNShape id="Lane_Managers_di" bpmnElement="Lane_Managers" isHorizontal="true">
-        <dc:Bounds x="190" y="140" width="1390" height="120"/>
-      </bpmndi:BPMNShape>
-
-      <!-- Lane: hr (y=260, h=120) -->
-      <bpmndi:BPMNShape id="Lane_HR_di" bpmnElement="Lane_HR" isHorizontal="true">
-        <dc:Bounds x="190" y="260" width="1390" height="120"/>
-      </bpmndi:BPMNShape>
-
-      <!-- Lane: System (y=380, h=340) -->
       <bpmndi:BPMNShape id="Lane_System_di" bpmnElement="Lane_System" isHorizontal="true">
-        <dc:Bounds x="190" y="380" width="1390" height="340"/>
+        <dc:Bounds x="200" y="410" width="1280" height="340" />
       </bpmndi:BPMNShape>
-
-      <!-- StartEvent (employees lane, center y=90) -->
-      <bpmndi:BPMNShape id="StartEvent_1_di" bpmnElement="StartEvent_1">
-        <dc:Bounds x="252" y="72" width="36" height="36"/>
-        <bpmndi:BPMNLabel><dc:Bounds x="230" y="115" width="80" height="14"/></bpmndi:BPMNLabel>
+      <bpmndi:BPMNShape id="Lane_HR_di" bpmnElement="Lane_HR" isHorizontal="true">
+        <dc:Bounds x="200" y="290" width="1280" height="120" />
       </bpmndi:BPMNShape>
-
-      <!-- Task_ManagerReview (managers lane, center y=200) -->
-      <bpmndi:BPMNShape id="Task_ManagerReview_di" bpmnElement="Task_ManagerReview">
-        <dc:Bounds x="590" y="160" width="140" height="80"/>
+      <bpmndi:BPMNShape id="Lane_Managers_di" bpmnElement="Lane_Managers" isHorizontal="true">
+        <dc:Bounds x="200" y="170" width="1280" height="120" />
       </bpmndi:BPMNShape>
-
-      <!-- TimerBoundary on ManagerReview (bottom-right of task) -->
-      <bpmndi:BPMNShape id="TimerBoundary_ManagerReview_di" bpmnElement="TimerBoundary_ManagerReview">
-        <dc:Bounds x="654" y="222" width="36" height="36"/>
-        <bpmndi:BPMNLabel><dc:Bounds x="632" y="265" width="80" height="27"/></bpmndi:BPMNLabel>
+      <bpmndi:BPMNShape id="Lane_Employees_di" bpmnElement="Lane_Employees" isHorizontal="true">
+        <dc:Bounds x="200" y="70" width="1280" height="100" />
       </bpmndi:BPMNShape>
-
-      <!-- Task_HRRecord (hr lane, center y=320) -->
-      <bpmndi:BPMNShape id="Task_HRRecord_di" bpmnElement="Task_HRRecord">
-        <dc:Bounds x="900" y="280" width="140" height="80"/>
-      </bpmndi:BPMNShape>
-
-      <!-- System lane elements (center y=550) -->
-      <bpmndi:BPMNShape id="Task_ValidateRequest_di" bpmnElement="Task_ValidateRequest">
-        <dc:Bounds x="310" y="420" width="140" height="80"/>
-      </bpmndi:BPMNShape>
-
-      <bpmndi:BPMNShape id="Gateway_Validation_di" bpmnElement="Gateway_Validation" isMarkerVisible="true">
-        <dc:Bounds x="505" y="435" width="50" height="50"/>
-        <bpmndi:BPMNLabel><dc:Bounds x="488" y="492" width="85" height="14"/></bpmndi:BPMNLabel>
-      </bpmndi:BPMNShape>
-
-      <bpmndi:BPMNShape id="Task_EscalationReminder_di" bpmnElement="Task_EscalationReminder">
-        <dc:Bounds x="620" y="520" width="140" height="80"/>
-      </bpmndi:BPMNShape>
-
-      <bpmndi:BPMNShape id="Gateway_Decision_di" bpmnElement="Gateway_Decision" isMarkerVisible="true">
-        <dc:Bounds x="795" y="435" width="50" height="50"/>
-        <bpmndi:BPMNLabel><dc:Bounds x="793" y="492" width="55" height="14"/></bpmndi:BPMNLabel>
-      </bpmndi:BPMNShape>
-
-      <bpmndi:BPMNShape id="Task_FinalizeApproval_di" bpmnElement="Task_FinalizeApproval">
-        <dc:Bounds x="1080" y="420" width="140" height="80"/>
-      </bpmndi:BPMNShape>
-
-      <bpmndi:BPMNShape id="Task_SendRejectionEmail_di" bpmnElement="Task_SendRejectionEmail">
-        <dc:Bounds x="960" y="520" width="140" height="80"/>
-      </bpmndi:BPMNShape>
-
-      <bpmndi:BPMNShape id="EndEvent_Approved_di" bpmnElement="EndEvent_Approved">
-        <dc:Bounds x="1282" y="442" width="36" height="36"/>
-        <bpmndi:BPMNLabel><dc:Bounds x="1260" y="485" width="80" height="14"/></bpmndi:BPMNLabel>
-      </bpmndi:BPMNShape>
-
       <bpmndi:BPMNShape id="EndEvent_Rejected_di" bpmnElement="EndEvent_Rejected">
-        <dc:Bounds x="1162" y="542" width="36" height="36"/>
-        <bpmndi:BPMNLabel><dc:Bounds x="1141" y="585" width="78" height="14"/></bpmndi:BPMNLabel>
+        <dc:Bounds x="1172" y="572" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1152" y="615" width="77" height="14" />
+        </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
-
+      <bpmndi:BPMNShape id="EndEvent_Approved_di" bpmnElement="EndEvent_Approved">
+        <dc:Bounds x="1292" y="472" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1270" y="515" width="80" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_SendRejectionEmail_di" bpmnElement="Task_SendRejectionEmail">
+        <dc:Bounds x="970" y="550" width="140" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_FinalizeApproval_di" bpmnElement="Task_FinalizeApproval">
+        <dc:Bounds x="1090" y="450" width="140" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_HRRecord_di" bpmnElement="Task_HRRecord">
+        <dc:Bounds x="910" y="310" width="140" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_Decision_di" bpmnElement="Gateway_Decision" isMarkerVisible="true">
+        <dc:Bounds x="805" y="465" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="804" y="522" width="54" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="EndEvent_EscalationSent_di" bpmnElement="EndEvent_EscalationSent">
-        <dc:Bounds x="822" y="542" width="36" height="36"/>
-        <bpmndi:BPMNLabel><dc:Bounds x="802" y="585" width="76" height="14"/></bpmndi:BPMNLabel>
+        <dc:Bounds x="832" y="572" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="813" y="615" width="74" height="14" />
+        </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
-
-      <!-- Edges -->
-      <bpmndi:BPMNEdge id="Flow_start_to_validation_di" bpmnElement="Flow_start_to_validation">
-        <di:waypoint x="270" y="108"/><di:waypoint x="270" y="460"/><di:waypoint x="310" y="460"/>
-      </bpmndi:BPMNEdge>
-
-      <bpmndi:BPMNEdge id="Flow_validation_to_gateway_di" bpmnElement="Flow_validation_to_gateway">
-        <di:waypoint x="450" y="460"/><di:waypoint x="505" y="460"/>
-      </bpmndi:BPMNEdge>
-
-      <bpmndi:BPMNEdge id="Flow_valid_request_di" bpmnElement="Flow_valid_request">
-        <di:waypoint x="530" y="435"/><di:waypoint x="530" y="200"/><di:waypoint x="590" y="200"/>
-        <bpmndi:BPMNLabel><dc:Bounds x="542" y="313" width="26" height="14"/></bpmndi:BPMNLabel>
-      </bpmndi:BPMNEdge>
-
-      <bpmndi:BPMNEdge id="Flow_invalid_request_di" bpmnElement="Flow_invalid_request">
-        <di:waypoint x="530" y="485"/><di:waypoint x="530" y="560"/><di:waypoint x="960" y="560"/>
-        <bpmndi:BPMNLabel><dc:Bounds x="540" y="515" width="36" height="14"/></bpmndi:BPMNLabel>
-      </bpmndi:BPMNEdge>
-
-      <bpmndi:BPMNEdge id="Flow_manager_to_gw_di" bpmnElement="Flow_manager_to_gw">
-        <di:waypoint x="730" y="200"/><di:waypoint x="820" y="200"/><di:waypoint x="820" y="435"/>
-      </bpmndi:BPMNEdge>
-
-      <bpmndi:BPMNEdge id="Flow_approved_di" bpmnElement="Flow_approved">
-        <di:waypoint x="820" y="435"/><di:waypoint x="820" y="320"/><di:waypoint x="900" y="320"/>
-        <bpmndi:BPMNLabel><dc:Bounds x="836" y="373" width="47" height="14"/></bpmndi:BPMNLabel>
-      </bpmndi:BPMNEdge>
-
-      <bpmndi:BPMNEdge id="Flow_rejected_di" bpmnElement="Flow_rejected">
-        <di:waypoint x="845" y="460"/><di:waypoint x="960" y="460"/><di:waypoint x="960" y="520"/>
-        <bpmndi:BPMNLabel><dc:Bounds x="880" y="440" width="42" height="14"/></bpmndi:BPMNLabel>
-      </bpmndi:BPMNEdge>
-
-      <bpmndi:BPMNEdge id="Flow_hr_to_finalize_di" bpmnElement="Flow_hr_to_finalize">
-        <di:waypoint x="1040" y="320"/><di:waypoint x="1150" y="320"/><di:waypoint x="1150" y="460"/><di:waypoint x="1080" y="460"/>
-      </bpmndi:BPMNEdge>
-
-      <bpmndi:BPMNEdge id="Flow_finalize_to_end_di" bpmnElement="Flow_finalize_to_end">
-        <di:waypoint x="1220" y="460"/><di:waypoint x="1282" y="460"/>
-      </bpmndi:BPMNEdge>
-
+      <bpmndi:BPMNShape id="Task_EscalationReminder_di" bpmnElement="Task_EscalationReminder">
+        <dc:Bounds x="630" y="550" width="140" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_ManagerReview_di" bpmnElement="Task_ManagerReview">
+        <dc:Bounds x="600" y="190" width="140" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_Validation_di" bpmnElement="Gateway_Validation" isMarkerVisible="true">
+        <dc:Bounds x="515" y="465" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="575" y="483" width="73" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_ValidateRequest_di" bpmnElement="Task_ValidateRequest">
+        <dc:Bounds x="320" y="450" width="140" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="StartEvent_1_di" bpmnElement="StartEvent_1">
+        <dc:Bounds x="262" y="102" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="296" y="145" width="87" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="TimerBoundary_ManagerReview_di" bpmnElement="TimerBoundary_ManagerReview">
+        <dc:Bounds x="664" y="252" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="643" y="295" width="79" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
       <bpmndi:BPMNEdge id="Flow_rejection_to_end_di" bpmnElement="Flow_rejection_to_end">
-        <di:waypoint x="1100" y="560"/><di:waypoint x="1162" y="560"/>
+        <di:waypoint x="1110" y="590" />
+        <di:waypoint x="1172" y="590" />
       </bpmndi:BPMNEdge>
-
-      <bpmndi:BPMNEdge id="Flow_timer_to_reminder_di" bpmnElement="Flow_timer_to_reminder">
-        <di:waypoint x="672" y="258"/><di:waypoint x="672" y="560"/><di:waypoint x="620" y="560"/>
+      <bpmndi:BPMNEdge id="Flow_finalize_to_end_di" bpmnElement="Flow_finalize_to_end">
+        <di:waypoint x="1230" y="490" />
+        <di:waypoint x="1292" y="490" />
       </bpmndi:BPMNEdge>
-
+      <bpmndi:BPMNEdge id="Flow_rejected_di" bpmnElement="Flow_rejected">
+        <di:waypoint x="855" y="490" />
+        <di:waypoint x="1040" y="490" />
+        <di:waypoint x="1040" y="550" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="925" y="470" width="40" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_invalid_request_di" bpmnElement="Flow_invalid_request">
+        <di:waypoint x="540" y="515" />
+        <di:waypoint x="540" y="680" />
+        <di:waypoint x="1040" y="680" />
+        <di:waypoint x="1040" y="630" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="552" y="589" width="32" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_hr_to_finalize_di" bpmnElement="Flow_hr_to_finalize">
+        <di:waypoint x="1050" y="350" />
+        <di:waypoint x="1160" y="350" />
+        <di:waypoint x="1160" y="450" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_approved_di" bpmnElement="Flow_approved">
+        <di:waypoint x="830" y="465" />
+        <di:waypoint x="830" y="350" />
+        <di:waypoint x="910" y="350" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="837" y="443" width="46" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_manager_to_gw_di" bpmnElement="Flow_manager_to_gw">
+        <di:waypoint x="740" y="230" />
+        <di:waypoint x="780" y="230" />
+        <di:waypoint x="780" y="490" />
+        <di:waypoint x="805" y="490" />
+      </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_reminder_to_end_di" bpmnElement="Flow_reminder_to_end">
-        <di:waypoint x="760" y="560"/><di:waypoint x="822" y="560"/>
+        <di:waypoint x="770" y="590" />
+        <di:waypoint x="832" y="590" />
       </bpmndi:BPMNEdge>
-
+      <bpmndi:BPMNEdge id="Flow_timer_to_reminder_di" bpmnElement="Flow_timer_to_reminder">
+        <di:waypoint x="682" y="288" />
+        <di:waypoint x="682" y="550" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_valid_request_di" bpmnElement="Flow_valid_request">
+        <di:waypoint x="540" y="465" />
+        <di:waypoint x="540" y="230" />
+        <di:waypoint x="600" y="230" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="554" y="343" width="23" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_validation_to_gateway_di" bpmnElement="Flow_validation_to_gateway">
+        <di:waypoint x="460" y="490" />
+        <di:waypoint x="515" y="490" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_start_to_validation_di" bpmnElement="Flow_start_to_validation">
+        <di:waypoint x="280" y="138" />
+        <di:waypoint x="280" y="490" />
+        <di:waypoint x="320" y="490" />
+      </bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>
 
