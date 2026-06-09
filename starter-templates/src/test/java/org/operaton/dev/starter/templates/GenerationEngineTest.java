@@ -227,7 +227,13 @@ class GenerationEngineTest {
     }
 
     @Test
-    void renovate_and_dependabot_are_mutually_exclusive() throws Exception {
+    void dependency_updater_options_are_mutually_exclusive_and_optional() throws Exception {
+        var noneConfig = ProjectConfig.builder()
+                .groupId("com.example")
+                .artifactId("test-project")
+                .projectName("Test Project")
+                .dependencyUpdater(DependencyUpdater.NONE)
+                .build();
         var renovateConfig = ProjectConfig.builder()
                 .groupId("com.example")
                 .artifactId("test-project")
@@ -241,8 +247,12 @@ class GenerationEngineTest {
                 .dependencyUpdater(DependencyUpdater.DEPENDABOT)
                 .build();
 
+        var noneEntries = listZipEntries(engine.generate(noneConfig));
         var renovateEntries = listZipEntries(engine.generate(renovateConfig));
         var dependabotEntries = listZipEntries(engine.generate(dependabotConfig));
+
+        assertFalse(noneEntries.contains("renovate.json"), "NONE should not include renovate.json");
+        assertFalse(noneEntries.contains(".github/dependabot.yml"), "NONE should not include dependabot.yml");
 
         assertTrue(renovateEntries.contains("renovate.json"));
         assertFalse(renovateEntries.contains(".github/dependabot.yml"));

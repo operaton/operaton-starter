@@ -5,6 +5,9 @@ package org.operaton.dev.starter.templates.model;
  */
 public enum DependencyUpdater {
 
+    /** No dependency updater — generates no configuration */
+    NONE,
+
     /** GitHub Dependabot — generates .github/dependabot.yml */
     DEPENDABOT,
 

@@ -129,7 +129,7 @@ public record ProjectConfig(
         private BuildSystem buildSystem = BuildSystem.MAVEN;
         private int javaVersion = DEFAULT_JAVA_VERSION;
         private Optional<DeploymentTarget> deploymentTarget = Optional.empty();
-        private DependencyUpdater dependencyUpdater = DependencyUpdater.RENOVATE;
+        private DependencyUpdater dependencyUpdater = DependencyUpdater.NONE;
         private boolean dockerCompose = false;
         private boolean githubActions = true;
         private String operatonVersionOverride = "";

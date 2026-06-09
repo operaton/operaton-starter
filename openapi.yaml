@@ -68,8 +68,8 @@ paths:
           in: query
           schema:
             type: string
-            enum: [DEPENDABOT, RENOVATE]
-            default: RENOVATE
+            enum: [NONE, DEPENDABOT, RENOVATE]
+            default: NONE
         - name: dockerCompose
           in: query
           schema:
@@ -230,9 +230,9 @@ components:
             Required when projectType is PROCESS_ARCHIVE.
         dependencyUpdater:
           type: string
-          enum: [DEPENDABOT, RENOVATE]
+          enum: [NONE, DEPENDABOT, RENOVATE]
           description: Dependency update tool to configure in generated project
-          default: RENOVATE
+          default: NONE
         dockerCompose:
           type: boolean
           description: Include a docker-compose.yml in the generated project

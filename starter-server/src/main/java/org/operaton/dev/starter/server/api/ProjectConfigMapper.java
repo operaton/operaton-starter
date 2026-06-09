@@ -70,10 +70,11 @@ public class ProjectConfigMapper {
 
     private DependencyUpdater mapDependencyUpdater(
             org.operaton.dev.starter.server.model.ProjectConfig.DependencyUpdaterEnum dto) {
-        if (dto == null) return DependencyUpdater.RENOVATE;
+        if (dto == null) return DependencyUpdater.NONE;
         return switch (dto) {
             case DEPENDABOT -> DependencyUpdater.DEPENDABOT;
             case RENOVATE -> DependencyUpdater.RENOVATE;
+            case NONE -> DependencyUpdater.NONE;
         };
     }
 }

@@ -453,10 +453,10 @@ public class GenerationEngine {
         }
 
         // Dependency updater — mutually exclusive
-        if (config.dependencyUpdater() == DependencyUpdater.RENOVATE) {
-            addTemplateEntry(zos, "renovate.json", "common/renovate.json.jte", config);
-        } else {
-            addTemplateEntry(zos, ".github/dependabot.yml", "common/dependabot.yml.jte", config);
+        switch (config.dependencyUpdater()) {
+            case RENOVATE -> addTemplateEntry(zos, "renovate.json", "common/renovate.json.jte", config);
+            case DEPENDABOT -> addTemplateEntry(zos, ".github/dependabot.yml", "common/dependabot.yml.jte", config);
+            case NONE -> {} // No dependency updater selected
         }
 
         // Optional GitHub Actions CI
