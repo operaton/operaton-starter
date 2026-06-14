@@ -1,11 +1,12 @@
 ---
 name: operaton-starter
 status: final
-updated: 2026-06-01
+updated: 2026-06-13
 sources:
   - imports/ux-design-specification.md
   - imports/ux-color-themes.html
   - imports/ux-design-directions.html
+  - ../../prds/prd-operaton-starter-examples-gallery-2026-06-13/prd.md
 ---
 
 ## 1. Foundation
@@ -27,6 +28,9 @@ Key composables:
 | `useMetadata()` | Fetches `MetadataResponse` (projectTypes, buildSystems, globalOptions); exposes `isLoading`, `error` |
 | `useProjectForm(metadata)` | Reactive `formState: ProjectConfig`; per-field validation; computed `fileTree`; computed `shareableUrl`; `initFromQuery(route.query)` |
 | `useGenerate(formState)` | `isGenerating`, `error`, `generate()` — triggers ZIP download |
+| `useExamples()` | Reads `examples` slice from `MetadataResponse`; exposes `bySource`, `allTags`, `allIntegrations`, `runtimes`, `buildSystems`, `complexities` derived sets |
+| `useGalleryFilters()` | Reactive `query` (free-text), `filters` (runtime / buildSystem / complexity / integrations sets); computed `filteredExamples`, `filteredUseCases`, `resultCount`; `clear()` |
+| `useExampleDownload()` | Per-example `status: 'idle'\|'downloading'\|'success'\|'error'`, `error`, `download(example)` — drives the inline action-row states |
 
 ---
 
@@ -56,12 +60,15 @@ Key composables:
   → Copy shareable link
 ```
 
+**Gallery internal structure (post Examples Gallery update):** The Gallery surface holds, top to bottom: hero + "Configure Now →" CTA → **Project Types** subsection (unchanged primary entry — preserves the Marcus / Elena / Priya flows in §8) → **GallerySearchBar** (sticky, scoped to the sections below it) → **Examples** subsection → **Use Cases** subsection. The search input filters Examples + Use Cases by title/description/tags; Project Types are not affected by the search bar. The filter chip row (runtime / buildSystem / complexity / integrations) applies only to Examples. Each subsection has its own `<h2>` heading and a short blurb explaining what it contains.
+
 ### Not in MVP
 
 - Dark mode (light mode only for V1)
 - User accounts or saved configurations
 - Multi-page wizard or stepped form
 - In-browser ZIP preview
+- In-UI repository management or manual refresh trigger (the FR-B9 refresh endpoint is API-only in v1)
 
 ---
 
@@ -446,3 +453,143 @@ A developer who navigates entirely without a mouse.
 
 - Light mode only — dark mode is explicitly out of scope for MVP.
 - Browser support: two most recent major versions of Chrome, Firefox, and Safari (Tailwind + Vue 3 baseline).
+
+---
+
+## 10. Examples Gallery (added 2026-06-13)
+
+Extension to the Gallery surface. PRD: `../../prds/prd-operaton-starter-examples-gallery-2026-06-13/prd.md`. Inherits all prior IA, voice, components, states, and a11y rules unless explicitly overridden below. DESIGN.md owns visual specs.
+
+### 10.1 Microcopy
+
+| Context | Do | Don't |
+|---------|----|-------|
+| Subsection heading | "Examples" / "Use Cases" / "Project Types" | "Sample projects" / "Templates" |
+| Examples blurb | "Runnable example projects published by the Operaton community. Download a ZIP and open in your IDE." | "Browse our amazing example library" |
+| Search placeholder | "Search examples and use cases…" | "Type to search" |
+| Filter chip aria-label | "Filter by {label}" (e.g., "Filter by Spring Boot") | "Toggle Spring Boot" |
+| Active chip aria-label | "Remove filter: {label}" | "Disable Spring Boot" |
+| "Clear filters" ghost button | "Clear filters" | "Reset" |
+| Result counter (live region) | "{n} examples, {m} use cases match" / "1 example matches" / "No matches" | "Showing results" |
+| Download primary CTA | "Download ZIP" | "Get this example" / "Download" |
+| Download in-progress | "Downloading…" | "Loading…" / "Please wait" |
+| Download success (transient) | "Downloaded {exampleId}.zip ✓" | "Success!" |
+| Download failure inline | "Couldn't download. {short reason}. **Retry**" | "Error occurred" |
+| View on GitHub | "View on GitHub ↗" | "See repo" / "Source" |
+| Details disclosure | "More details ↓" / "Hide details ↑" | "Show more" |
+| Empty: no examples loaded | "No examples are available right now. Maintainers can register example repositories — see the format docs." + "View format docs →" | "Coming soon" |
+| Empty: no filter matches | "No examples match these filters." + "Clear filters" | "0 results" |
+| Card SHA footer | "@ {short-sha}" using mono font, no label | "Commit: {sha}" |
+
+### 10.2 Component Patterns
+
+All visual specs in DESIGN.md.
+
+#### `<GallerySearchBar>`
+
+- Rendered as `<div role="search">` containing `<input type="search" aria-label="Search examples and use cases">` + a `<div role="toolbar" aria-label="Filter examples">` of `<FilterChip>`s.
+- Sticky position via CSS `position: sticky; top: {spacing.header-height}`. Initial render has no shadow; on `IntersectionObserver` triggering past its anchor, applies `{components.search-bar.sticky-shadow}`.
+- Search input is **debounced 200ms** before updating the shared filter state — prevents thrashing the result counter and live region.
+- A visually subtle live region `<span role="status" aria-live="polite" class="sr-only">` announces the result count after each debounced change.
+- "Clear filters" appears (as `{components.button-ghost}`) only when at least one chip is active or the query is non-empty.
+
+#### `<FilterChip>`
+
+- `<button type="button" aria-pressed="{active}">` — the `switch` role pairs cleanly with each chip representing an independent on/off filter value.
+- Keyboard: `Tab` focuses, `Space`/`Enter` toggles. Inside the toolbar, `Arrow Left`/`Arrow Right` move focus between chips (standard toolbar semantics).
+- Active chips visually carry an "×" glyph on hover/focus (informational only — the toggle is still `Space`/`Enter`).
+- Visible focus ring via the global `*:focus-visible` rule.
+
+#### `<ExampleGalleryCard>`
+
+- Rendered as `<li>` inside `<ul role="list">` (the Examples subsection grid). Like `<ProjectTypeCard>`, the `<li>` is a non-interactive container.
+- **Focusable elements within a card**: (1) "View on GitHub" link, (2) "Download ZIP" button, (3) "More details" disclosure button. The whole card is **not** a single clickable target — examples carry too much metadata to collapse onto one action.
+- Anatomy per DESIGN.md `{components.example-card}`. Icon slot renders: (a) the emoji character at 1.5rem if `icon` is a single grapheme, (b) the fetched image otherwise, (c) a default neutral SVG glyph if `icon` is absent or the image load fails.
+- Hover: card border transitions to `{colors.primary}` + shadow elevates (inherits `{components.card}`).
+- Details disclosure uses `aria-expanded` + `aria-controls`; the panel itself is a `<div>` (no role). `Escape` collapses an open panel and returns focus to the disclosure button.
+- The pinned SHA footer renders the short SHA inside the details panel; the GitHub link's `href` includes the SHA so the link survives later force-pushes.
+
+#### `<ExamplesEmptyState>`
+
+- Rendered as `<div role="region" aria-label="Examples">`'s child when the filtered list is empty.
+- Two messages selected by cause (no examples loaded vs. filter mismatch); see microcopy table.
+- Single CTA button styled per `{components.button-ghost}`.
+
+#### `<DownloadAction>` (sub-pattern inside `<ExampleGalleryCard>`)
+
+A small state machine driven by `useExampleDownload()`. Renders exactly one of: idle button, disabled+spinner button, transient success label, or inline error block. Transitions are **not animated** beyond a 100ms fade — fast feedback matters more than polish here.
+
+### 10.3 State Patterns (additions)
+
+| State | Surface | Behavior |
+|-------|---------|----------|
+| **Examples loading** | Gallery — Examples subsection | Skeleton cards matching `<ExampleGalleryCard>` dimensions; `aria-busy="true"` on subsection container; metadata badges and tag rows rendered as `{components.skeleton}` blocks |
+| **All sources failed** | Gallery — Examples subsection | `<ExamplesEmptyState>` with the "no examples loaded" copy; **no** global `<ErrorBanner>` (the rest of the gallery still works) |
+| **Some sources failed** | Gallery — Examples subsection | Subsection renders the examples that did load; failed sources are silent in the UI (logs only, per PRD FR-B7) |
+| **No filter matches** | Examples + Use Cases subsections | `<ExamplesEmptyState>` with the "no matches" copy + "Clear filters" button |
+| **Download in progress** | Card action row | Button disabled, label "Downloading…", spinner glyph; other cards remain interactive |
+| **Download success** | Card action row | Transient `{components.download-success-inline}` for 3s, then idle |
+| **Download failed** | Card action row | `{components.card-error-inline}` rendered below action row with retry; never escalates to global `<ErrorBanner>` |
+| **Details expanded** | Card | `aria-expanded="true"` on the disclosure; details panel rendered; reflows the gallery grid via natural document flow (no absolute positioning) |
+| **Icon image load failed** | Card | Silent fallback to the neutral SVG glyph; no error surfaced to the user |
+
+### 10.4 Interaction Primitives (additions)
+
+| Action | Key(s) / behavior |
+|--------|------------------|
+| Search input | Type → 200ms debounce → filter applies + live-region announces count |
+| Toggle filter chip | `Space` / `Enter` while chip focused |
+| Move within filter chip toolbar | `Arrow Left` / `Arrow Right` (toolbar semantics — overrides global `Tab` flow within the toolbar group) |
+| Open card details | `Enter` / `Space` on the disclosure button |
+| Close card details | `Escape` while focus inside the card's details panel — returns focus to disclosure |
+| Download | `Enter` / `Space` on "Download ZIP" button |
+| Retry after failure | `Enter` / `Space` on inline "Retry" affordance |
+
+**Filter and search semantics:**
+
+- Search query matches against `title`, `shortDescription`, `tags[].label`, `integrations[]` (case-insensitive substring).
+- Active filter chips combine with **AND across filter categories** and **OR within a category** (e.g., `runtime=spring-boot` AND (`integration=kafka` OR `integration=rest`)).
+- Filters and search compose: search narrows further within the filter-matched set.
+- Filter chip state is **not** mirrored to URL query params in v1 — keeps the existing `?projectType=` semantics clean. `[ASSUMPTION]` deep-linking filtered views is not yet a needed user journey.
+
+### 10.5 Accessibility (additions)
+
+| Pattern | Implementation |
+|---------|---------------|
+| Search bar | `<div role="search">` wrapper; `<input type="search" aria-label="Search examples and use cases">` |
+| Filter chip group | `<div role="toolbar" aria-label="Filter examples">` containing `<button type="button" aria-pressed="{bool}">` per chip |
+| Result counter | `<span role="status" aria-live="polite" class="sr-only">` updated after debounce |
+| Example card | `<li>` inside `<ul role="list">`; non-interactive container |
+| Card details disclosure | `aria-expanded` + `aria-controls` on the toggle button; panel itself is plain `<div>` |
+| Card-local error | Plain `<div>` (not `role="alert"`) — failure is scoped and the user just triggered the action; no need to interrupt SR users globally. Includes a focusable `Retry` button |
+| Icon slot | Emoji renders inside a `<span aria-hidden="true">`; the card's accessible name comes from its title. Image-based icons use `alt=""` (decorative) |
+| Sticky search bar | Remains in the document flow (does not trap focus); `Tab` exits naturally into the gallery content below |
+| Live SHA footer | Visual-only; not announced by screen readers (wrapped in `aria-hidden="true"` since it adds no journey value for SR users) |
+
+WCAG 2.5.5 target size: filter chips minimum 32px height with the chip container providing a 44×44px touch target via padding on mobile.
+
+### 10.6 Key Flow — Anna (Examples Browser)
+
+Anna is a backend developer evaluating Operaton. She knows she wants a Spring Boot starter with Kafka.
+
+1. Lands on `/` from a search engine.
+2. Sees the sticky **GallerySearchBar** under the hero — types `kafka`.
+3. Live region announces "1 example, 0 use cases match"; the Examples subsection re-renders with the Order Fulfillment card.
+4. Notices the card icon (📦), reads the shortDescription ("End-to-end order fulfillment process on Quarkus with Kafka events…").
+5. Realizes she wanted Spring Boot, not Quarkus. Clears the search and clicks the "Spring Boot" filter chip in the sticky bar.
+6. Examples subsection shows the Leave Request card. She clicks **"More details ↓"** — reads longDescription, sees the integrations list, the SHA at the bottom.
+7. Clicks **"Download ZIP"**. Button enters disabled+spinner state for ~2s. Replaced by "Downloaded leave-request-spring-boot.zip ✓" for 3s.
+8. **Climax**: Anna had a runnable starter on disk less than 30s after landing — and could see the build system, runtime, and prerequisites *before* downloading.
+
+**Failure path 1** — repository unreachable at startup: the Examples subsection renders `<ExamplesEmptyState>` ("No examples are available right now…"); Use Cases section still works; Anna can fall back to the existing flow.
+
+**Failure path 2** — download fails: card-local `{components.card-error-inline}` appears below the action row with a Retry button. The rest of the gallery stays fully interactive.
+
+### 10.7 Responsive Notes (additions)
+
+| Breakpoint | Behavior |
+|------------|----------|
+| Mobile (< 768px) | GallerySearchBar wraps: search input on row 1, filter chips on row 2 (horizontally scrollable rather than wrapping further). Example cards full-width. Sticky behavior preserved. |
+| Tablet (≥ 768px) | Search bar single row; chip row wraps to a second line when chip count exceeds row width. Cards: 2 columns. |
+| Desktop (≥ 1024px) | Cards: 3 columns. |
+| Wide (≥ 1280px) | Cards remain 3 columns within `{spacing.content-max-width}`. |

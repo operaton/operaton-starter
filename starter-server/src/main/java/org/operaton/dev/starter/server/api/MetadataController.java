@@ -1,6 +1,7 @@
 package org.operaton.dev.starter.server.api;
 
 import org.operaton.dev.starter.server.config.StarterProperties;
+import org.operaton.dev.starter.server.examples.ExampleRegistry;
 import org.operaton.dev.starter.server.model.*;
 import org.operaton.dev.starter.server.model.Tag;
 import org.operaton.dev.starter.server.model.TagCategory;
@@ -21,6 +22,9 @@ import java.util.List;
  * REST controller for {@code GET /api/v1/metadata}.
  * Returns all supported configuration options and template manifests.
  * Served from in-memory — no database query.
+ *
+ * <p>Includes examples loaded from configured sources via {@link ExampleRegistry}.
+ * The examples field is additive and does not affect existing fields.
  */
 @RestController
 public class MetadataController {
@@ -29,10 +33,12 @@ public class MetadataController {
 
     private final StarterProperties properties;
     private final ResourceLoader resourceLoader;
+    private final ExampleRegistry exampleRegistry;
 
-    public MetadataController(StarterProperties properties, ResourceLoader resourceLoader) {
+    public MetadataController(StarterProperties properties, ResourceLoader resourceLoader, ExampleRegistry exampleRegistry) {
         this.properties = properties;
         this.resourceLoader = resourceLoader;
+        this.exampleRegistry = exampleRegistry;
     }
 
     @GetMapping(value = "/api/v1/metadata", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -51,6 +57,11 @@ public class MetadataController {
             metadata.setDefaultGroupId(defaultGroupId);
         }
         metadata.setUseCaseExamples(buildUseCaseExamples());
+
+        // Include examples from registry (loaded from configured sources)
+        var snapshot = exampleRegistry.snapshot();
+        metadata.setExamples(snapshot.allExamples());
+
         return metadata;
     }
 

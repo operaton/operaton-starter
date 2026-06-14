@@ -1,5 +1,6 @@
 package org.operaton.dev.starter.server.examples;
 
+import org.springframework.stereotype.Component;
 import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
@@ -21,6 +22,7 @@ import java.util.Map;
  *   <li>Silently ignores unknown fields</li>
  * </ul>
  */
+@Component
 public class ExampleManifestParser {
     private static final int CODE_POINT_LIMIT = 256 * 1024; // 256 KB
     private static final String REQUIRED_API_VERSION_PREFIX = "operaton-starter/v1";

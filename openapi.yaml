@@ -277,6 +277,11 @@ components:
           items:
             $ref: "#/components/schemas/UseCaseExample"
           description: Pre-configured use case example projects available in the gallery
+        examples:
+          type: array
+          items:
+            $ref: "#/components/schemas/Example"
+          description: External examples from registered repositories
 
     ProjectTypeInfo:
       type: object
@@ -363,6 +368,9 @@ components:
         - TECHNOLOGY
         - PLATFORM
         - STANDARD
+        - RUNTIME
+        - BUILD_SYSTEM
+        - COMPLEXITY
       description: Category used to color-code tag chips in the UI
 
     Tag:
@@ -486,6 +494,133 @@ components:
             File tree manifest for the use case example, used by the UI to render
             the preview. Contains the actual use-case-specific templates (e.g. the
             real BPMN, not the skeleton).
+
+    Author:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Author name
+          example: Karsten Thoms
+        url:
+          type: string
+          description: Author URL (optional, e.g. GitHub profile)
+          example: https://github.com/kthoms
+
+    Example:
+      type: object
+      required:
+        - id
+        - title
+        - path
+        - shortDescription
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the example (slug, unique within repository)
+          example: leave-request-spring-boot
+        title:
+          type: string
+          description: Human-readable title
+          example: Leave Request (Spring Boot)
+        icon:
+          type: string
+          description: Icon emoji or repo-relative image path
+          example: "📝"
+        path:
+          type: string
+          description: Repository-relative path to the example folder
+          example: examples/leave-request-spring-boot
+        shortDescription:
+          type: string
+          description: Short description (≤ 200 characters)
+          example: Classic leave-request approval process with REST API and DMN-based policy.
+        longDescription:
+          type: string
+          description: Long description in Markdown format (optional)
+        buildSystem:
+          type: string
+          enum: [maven, gradle]
+          description: Build system used in the example
+          example: maven
+        runtime:
+          type: string
+          enum: [spring-boot, quarkus, plain-java, other]
+          description: Runtime environment for the example
+          example: spring-boot
+        operatonVersion:
+          type: string
+          description: Operaton version required by the example
+          example: "1.0.0-beta-5"
+        javaVersion:
+          type: string
+          description: Java version required by the example
+          example: "21"
+        complexity:
+          type: string
+          enum: [beginner, intermediate, advanced]
+          description: Difficulty level of the example
+          example: beginner
+        tags:
+          type: array
+          items:
+            $ref: '#/components/schemas/Tag'
+          description: Tags describing the example capabilities
+        integrations:
+          type: array
+          items:
+            type: string
+          description: External systems and technologies integrated in this example
+          example: [rest, dmn]
+        bpmnConcepts:
+          type: array
+          items:
+            type: string
+          description: BPMN elements and patterns demonstrated in this example
+          example: [user-task, exclusive-gateway, business-rule-task]
+        requires:
+          type: string
+          description: Free-form prerequisites
+          example: Java 21+
+        authors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Author'
+          description: Authors of the example
+        license:
+          type: string
+          description: SPDX license identifier
+          example: Apache-2.0
+        documentationUrl:
+          type: string
+          description: URL to the example documentation
+          example: https://github.com/kthoms/operaton-examples/blob/main/examples/leave-request-spring-boot/README.md
+        demoVideoUrl:
+          type: string
+          description: URL to a demo video (optional)
+        screenshots:
+          type: array
+          items:
+            type: string
+          description: Repository-relative paths to screenshot images
+          example: [examples/leave-request-spring-boot/docs/process.png]
+        lastUpdated:
+          type: string
+          format: date
+          description: ISO date when the example was last updated
+          example: "2026-06-10"
+        sourceRepo:
+          type: string
+          description: Computed field - repository owner/repo (e.g., kthoms/operaton-examples)
+          example: kthoms/operaton-examples
+        sourceRepoSha:
+          type: string
+          description: Computed field - resolved commit SHA from the source repository
+          example: abc123def456
+        sourceRepoUrl:
+          type: string
+          description: Computed field - GitHub HTML URL to the example folder
+          example: https://github.com/kthoms/operaton-examples/tree/main/examples/leave-request-spring-boot
 
     ProblemDetail:
       type: object

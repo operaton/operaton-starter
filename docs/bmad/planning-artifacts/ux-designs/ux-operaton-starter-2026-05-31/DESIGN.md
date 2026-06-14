@@ -2,11 +2,12 @@
 name: operaton-starter
 description: Open-source Operaton project generator at start.operaton.org
 status: final
-updated: 2026-06-01
+updated: 2026-06-13
 sources:
   - imports/ux-design-specification.md
   - imports/ux-color-themes.html
   - imports/ux-design-directions.html
+  - ../../prds/prd-operaton-starter-examples-gallery-2026-06-13/prd.md
 colors:
   primary: '#184AEF'
   primary-dark: '#0a2dbf'
@@ -148,6 +149,64 @@ components:
     border-left: '2px solid {colors.neutral-200}'
     padding-left: '1rem'
     margin-top: '0.5rem'
+  example-card:
+    extends: '{components.card}'
+    icon-size: 2.5rem
+    icon-background: '{colors.neutral-50}'
+    icon-radius: '{rounded.s}'
+    expanded-divider: '1px solid {colors.neutral-200}'
+    sha-foreground: '{colors.neutral-500}'
+    sha-fontFamily: '{typography.code.fontFamily}'
+    sha-fontSize: 0.75rem
+  metadata-badge:
+    background: '{colors.neutral-50}'
+    foreground: '{colors.neutral-900}'
+    border: '1px solid {colors.neutral-200}'
+    radius: 0.25em
+    padding: '0.125rem 0.5rem'
+    fontSize: 0.75rem
+    fontWeight: '500'
+  search-bar:
+    background: '{colors.neutral-0}'
+    border-bottom: '1px solid {colors.neutral-200}'
+    padding: '1rem 0'
+    sticky-top: '{spacing.header-height}'
+    sticky-shadow: '0 2px 4px rgba(0,0,0,0.04)'
+  filter-chip:
+    background: '{colors.neutral-0}'
+    foreground: '{colors.neutral-900}'
+    border: '1px solid {colors.neutral-200}'
+    radius: 999px
+    padding: '0.25rem 0.75rem'
+    fontSize: 0.875rem
+    fontWeight: '500'
+    hover-border: '{colors.primary}'
+  filter-chip-active:
+    background: '{colors.primary}'
+    foreground: '{colors.neutral-0}'
+    border: '1px solid {colors.primary}'
+    radius: 999px
+    padding: '0.25rem 0.75rem'
+    fontSize: 0.875rem
+    fontWeight: '500'
+  download-success-inline:
+    foreground: '{colors.success}'
+    fontSize: 0.875rem
+    fontWeight: '500'
+  card-error-inline:
+    background: '{colors.error-bg}'
+    border: '1px solid {colors.error-border}'
+    foreground: '{colors.error}'
+    radius: '{rounded.s}'
+    padding: '0.5rem 0.75rem'
+    fontSize: 0.875rem
+  empty-state:
+    background: '{colors.neutral-50}'
+    border: '1px dashed {colors.neutral-200}'
+    radius: '{rounded.s}'
+    padding: '2rem'
+    foreground: '{colors.neutral-500}'
+    textAlign: center
 ---
 
 ## Brand & Style
@@ -298,6 +357,52 @@ Interactive file structure display. `{colors.neutral-50}` background, `{colors.n
 
 Adjacent content pane that shows the representative source content of the selected file from the file tree. `{colors.neutral-50}` background, `{colors.neutral-200}` border, `{rounded.s}` corners, `1rem` padding. Font: `{typography.code}`. A filename label above the content uses `{components.file-content-pane.filename-foreground}` and `{components.file-content-pane.filename-fontSize}`. Content is static template source (`TemplateManifestEntry.previewContent`) — it does not dynamically reflect the current form state.
 
+### ExampleCard (`{components.example-card}`)
+
+Extends `{components.card}` for the Examples Gallery subsection. Same border, radius, padding, and hover treatment — a visual cousin of `<ProjectTypeCard>`.
+
+Anatomy (top to bottom):
+1. **Header row**: a 2.5rem square `icon` slot (background `{components.example-card.icon-background}`, radius `{components.example-card.icon-radius}`) on the left + title (`{typography.heading-3}`) + a quiet "View on GitHub ↗" link at right styled as `{components.button-ghost}`.
+2. **shortDescription** (`{typography.body}`, two-line clamp).
+3. **Metadata badge row**: up to three `{components.metadata-badge}` chips (runtime, buildSystem, complexity). Absent fields are simply omitted — never rendered as "—".
+4. **Tag chip row**: `{components.tag}` chips for the example's `tags[]`.
+5. **Action row**: "Download ZIP" `{components.button-primary}` on the left; "More details ↓" disclosure `<button>` rendered as `{components.button-ghost}` on the right.
+6. **Details panel** (collapsed by default): revealed via `max-height` 200ms ease-out, separated by `{components.example-card.expanded-divider}`. Contains longDescription (markdown), integrations, bpmnConcepts, requires, authors, license, lastUpdated. The pinned short SHA renders at the bottom in `{components.example-card.sha-foreground}` + mono font + 0.75rem.
+
+Inline action-row states (replace the Download button area; never use toasts):
+- **In-progress**: button disabled, label "Downloading…", spinner glyph left of label.
+- **Success (transient ~3s)**: button hidden; `{components.download-success-inline}` "Downloaded {exampleId}.zip" + ✓ glyph; button restored after timeout.
+- **Failure**: `{components.card-error-inline}` shown below the action row, includes a "Retry" affordance.
+
+### MetadataBadge (`{components.metadata-badge}`) — a Tag category variant
+
+`MetadataBadge` is **not** a separate data model from `{components.tag}`. Per PRD FR-D7, the unified `Tag` model is reused; the visual variation is driven by `TagCategory`. `tagColors.ts` maps categories so that:
+
+- Categories `concept`, `integration` render with the existing accent-tag treatment (`{components.tag}` — secondary at 20% with primary text).
+- New categories `runtime`, `buildSystem`, `complexity` render with the **monochrome** treatment described by `{components.metadata-badge}` tokens (neutral-50 background, neutral-200 border, neutral-900 text, tighter padding).
+
+Same chip element, two visual lanes — the lane is a function of `tag.category`, not a separate component. This keeps "objective fact vs. browseable keyword" hierarchy without forking the model.
+
+### GallerySearchBar (`{components.search-bar}`)
+
+Sticky bar pinned just below the header. Contains a full-width search `<input>` (`{components.input}`) on the left and a horizontal filter-chip row on the right (wraps to a second line below `md`). On scroll past its initial position, gains `{components.search-bar.sticky-shadow}` to separate from content. `sticky-top` is `{spacing.header-height}` so the bar pins directly under the app header. Bar height stays constant; never collapses on scroll.
+
+### FilterChip (`{components.filter-chip}` / `{components.filter-chip-active}`)
+
+Pill-shaped toggle for filter values (e.g., "Spring Boot", "Gradle", "Beginner", "Kafka"). Default state: white, neutral border, dark text. Active state: filled `{colors.primary}`, white text. A small "×" glyph appears inside an active chip on hover/focus, signalling removability. Pill radius (`999px`) deliberately differs from cards and tags so chips read as **controls**, not content.
+
+### DownloadSuccessInline (`{components.download-success-inline}`)
+
+Transient `{colors.success}` text + ✓ glyph that replaces the Download button for ~3s after a successful download. Sized at `{typography.label}`. Used only in the example-card action row.
+
+### CardErrorInline (`{components.card-error-inline}`)
+
+Card-local error message styled like a quieter `{components.error-banner}`. Used only for scoped failures inside a single ExampleCard. The global `<ErrorBanner>` is reserved for view-wide failures (metadata fetch, etc.).
+
+### EmptyState (`{components.empty-state}`)
+
+Two uses in the Examples subsection: (1) no examples loaded at all (all sources failed, or none configured), (2) no examples match active search/filters. Dashed border + neutral-50 background + centered text signal "this space is intentionally blank, not broken." Includes one ghost-button CTA: "View format docs →" for case 1, "Clear filters" for case 2.
+
 ### ConditionalSubOption (`{components.conditional-sub-option}`)
 
 Revealed below a parent option when the parent is enabled (e.g., Gradle DSL after Gradle is selected; Dependency Updates flavour after the checkbox is checked). Uses a left-border indent visual (`{components.conditional-sub-option.border-left}`, `{components.conditional-sub-option.padding-left}`) and neutral-50 background to convey hierarchical relationship. Animated reveal: `max-height` transition 200ms ease-out (same as help accordion). Hidden entirely when the parent is unselected.
@@ -318,3 +423,6 @@ Revealed below a parent option when the parent is enabled (e.g., Gradle DSL afte
 | Use `<fieldset>` + `<legend>` for radio groups | Group radio buttons with only visual styling |
 | Apply `@media (prefers-reduced-motion: reduce)` to suppress all transitions and `animate-pulse` | Animate skeleton cards and route transitions for users with `prefers-reduced-motion` active |
 | Test tag and error-banner colors in Windows High Contrast Mode (forced-colors) | Rely solely on background-color opacity for visual differentiation in forced-color contexts |
+| Route `runtime`/`buildSystem`/`complexity` Tags to the `{components.metadata-badge}` visual lane; route `concept`/`integration` Tags to the accent `{components.tag}` lane via `tagColors.ts` | Render every Tag category with the accent treatment — it dilutes the secondary accent's signal for the truly browseable keywords |
+| Surface per-example download failures via `{components.card-error-inline}` inside the failing card | Pop a global `<ErrorBanner>` for a per-example download failure (other cards remain usable) |
+| Render absent metadata fields by omitting the badge | Render placeholders like "—" or "n/a" for missing optional metadata |

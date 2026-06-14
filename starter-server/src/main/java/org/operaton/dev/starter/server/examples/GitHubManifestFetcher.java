@@ -2,6 +2,7 @@ package org.operaton.dev.starter.server.examples;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.net.URI;
@@ -30,6 +31,7 @@ import java.util.regex.Pattern;
  *   <li>Parses source token "owner/repo" or "owner/repo@ref"; default ref is "HEAD"</li>
  * </ul>
  */
+@Component
 public class GitHubManifestFetcher {
     private static final Logger log = LoggerFactory.getLogger(GitHubManifestFetcher.class);
 

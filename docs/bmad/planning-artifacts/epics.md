@@ -2,12 +2,20 @@
 stepsCompleted: ['step-01-validate-prerequisites', 'step-02-design-epics', 'step-03-create-stories', 'step-04-final-validation']
 workflowStatus: complete
 completedAt: '2026-06-08'
+lastAmendedAt: '2026-06-13'
 inputDocuments:
   - 'docs/bmad/planning-artifacts/prd.md'
   - 'docs/bmad/planning-artifacts/architecture.md'
   - 'docs/bmad/planning-artifacts/ux-design-specification.md'
   - 'docs/bmad/planning-artifacts/prds/prd-operaton-starter-uc-enhancements-2026-06-06/prd.md'
   - 'docs/bmad/planning-artifacts/prds/prd-operaton-starter-2026-06-08/prd.md'
+  - 'docs/bmad/planning-artifacts/prds/prd-operaton-starter-examples-gallery-2026-06-13/prd.md'
+  - 'docs/bmad/planning-artifacts/prds/prd-operaton-starter-examples-gallery-2026-06-13/addendum.md'
+  - 'docs/bmad/planning-artifacts/ux-designs/ux-operaton-starter-2026-05-31/DESIGN.md'
+  - 'docs/bmad/planning-artifacts/ux-designs/ux-operaton-starter-2026-05-31/EXPERIENCE.md'
+amendments:
+  - date: '2026-06-13'
+    epic: 'Epic 8 — Examples Gallery'
 project_name: operaton-starter
 ---
 
@@ -1195,3 +1203,279 @@ So that I can quickly scan for projects using specific technologies, platforms, 
 **Given** existing snapshot or component tests that reference tag rendering
 **When** the structured tag type is adopted
 **Then** all tests pass (update test fixtures to use the new `Tag` object shape)
+
+---
+
+## Epic 8: Examples Gallery — Remote Example Repositories
+
+**Driver PRD:** `prds/prd-operaton-starter-examples-gallery-2026-06-13/prd.md`
+**Architecture:** `architecture.md` Amendment 2026-06-13 (sections A1–A13)
+**UX:** `ux-designs/ux-operaton-starter-2026-05-31/` (revised 2026-06-13)
+
+**Goal:** Allow the operaton-starter to aggregate example projects from maintainer-configured remote GitHub repositories that publish a `.operaton-starter.yml` manifest, surface them in a new Gallery subsection alongside Project Types and Use Cases, and let users download any example as a ZIP with one click. The list of source repositories is configuration-driven and seeded with `kthoms/operaton-examples`.
+
+Story sequencing follows architecture §A12: spec freeze first, then loader, then download, then UI, then docs. Each story is independently shippable behind no flag — the feature is invisible until at least one source is configured.
+
+### Story 8.1: Freeze Example/Tag OpenAPI Contract
+
+As a developer building operaton-starter,
+I want the `Example` model and the expanded `TagCategory` enum frozen in `openapi.yaml` before any implementation work,
+So that backend, frontend, and CLI/MCP clients consume a stable contract with no per-channel divergence.
+
+**Acceptance Criteria:**
+
+**Given** `openapi.yaml` is updated
+**When** the new `Example` schema is defined
+**Then** it carries all fields from `addendum.md`'s schema table — `id`, `title`, `icon`, `path`, `shortDescription`, `longDescription`, `buildSystem`, `runtime`, `operatonVersion`, `javaVersion`, `complexity`, `tags[]`, `integrations[]`, `bpmnConcepts[]`, `requires`, `authors[]`, `license`, `documentationUrl`, `demoVideoUrl`, `screenshots[]`, `lastUpdated`, plus the computed `sourceRepo`, `sourceRepoSha`, `sourceRepoUrl`.
+
+**Given** the `TagCategory` enum is updated
+**When** the OpenAPI client is regenerated
+**Then** `runtime`, `buildSystem`, and `complexity` are added as valid categories alongside the existing values; existing tag-rendering code continues to compile and render
+
+**Given** `MetadataResponse` is extended
+**When** the OpenAPI client is regenerated
+**Then** a new optional `examples: Example[]` field is present; existing consumers that ignore unknown fields continue to work; no other field is removed or renamed
+
+**Given** the generator runs in CI
+**When** `openapi.yaml` is changed without regenerating clients
+**Then** the existing contract-check GitHub Actions job posts a warning on the PR
+
+### Story 8.2: Add Examples Configuration Properties and Manifest Parser
+
+As a developer building operaton-starter,
+I want `StarterProperties` extended with examples configuration and a safe YAML parser that validates manifests,
+So that the loader can read a configured list of repositories and reject malformed or unsafe manifests before they enter the in-memory snapshot.
+
+**Acceptance Criteria:**
+
+**Given** `StarterProperties` is extended with a nested `Examples` record
+**When** the application boots
+**Then** `repositories: List<String>`, `cache.dir: Path` (default `${java.io.tmpdir}/operaton-starter/examples-cache`), `cache.maxSizeMb: long` (default 512), and `maxDownloadSizeMb: long` (default 50) are bound from `application.properties` and from the env vars `STARTER_EXAMPLES_REPOSITORIES`, `STARTER_EXAMPLES_CACHE_DIR`, `STARTER_EXAMPLES_CACHE_MAXSIZEMB`, `STARTER_EXAMPLES_MAXDOWNLOADSIZEMB`
+
+**Given** the default Spring properties ship preconfigured
+**When** no environment overrides are present
+**Then** `starter.examples.repositories` contains the single entry `kthoms/operaton-examples`
+
+**Given** a source token is invalid (does not match `^[A-Za-z0-9._-]+/[A-Za-z0-9._-]+(@[A-Za-z0-9._/-]+)?$`)
+**When** `StarterProperties` is validated at `@PostConstruct`
+**Then** the invalid token is dropped, a startup warning is logged identifying the token, and the application boots normally
+
+**Given** `ExampleManifestParser` is invoked with a well-formed manifest
+**When** parsing completes
+**Then** the parser returns a populated `ParsedManifest` containing each example with its computed `sourceRepo` and `sourceRepoSha`; `apiVersion` is checked against the major prefix `operaton-starter/v1`; unknown fields are silently ignored
+
+**Given** `ExampleManifestParser` is invoked with a manifest > 256 KB, an unknown major `apiVersion`, an invalid `path` (absolute, contains `..`, or contains `\0`), or syntactically broken YAML
+**When** parsing runs
+**Then** the parser throws a typed `ManifestRejected` exception with a `reason` field; no partial result is returned
+
+**Given** ArchUnit test `NoArbitraryYamlInstantiationTest` is run
+**When** scanning production sources
+**Then** any `Yaml` construction outside test code that does not use `SafeConstructor` fails the build
+
+### Story 8.3: Implement GitHub Manifest Fetcher
+
+As a developer building operaton-starter,
+I want a `GitHubManifestFetcher` that resolves source tokens to manifests pinned at a commit SHA,
+So that what the user sees in the gallery and what they download are guaranteed to come from the same commit.
+
+**Acceptance Criteria:**
+
+**Given** a source token `owner/repo` (no `@ref`)
+**When** `GitHubManifestFetcher.fetch()` runs
+**Then** it issues `GET https://api.github.com/repos/{owner}/{repo}/commits/HEAD` with `Accept: application/vnd.github.sha`, captures the returned 40-character SHA, then issues `GET https://raw.githubusercontent.com/{owner}/{repo}/{sha}/.operaton-starter.yml` and returns both the YAML bytes and the resolved SHA
+
+**Given** a source token `owner/repo@some-branch`
+**When** the fetch runs
+**Then** the commits-API call uses `{ref}` = `some-branch`; the raw-content URL uses the resolved SHA, never the ref string
+
+**Given** any HTTP call to GitHub exceeds 5 seconds
+**When** the timeout fires
+**Then** the fetcher throws `SourceUnavailable("timeout")`; no partial result is returned
+
+**Given** the commits API returns 4xx or 5xx, or the raw URL returns non-200
+**When** the fetcher runs
+**Then** it throws `SourceUnavailable("http-{status}")`; the response body is not parsed
+
+**Given** WireMock-backed tests
+**When** the suite runs
+**Then** there is at least one test per outcome: 200 happy path, 404 on commits, 404 on raw, 5xx, network timeout, and a manifest with a non-default branch ref
+
+### Story 8.4: Wire Up Registry, Startup Load, and Metadata Endpoint
+
+As a developer building operaton-starter,
+I want example manifests fetched in parallel at server startup, assembled into an immutable in-memory snapshot, and exposed through the existing `/api/v1/metadata` endpoint,
+So that the frontend receives examples through the same contract it already consumes.
+
+**Acceptance Criteria:**
+
+**Given** an `ApplicationReadyEvent` fires
+**When** `ExampleRepositoryLoader.load()` runs
+**Then** it dispatches one parallel task per configured source via the fetcher + parser, assembles an `ExampleSnapshot`, and stores it atomically in `ExampleRegistry`; total wall time is ≤ 3 seconds for N ≤ 10 sources on a normal network
+
+**Given** a configured source fails (any cause)
+**When** the loader completes
+**Then** the source is recorded in the snapshot with an `outcome` of `skipped:<reason>` and zero examples; the application starts successfully; other sources are unaffected
+
+**Given** every configured source fails at startup
+**When** the loader completes
+**Then** the application still starts; `examples[]` in `/api/v1/metadata` is an empty array; no `ErrorBanner`-equivalent server-side flag is raised
+
+**Given** `MetadataController` serves `GET /api/v1/metadata`
+**When** at least one source loaded successfully
+**Then** the response includes `examples[]` with each entry carrying the manifest fields plus `sourceRepo`, `sourceRepoSha`, and `sourceRepoUrl` (HTML URL to the example folder at the pinned SHA); `useCaseExamples` and `projectTypes` are unchanged in shape
+
+**Given** the contract test for `MetadataResponse`
+**When** it runs against the live response
+**Then** the response validates against the regenerated OpenAPI schema with zero violations
+
+### Story 8.5: Implement Example Download Endpoint with SHA-Keyed ZIP Cache
+
+As an API consumer,
+I want `GET /api/v1/examples/{owner}/{repo}/{exampleId}/download` to stream a ZIP of the example subfolder pinned to the SHA the user saw,
+So that the downloaded archive always matches the metadata that surfaced it, and repeat downloads are fast.
+
+**Acceptance Criteria:**
+
+**Given** a request to download a known example
+**When** the cache holds `{cacheDir}/{owner}/{repo}/{sha}/{exampleId}.zip`
+**Then** the endpoint streams the file with `Content-Type: application/zip`, `Content-Disposition: attachment; filename="{exampleId}.zip"`, an `ETag: W/"sha-{shortSha}-{exampleId}"` header, and a `Last-Modified` header from the file mtime
+
+**Given** a request to download a known example
+**When** the cache is empty for that key
+**Then** `ZipBuilder` fetches `https://codeload.github.com/{owner}/{repo}/tar.gz/{sha}`, walks tar entries with Apache Commons Compress, filters to entries under the example's `path:`, re-packs them into a new `.tmp` ZIP, atomic-renames `.tmp` to the cache path, and streams the result
+
+**Given** a tarball where the filtered uncompressed payload would exceed `maxDownloadSizeMb`
+**When** the running counter trips the limit during streaming
+**Then** the build aborts, the `.tmp` file is deleted, and the endpoint returns `413 Payload Too Large` with a `ProblemDetail` body identifying the example
+
+**Given** a tar entry whose normalized path escapes the example subpath (e.g. contains `..` or is absolute)
+**When** `ZipBuilder` encounters it
+**Then** the build aborts, the `.tmp` file is deleted, and the endpoint returns `502 Bad Gateway` with a `ProblemDetail` describing "upstream archive failed path-safety check"
+
+**Given** GitHub is unreachable and the cache holds no entry for the requested key
+**When** the request runs
+**Then** the endpoint returns `502 Bad Gateway` with a `ProblemDetail` body; the existing snapshot in `ExampleRegistry` is **not** invalidated
+
+**Given** a request for a `(owner, repo, exampleId)` not present in the current `ExampleRegistry`
+**When** the controller resolves it
+**Then** the endpoint returns `404 Not Found`; no GitHub call is made
+
+**Given** the SHA used by the download endpoint
+**When** the build runs
+**Then** the SHA comes from the in-memory `ExampleRegistry` snapshot — `ExampleDownloadController` never calls the commits API itself (verified by unit test that asserts no fetcher invocation on the download path)
+
+**Given** the cache size on disk exceeds `cache.maxSizeMb`
+**When** the LRU pruning task runs (every 10 minutes via `@Scheduled`)
+**Then** oldest-by-last-access files are deleted until total size is below the threshold; in-flight writes (the `.tmp` files) are excluded from candidates
+
+**Given** two concurrent requests for the same uncached `(sha, exampleId)`
+**When** both reach `ZipBuilder`
+**Then** both succeed (each writes its own `.tmp` then atomic-renames; the final cache entry is consistent); no partial or corrupt ZIP can be served
+
+### Story 8.6: Implement Manual Refresh Endpoint and Diagnostics Actuator
+
+As a maintainer,
+I want a `POST /api/v1/examples/refresh` endpoint and a `/actuator/examples` diagnostics endpoint,
+So that I can pick up new examples without restarting the server and can see exactly what loaded, from where, and at which SHA.
+
+**Acceptance Criteria:**
+
+**Given** a `POST /api/v1/examples/refresh` request
+**When** the controller runs
+**Then** `ExampleRepositoryLoader.load()` is re-invoked using the configured source list; the response is `200 OK` with a JSON body of per-source `Status` entries (`source`, `outcome`, `examplesLoaded`, `resolvedSha`, `lastFetchedAt`, `error?`)
+
+**Given** a source fails during refresh while it previously had a successful snapshot in memory
+**When** the new `ExampleSnapshot` is assembled
+**Then** that source's slot is filled from the **previous** snapshot rather than being dropped; the response `Status` for that source carries `outcome: stale:<reason>` so the maintainer can tell it didn't update
+
+**Given** the refresh endpoint is called repeatedly
+**When** each call completes
+**Then** the registry swap is atomic (an in-flight `GET /api/v1/metadata` cannot observe a torn snapshot — verified by a concurrency test)
+
+**Given** `GET /actuator/examples` is invoked
+**When** the actuator endpoint serves the response
+**Then** the body matches the same `Status[]` shape returned by `/api/v1/examples/refresh`, reflecting the most recent load attempt
+
+**Given** the refresh endpoint is unauthenticated in v1
+**When** a request from any origin hits it
+**Then** the controller serves it; the security review note from PRD Open Q-1 is recorded as a deferred decision (no test required, but a `@Deprecated`-style comment or `[NOTE FOR PM]` is present in the controller pointing to that decision)
+
+### Story 8.7: Implement Examples Gallery UI (Search, Filters, Card, Download, Empty States)
+
+As a developer evaluating Operaton,
+I want a searchable, filterable Examples subsection in the gallery with rich cards and one-click ZIP download,
+So that I can pick a runnable starter that fits my stack and have it on disk in under 30 seconds.
+
+**Acceptance Criteria:**
+
+**Given** `useExamples()`, `useGalleryFilters()`, and `useExampleDownload()` composables are implemented
+**When** `GalleryView.vue` mounts
+**Then** the gallery renders three subsections in this order — **Project Types**, **Examples**, **Use Cases** — each with its own `<h2>` and short blurb; the existing Marcus/Elena/Priya flows continue to enter via Project Types
+
+**Given** `<GallerySearchBar>` is rendered
+**When** the user scrolls past the hero
+**Then** the search input + filter chip row sticks below the app header (`top: {spacing.header-height}`), gains `{components.search-bar.sticky-shadow}`, and stays full-width; the search input is `<input type="search" aria-label="Search examples and use cases">` with a 200ms debounce; a `<span role="status" aria-live="polite" class="sr-only">` announces "{n} examples, {m} use cases match" after each debounced change
+
+**Given** the user toggles a filter chip
+**When** rendered
+**Then** the chip is `<button type="button" aria-pressed="{bool}">` with toolbar semantics (`<div role="toolbar" aria-label="Filter examples">`); Arrow Left/Right move focus between chips; Space/Enter toggles; active chips show an `×` glyph on hover/focus
+
+**Given** the active filter state
+**When** results are computed
+**Then** filter chips (runtime, buildSystem, complexity, integrations) apply only to the Examples subsection; the free-text search applies to both Examples and Use Cases; filters compose with AND across categories and OR within a category; Project Types are unaffected
+
+**Given** `<ExampleGalleryCard>` is rendered
+**When** an example carries an emoji `icon`
+**Then** the icon slot displays the emoji as plain text; when `icon` is a repo-relative image path, the image is fetched at the pinned SHA and rendered; when absent or load fails, a neutral default SVG glyph is shown — no error surfaced to the user
+
+**Given** `<ExampleGalleryCard>` is rendered
+**When** the user clicks "More details"
+**Then** `aria-expanded` toggles on the disclosure button; the panel reveals longDescription (markdown), integrations, bpmnConcepts, requires, authors, license, lastUpdated, and the pinned short SHA in mono `0.75rem` text; `Escape` while focus is in the panel closes it and returns focus to the disclosure button
+
+**Given** the user clicks "Download ZIP" on a card
+**When** the request is in flight
+**Then** the button is disabled and shows "Downloading…" with a spinner glyph; on success the button is replaced for ~3s by `{components.download-success-inline}` "Downloaded {exampleId}.zip ✓"; on failure a `{components.card-error-inline}` block appears below the action row with a "Retry" affordance; the global `<ErrorBanner>` is **not** used for per-example failures
+
+**Given** the API returned `examples: []` (no sources loaded or all failed)
+**When** the Examples subsection renders
+**Then** an `<ExamplesEmptyState>` shows the copy "No examples are available right now…" with a "View format docs →" ghost button linking to `docs/examples-repository-format.md`
+
+**Given** active filters produce no matches
+**When** the Examples subsection renders
+**Then** an `<ExamplesEmptyState>` shows "No examples match these filters." with a "Clear filters" ghost button that resets `useGalleryFilters().clear()`
+
+**Given** runtime / buildSystem / complexity Tags arrive from the API
+**When** rendered
+**Then** they route through `tagColors.ts` to the monochrome `{components.metadata-badge}` visual lane; `concept` and `integration` Tags continue to render with the existing accent `{components.tag}` lane — verified by component tests for each category
+
+**Given** the axe-core a11y CI job runs against `GalleryView.vue`
+**When** the new components are in place
+**Then** zero violations are reported; the suite covers the sticky search bar, filter chip toolbar, card disclosure pattern, and empty states
+
+### Story 8.8: Author Manifest Format Documentation and Seed Sample Repository
+
+As an example author,
+I want clear documentation of the `.operaton-starter.yml` format and a working sample repository to copy from,
+So that I can publish a new example without trial-and-error and without reading starter source code.
+
+**Acceptance Criteria:**
+
+**Given** `docs/examples-repository-format.md` is published
+**When** read end-to-end
+**Then** it covers: rationale (one paragraph), the full field-by-field schema table (matching `addendum.md`'s table), an annotated complete `.operaton-starter.yml` example, the forward-compatibility contract (unknown fields ignored, `apiVersion` major-gated), repository layout expectations (manifest at repo root; each example in a subfolder referenced by `path:`), and registration instructions (open a PR against operaton-starter to extend the default `starter.examples.repositories` list, or run the starter with `STARTER_EXAMPLES_REPOSITORIES`)
+
+**Given** the main `README.md` is updated
+**When** read
+**Then** a "Contributing examples" section links to `docs/examples-repository-format.md`; the Examples Gallery section of the deployed site includes a "Publish your own examples →" link to the same doc
+
+**Given** the seed sample manifest at `kthoms/operaton-examples`
+**When** committed to that repository's `main` branch
+**Then** it lists at least three examples covering the runtime matrix (Spring Boot + Maven, Quarkus + Gradle, plain-Java embedded), each with a populated long description, an icon (emoji), tags spanning the new `runtime` / `buildSystem` / `complexity` categories plus existing `concept` / `integration` categories, and a `path:` pointing at a real example subfolder
+
+**Given** the seed sample manifest validates against `ExampleManifestParser`
+**When** the loader fetches it at startup
+**Then** all examples in the sample load successfully (no `skipped:schema` outcomes); a smoke test runs the parser against the committed sample as a fixture
+
+**Given** the v1 release ships
+**When** an operator boots the starter with default configuration
+**Then** the gallery displays the seed sample's examples without any environment override required

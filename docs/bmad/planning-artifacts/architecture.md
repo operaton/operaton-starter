@@ -3,7 +3,17 @@ stepsCompleted: [1, 2, 3, 4, 5, 6, 7, 8]
 lastStep: 8
 status: 'complete'
 completedAt: '2026-05-31'
-inputDocuments: ['_bmad-output/planning-artifacts/prd.md']
+lastAmendedAt: '2026-06-13'
+inputDocuments:
+  - '_bmad-output/planning-artifacts/prd.md'
+  - 'docs/bmad/planning-artifacts/prds/prd-operaton-starter-examples-gallery-2026-06-13/prd.md'
+  - 'docs/bmad/planning-artifacts/prds/prd-operaton-starter-examples-gallery-2026-06-13/addendum.md'
+  - 'docs/bmad/planning-artifacts/ux-designs/ux-operaton-starter-2026-05-31/DESIGN.md'
+  - 'docs/bmad/planning-artifacts/ux-designs/ux-operaton-starter-2026-05-31/EXPERIENCE.md'
+amendments:
+  - date: '2026-06-13'
+    section: 'Examples Gallery (feature addendum)'
+    reason: 'Examples Gallery feature PRD'
 workflowType: 'architecture'
 project_name: 'operaton-starter'
 user_name: 'Karsten'
@@ -1191,3 +1201,253 @@ Each ADR: **Context** / **Decision** / **Consequences** format. Authored by Paig
 - Run `ZeroSpringDependencyTest` after any change to `starter-templates`
 - Any new project type requires a new `@ParameterizedTest` entry in `GenerationEngineTest`
 - Any new config field requires updating `useShareableLink.ts` and its round-trip test
+
+---
+
+## Amendment 2026-06-13 — Examples Gallery (Feature Addendum)
+
+**Driver:** PRD `prds/prd-operaton-starter-examples-gallery-2026-06-13/prd.md` (+ `addendum.md`) and UX update `ux-designs/ux-operaton-starter-2026-05-31/` (2026-06-13 revision).
+
+This amendment extends the architecture for a single additive feature. It does **not** modify any pre-existing decision in the core architecture above. Where this amendment introduces a new constraint or contract, it sits alongside the originals.
+
+### A1. Scope and Non-Goals
+
+In scope:
+- Aggregating example projects from maintainer-controlled remote GitHub repositories at server startup and on manual refresh.
+- Serving a per-example ZIP download endpoint backed by a server-side cache keyed on resolved commit SHA.
+- Surfacing examples in the existing Vue gallery as an additional subsection alongside Project Types and Use Cases.
+
+Out of scope (explicitly deferred):
+- User-driven repository registration. The list is environment-configured only.
+- Private GitHub authentication.
+- Periodic background refresh (manual refresh + restart only).
+- Per-user/per-session ref pinning beyond the load cycle.
+
+### A2. Module Map
+
+The feature adds one new backend subpackage and one new frontend feature folder. No new Maven module is introduced — the work fits the existing `starter-server` and `starter-web` modules.
+
+```
+starter-server/src/main/java/org/operaton/dev/starter/server/
+└── examples/                                            (new package)
+    ├── ExampleRepositoryLoader.java                     # @Service, ApplicationReadyEvent listener + refresh entry point
+    ├── ExampleManifestParser.java                       # SnakeYAML SafeConstructor, schema validation
+    ├── GitHubManifestFetcher.java                       # raw.githubusercontent.com + commits API, per-source timeouts
+    ├── ExampleSnapshot.java                             # immutable record: per-source loaded state + resolved SHA
+    ├── ExampleRegistry.java                             # holds the current ExampleSnapshot atomic reference
+    ├── ZipBuilder.java                                  # tarball → filtered ZIP streaming (Apache Commons Compress)
+    ├── ExampleZipCache.java                             # disk-backed LRU keyed by (owner/repo/sha/exampleId)
+    ├── api/ExampleDownloadController.java               # GET .../examples/{owner}/{repo}/{id}/download
+    ├── api/ExampleRefreshController.java                # POST .../examples/refresh
+    └── actuator/ExampleSourcesEndpoint.java             # /actuator/examples — diagnostics
+
+starter-server/src/main/java/org/operaton/dev/starter/server/api/
+└── MetadataController.java                              # extended to surface examples[] from ExampleRegistry
+
+starter-server/src/main/java/org/operaton/dev/starter/server/config/
+└── StarterProperties.java                               # extended with Examples(repositories, cache, maxDownloadSizeMb)
+
+starter-web/src/
+├── features/examples/                                   (new folder)
+│   ├── ExampleGalleryCard.vue
+│   ├── GallerySearchBar.vue
+│   ├── FilterChip.vue
+│   ├── ExamplesEmptyState.vue
+│   ├── DownloadAction.vue
+│   ├── useExamples.ts
+│   ├── useGalleryFilters.ts
+│   └── useExampleDownload.ts
+└── views/GalleryView.vue                                # extended: hosts new subsection + sticky search bar
+```
+
+Boundary preserved: `starter-templates` and the generation engine are **untouched**. Examples are served as opaque archives — the starter does not introspect or render them. This is enforced by an ArchUnit test (see A8).
+
+### A3. Configuration Contract
+
+Single new properties group on `StarterProperties` — a nested record under the existing `starter.*` namespace.
+
+```java
+public record Examples(
+    List<String> repositories,    // "owner/repo" or "owner/repo@ref" tokens
+    Cache cache,
+    long maxDownloadSizeMb        // default 50
+) {
+  public record Cache(Path dir, long maxSizeMb) {}  // default dir: ${java.io.tmpdir}/operaton-starter/examples-cache; default 512 MB
+}
+```
+
+Environment binding:
+- `STARTER_EXAMPLES_REPOSITORIES` — comma-separated source list. Seed default: `kthoms/operaton-examples`.
+- `STARTER_EXAMPLES_CACHE_DIR`, `STARTER_EXAMPLES_CACHE_MAXSIZEMB`, `STARTER_EXAMPLES_MAXDOWNLOADSIZEMB`.
+
+Validation runs at `@PostConstruct` on `StarterProperties`: source tokens must match `^[A-Za-z0-9._-]+/[A-Za-z0-9._-]+(@[A-Za-z0-9._/-]+)?$`. Invalid tokens are dropped with a startup warning — the application never fails to boot because of a configured source.
+
+### A4. Manifest Contract
+
+The manifest schema is authored in `docs/examples-repository-format.md` (FR-E1) and is the **single source of truth**. The Java DTOs in `org.operaton.dev.starter.server.examples` model it but do not duplicate the spec. Conformance rules at the parser:
+
+- `apiVersion` must start with `operaton-starter/v1`. Unknown major → skip source with logged reason.
+- Manifest size hard cap: 256 KB (rejected before parse).
+- YAML parser: SnakeYAML `SafeConstructor` (no class instantiation), `LoaderOptions.codePointLimit` set to 256 KB.
+- Unknown fields are silently ignored (forward-compatibility).
+- `path` validation: relative, no `..` segments, no leading `/`, no embedded `\0`. Path traversal in either manifest `path` or tarball entry names is a hard rejection.
+
+The generated OpenAPI model `Example` mirrors the manifest fields plus the computed fields (`sourceRepo`, `sourceRepoSha`, `sourceRepoUrl`). The generated client is the only thing the frontend reads — same pattern as the rest of the system. The unified `Tag` model (Operaton tag color routing) is reused per PRD FR-D7 with new categories `runtime`, `buildSystem`, `complexity` added to the `TagCategory` enum in `openapi.yaml`.
+
+### A5. Load Cycle (startup + refresh)
+
+```
+ApplicationReadyEvent  ── or ──  POST /api/v1/examples/refresh
+        │
+        ▼
+ExampleRepositoryLoader.load()
+        │
+        ├──parallel-for each source token──▶ GitHubManifestFetcher
+        │                                        │
+        │                                        ├─ GET /repos/{o}/{r}/commits/{ref}
+        │                                        │      Accept: application/vnd.github.sha
+        │                                        │      → resolved commit SHA
+        │                                        │
+        │                                        └─ GET raw.githubusercontent.com/{o}/{r}/{sha}/.operaton-starter.yml
+        │                                               → 256 KB cap → SnakeYAML SafeConstructor
+        │
+        ├─ ExampleManifestParser → per-example DTOs annotated with (sourceRepo, sha)
+        │
+        ├─ assemble ExampleSnapshot (immutable record)
+        │
+        └─ ExampleRegistry.swap(snapshot)   ← atomic reference; readers never see torn state
+```
+
+Failure model (per source, never global):
+- DNS / connect timeout (5s) → source marked `skipped: network`.
+- Non-2xx on commits or raw URL → `skipped: http-<status>`.
+- YAML parse / schema violation / size cap → `skipped: schema`.
+- Unknown `apiVersion` major → `skipped: api-version`.
+
+Refresh-specific behavior: a failed source on refresh **preserves its previous in-memory snapshot** instead of disappearing. Implementation: per-source result is merged into a fresh `ExampleSnapshot` builder; missing/failed entries are filled from the previous snapshot. This makes refresh safe to call casually.
+
+### A6. Download Cycle
+
+```
+GET /api/v1/examples/{owner}/{repo}/{exampleId}/download
+        │
+        ▼
+ExampleDownloadController
+        │
+        ├─ lookup example in ExampleRegistry → 404 if missing
+        ├─ resolved SHA from the registry entry (never re-resolved here)
+        │
+        ▼
+ExampleZipCache.getOrBuild(owner, repo, sha, exampleId)
+        │
+        ├─ cache hit → File on disk → stream response (200, application/zip)
+        │
+        └─ cache miss
+              │
+              ▼
+       ZipBuilder.build(owner, repo, sha, exampleId, subPath)
+              │
+              ├─ GET codeload.github.com/{o}/{r}/tar.gz/{sha}   (streamed)
+              ├─ Apache Commons Compress: walk tar entries
+              ├─ filter to entries under `{repoSubPath}/{example.path}/...`
+              ├─ enforce path-safety (no `..`, no absolute) per-entry
+              ├─ enforce running size against `maxDownloadSizeMb`
+              │    → exceeded: abort, delete partial .tmp, 413 Payload Too Large
+              ├─ re-pack into a new ZipOutputStream backed by a .tmp file
+              ├─ atomic rename .tmp → final cache path
+              │
+              └─ stream the final file to the response
+```
+
+**Caching rules:**
+- Cache key: `{cacheDir}/{owner}/{repo}/{sha}/{exampleId}.zip`. SHA-keying gives natural invalidation: a refresh that bumps the SHA leaves old entries to age out via LRU.
+- Eviction: lazy. A periodic task (every 10 minutes, `@Scheduled`) prunes oldest-by-access until total size ≤ `cache.maxSizeMb`. No global lock — uses `Files.walk` snapshot + best-effort delete; concurrent writers cannot collide because each `(sha, exampleId)` write goes via a unique `.tmp` then atomic rename.
+- `Last-Modified` header set to the file mtime; `ETag` is the SHA itself (`W/"sha-{shortSha}-{exampleId}"`). Clients get cheap revalidation.
+
+**Outcome matrix:**
+
+| Trigger | Cache state | GitHub state | Result |
+|---|---|---|---|
+| Known example | Hit | (irrelevant) | 200 + stream |
+| Known example | Miss | OK | 200 + build + cache + stream |
+| Known example | Miss | Unreachable | 502 with `ProblemDetail` |
+| Known example | Miss | Tarball > cap | 413 + `ProblemDetail` |
+| Unknown owner/repo/id | — | — | 404 |
+| Refresh in flight | (irrelevant) | — | Reads pre-swap snapshot — never torn |
+
+### A7. API Surface (additions)
+
+| Verb | Path | Auth | Returns | Notes |
+|---|---|---|---|---|
+| GET | `/api/v1/metadata` | none | `MetadataResponse` with new `examples: Example[]` | Backwards-compatible — additive only |
+| GET | `/api/v1/examples/{owner}/{repo}/{id}/download` | none | `application/zip` | 200 / 404 / 413 / 502 |
+| POST | `/api/v1/examples/refresh` | none (v1) | `ExampleSourceStatus[]` | Idempotent in effect; not gated in v1 (PRD Open Q-1) |
+| GET | `/actuator/examples` | actuator default | `ExampleSourcesEndpoint.Status` | Per-source diagnostics |
+
+All endpoints are documented via the existing `openapi.yaml` and ship through the OpenAPI generator. The frontend reads only the generated client — no hand-written fetch paths.
+
+### A8. ArchUnit Constraints (additions)
+
+Two new tests added to the existing ArchUnit suite in `starter-server`:
+
+1. `ExamplesPackageBoundaryTest` — classes in `org.operaton.dev.starter.server.examples` may not depend on `org.operaton.dev.starter.templates` (generation engine), and vice versa. Examples are opaque archives; the generation path stays clean.
+2. `NoArbitraryYamlInstantiationTest` — any class loading user-supplied YAML must construct the parser with `SafeConstructor`. A negative test rejects `Yaml(new Constructor(...))` and `new Yaml()` outside test sources.
+
+Existing `ZeroSpringDependencyTest` is unaffected — the new package lives in `starter-server`, which is the Spring tier.
+
+### A9. Security Decisions
+
+- **YAML.** `SafeConstructor` + `codePointLimit` + manifest size cap. No class instantiation. Enforced by A8.
+- **Path traversal.** Both manifest `path:` and tarball entry names are validated: no `..`, no absolute, no `\0`. A path failure aborts the build and returns 502 (treat as upstream-corrupt input).
+- **Download size DoS.** Per-example uncompressed cap (`maxDownloadSizeMb`, default 50 MB) enforced as a running counter during tar streaming. Manifest size capped at 256 KB.
+- **Outbound surface.** Only `raw.githubusercontent.com`, `api.github.com`, `codeload.github.com` HTTPS endpoints. No credentials sent. List configurable but not user-toggleable.
+- **Refresh endpoint exposure.** v1 ships unauthenticated. Decision logged as PRD Open Q-1; revisit when first community/hosted deployment appears. Operators exposing the starter publicly are expected to gate it at the reverse proxy.
+- **Cache directory.** Default under `${java.io.tmpdir}`. Operators can move it via `STARTER_EXAMPLES_CACHE_DIR`. Files are written with the JVM's default permissions; container deployments should ensure the path is on the same writable volume across restarts to retain cache value (otherwise behavior degrades to "every restart warms cold").
+
+### A10. Consistency Rules (additions to the Patterns section)
+
+These are AI Agent instructions, in the same spirit as the existing Patterns section:
+
+- **Never** read user-supplied YAML with anything other than SnakeYAML `SafeConstructor`. Tested by ArchUnit (A8.2).
+- **Never** include `starter-templates` types from `org.operaton.dev.starter.server.examples`. Tested by ArchUnit (A8.1).
+- **Never** resolve `@ref` to a SHA inside `ExampleDownloadController` — the SHA must come from the in-memory `ExampleRegistry` snapshot the user actually saw, not the current tip of branch.
+- **Never** introduce a UI control for the refresh endpoint in v1. Refresh is an API/curl operation; UI exposure requires a new PRD addendum.
+- **Always** add new manifest fields as **optional** with explicit `null`-safety on the consumer side. The manifest schema is forward-compatible by contract; this rule preserves that.
+- **Always** include the resolved short SHA in `ExampleSourcesEndpoint` output. Diagnostics that don't pin to a SHA are useless for debugging "which version of the example is live."
+- **Always** route new manifest fact-style categories (single-value enums like `runtime`, `buildSystem`) through the `Tag` model, not a parallel badge data model — DESIGN.md routes the visual lane on the `TagCategory`, not the Java type.
+
+### A11. Decisions and Rejected Alternatives
+
+| Decision | Chosen | Rejected | Why |
+|---|---|---|---|
+| Manifest fetch frequency | Startup + manual refresh endpoint | Periodic background refresh | Scheduler complexity without proportional user value at this stakes level |
+| Ref pinning | Resolve `@ref` → SHA at each load | Always fetch tip of branch | Makes manifest view and downloaded content consistent across a session |
+| ZIP caching | Disk LRU keyed by SHA | (a) No cache (b) In-memory cache | Disk LRU survives restarts where the temp dir does; SHA-key gives natural invalidation; in-memory wastes heap |
+| Tarball processing | `codeload` tarball + filter to subpath | (a) Git Trees API per-file fetch (b) Full `git clone` | One HTTP stream per build, no fan-out, no on-disk repo clones |
+| Auth on refresh endpoint | None in v1 | Token/basic auth | Defer until public deployments emerge; reverse proxy is operators' answer for now |
+| ZIP build strategy | Stream tar → re-pack ZIP in one pass | (a) Spool tar to disk first (b) Serve tarball directly | Single-pass avoids 2× disk churn; ZIP is the existing UX/API contract for downloads |
+| Manifest model | Reuse unified `Tag` with new categories | Parallel `MetadataBadge` data model | Honors PRD FR-D7; styling lane is a function of `TagCategory`, not a data fork |
+| Failure visibility | Skip-with-warning per source; preserve previous on refresh | Fail the metadata call on any source failure | Gallery degradation must be local, not global |
+| Module placement | Extend `starter-server` + `starter-web` | New `starter-examples` Maven module | Scope is small; a new module would add CI churn without architectural benefit |
+
+### A12. Implementation Sequence
+
+Stories should land in this order to avoid integration thrash:
+
+1. **Spec freeze.** Add `Example` and new `TagCategory` values to `openapi.yaml`; regenerate clients. CI green = contract locked.
+2. **Properties + loader skeleton.** `StarterProperties.Examples`, `ExampleManifestParser` with size/path/apiVersion guards, parser unit tests against fixtures. No HTTP yet.
+3. **GitHub fetcher.** `GitHubManifestFetcher` against a WireMock backend; covers SHA resolve + manifest fetch + timeouts + failure modes.
+4. **Registry + startup load.** `ExampleRepositoryLoader` wired to `ApplicationReadyEvent`; `MetadataController` exposes `examples[]`. Smoke test confirms backwards-compatible `metadata` response shape.
+5. **Download path.** `ExampleZipCache` + `ZipBuilder` + `ExampleDownloadController`; WireMock-backed tests for 200 / 404 / 413 / 502; running-size-cap test with a 60 MB synthetic tarball.
+6. **Refresh + diagnostics.** `ExampleRefreshController` + `ExampleSourcesEndpoint`; preserve-previous-on-failure test.
+7. **Frontend.** Composables + components per UX spines; ArchUnit tests added before merge.
+8. **Docs.** `docs/examples-repository-format.md` published; README linked; seed-repo sample manifest committed at `kthoms/operaton-examples`.
+
+Each story is independently shippable behind no flag — the feature is invisible until at least one source is configured (which v1 ships preconfigured).
+
+### A13. Handoff Notes for Story Writing
+
+- Frontend filter chip state is **not** mirrored to URL params in v1 (UX decision). Story writers should not infer a URL contract from card content.
+- The `examples[].lastUpdated` value is **author-asserted**, not derived from GitHub commit info — keep it that way for v1 to avoid an extra commits API call per source.
+- `ExampleSourcesEndpoint` is the canonical place to learn what happened at load time. Stories that touch loader logic should add to its returned `Status` shape rather than introducing parallel logging-only diagnostics.
+- The cache directory is shared across all source repositories. Stories that introduce per-repo logic (eviction policy, allow/deny lists) should keep that boundary clean — the cache itself is dumb storage; policy lives in the loader/refresh path.
