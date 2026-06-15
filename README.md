@@ -20,6 +20,14 @@ Every generated project:
 - Propagates Group ID, Artifact ID, and project name into BPMN process IDs, Java packages, and `spring.application.name`
 - Includes a purposeful README with next-step instructions and troubleshooting
 
+## Examples Gallery
+
+The web UI includes a curated **Examples Gallery** showcasing runnable Operaton examples from trusted repositories. Each example is a complete, ready-to-build project demonstrating specific patterns (approval workflows, event-driven processing, embedded engines) across different runtimes (Spring Boot, Quarkus, plain Java) and build systems (Maven, Gradle).
+
+Users can browse, filter, and download examples directly from the gallery, jumpstarting their Operaton journey.
+
+**→ [Publish your own examples](docs/examples-repository-format.md)**
+
 ## Access Channels
 
 **Web UI** — `start.operaton.org`
@@ -143,6 +151,17 @@ operaton-starter/
 All channels invoke the same `GenerationEngine.generate(ProjectConfig) → byte[]` — identical output guaranteed by a 6-combination CI test matrix (2 project types × 3 build systems).
 
 See [`docs/arc42/`](docs/arc42/) for full architecture documentation.
+
+## Contributing Examples
+
+Want to share your Operaton example with the community?
+
+1. **Author a new repository** with your example(s) and a `.operaton-starter.yml` manifest
+2. **Read the format guide**: [`docs/examples-repository-format.md`](docs/examples-repository-format.md) documents the schema, repository structure, and registration process
+3. **Register your repository** either via environment variable (self-hosted) or by opening a PR to add it to the default configuration
+4. **Your examples appear** in the public Examples Gallery once deployed
+
+See the [seed repository](https://github.com/kthoms/operaton-examples) for a complete example.
 
 ## Development
 

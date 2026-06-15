@@ -1,0 +1,97 @@
+apiVersion: operaton-starter/v1
+
+repository:
+  name: "Operaton Examples"
+  description: "Curated, runnable examples illustrating common Operaton patterns and integrations."
+  maintainer:
+    name: "Karsten Thoms"
+    url: "https://github.com/kthoms"
+
+examples:
+  - id: leave-request-spring-boot
+    title: "Leave Request (Spring Boot + Maven)"
+    icon: "📝"
+    path: examples/leave-request-spring-boot
+    shortDescription: >
+      Classic leave-request approval flow with a REST API, a user task, and a DMN-based vacation policy.
+    longDescription: |
+      A complete, runnable Spring Boot example showing how to model a leave-request
+      approval process in Operaton. Demonstrates:
+
+      - Submitting a request via REST
+      - Routing to a manager user task
+      - Evaluating a DMN policy for auto-approval thresholds
+      - Sending a notification on completion
+
+      Includes integration tests and a `docker-compose.yml` for a Postgres backend.
+    buildSystem: maven
+    runtime: spring-boot
+    operatonVersion: "2.1.1"
+    javaVersion: "21"
+    complexity: beginner
+    tags:
+      - { label: "Approval", category: "concept" }
+      - { label: "DMN", category: "concept" }
+      - { label: "REST", category: "integration" }
+    integrations: [rest, dmn, postgres]
+    bpmnConcepts: [user-task, exclusive-gateway, business-rule-task, service-task]
+    requires: "Java 21+, Docker (for Postgres)"
+    authors:
+      - { name: "Karsten Thoms", url: "https://github.com/kthoms" }
+    license: "Apache-2.0"
+    documentationUrl: "https://github.com/kthoms/operaton-examples/blob/main/examples/leave-request-spring-boot/README.md"
+    screenshots:
+      - examples/leave-request-spring-boot/docs/process.png
+    lastUpdated: "2026-06-10"
+
+  - id: order-fulfillment-quarkus
+    title: "Order Fulfillment (Quarkus + Gradle)"
+    icon: "📦"
+    path: examples/order-fulfillment-quarkus
+    shortDescription: >
+      End-to-end order fulfillment process on Quarkus with Kafka events and external task workers.
+    longDescription: |
+      A Quarkus-based example modeling order intake, payment, and shipping.
+
+      - Kafka inbound trigger for new orders
+      - External task pattern for payment and shipment services
+      - Compensation on payment failure
+    buildSystem: gradle
+    runtime: quarkus
+    operatonVersion: "2.1.1"
+    javaVersion: "21"
+    complexity: intermediate
+    tags:
+      - { label: "Order Mgmt", category: "concept" }
+      - { label: "Kafka", category: "integration" }
+      - { label: "External Task", category: "concept" }
+    integrations: [kafka, rest, external-task]
+    bpmnConcepts: [message-start-event, parallel-gateway, compensation, external-task]
+    requires: "Java 21+, Docker (Kafka, Postgres)"
+    authors:
+      - { name: "Karsten Thoms", url: "https://github.com/kthoms" }
+    license: "Apache-2.0"
+    documentationUrl: "https://github.com/kthoms/operaton-examples/blob/main/examples/order-fulfillment-quarkus/README.md"
+    lastUpdated: "2026-06-12"
+
+  - id: incident-escalation-plain-java
+    title: "Incident Escalation (Plain Java embedded)"
+    icon: "🚨"
+    path: examples/incident-escalation-plain-java
+    shortDescription: >
+      Minimal example embedding the Operaton engine in a plain Java app, no framework, with timer escalation.
+    buildSystem: maven
+    runtime: plain-java
+    operatonVersion: "2.1.1"
+    javaVersion: "17"
+    complexity: advanced
+    tags:
+      - { label: "Embedded", category: "runtime" }
+      - { label: "Timer", category: "concept" }
+    integrations: []
+    bpmnConcepts: [timer-boundary-event, escalation, sub-process]
+    requires: "Java 17+"
+    authors:
+      - { name: "Karsten Thoms", url: "https://github.com/kthoms" }
+    license: "Apache-2.0"
+    lastUpdated: "2026-06-08"
