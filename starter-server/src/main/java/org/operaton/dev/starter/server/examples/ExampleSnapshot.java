@@ -13,15 +13,30 @@ import java.util.List;
  * The snapshot captures per-source state: source token, outcome, examples list,
  * resolved SHA, and last fetch timestamp.
  *
+ * <p>Also carries a list of {@link ExampleSourceStatus} entries for each load attempt,
+ * used for diagnostics via the refresh endpoint and actuator.
+ *
  * <p>Thread-safe: once created, snapshots are never mutated. New snapshots are created
  * and swapped atomically via {@link ExampleRegistry}.
  */
 public record ExampleSnapshot(
-        List<SourceState> sources
+        List<SourceState> sources,
+        List<ExampleSourceStatus> statuses
 ) {
     public ExampleSnapshot {
         // Defensive copy and unmodifiable list
         sources = Collections.unmodifiableList(new ArrayList<>(sources));
+        statuses = Collections.unmodifiableList(new ArrayList<>(statuses));
+    }
+
+    /**
+     * Convenience constructor for backward compatibility when no statuses are available.
+     *
+     * @param sources the list of source states
+     * @return a new ExampleSnapshot with empty statuses list
+     */
+    public static ExampleSnapshot of(List<SourceState> sources) {
+        return new ExampleSnapshot(sources, List.of());
     }
 
     /**

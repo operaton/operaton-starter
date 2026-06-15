@@ -189,7 +189,7 @@ class ExampleDownloadControllerTest {
      * Creates an empty snapshot with no examples.
      */
     private ExampleSnapshot createEmptySnapshot() {
-        return new ExampleSnapshot(new ArrayList<>());
+        return ExampleSnapshot.of(new ArrayList<>());
     }
 
     /**
@@ -205,7 +205,7 @@ class ExampleDownloadControllerTest {
         String sha = example.getSourceRepoSha();
         sources.add(new ExampleSnapshot.SourceState(sourceRepo, "success", examples, sha, "2026-06-15T00:00:00Z"));
 
-        return new ExampleSnapshot(sources);
+        return ExampleSnapshot.of(sources);
     }
 
     /**

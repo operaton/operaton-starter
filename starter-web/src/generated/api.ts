@@ -40,3 +40,14 @@ export async function previewTemplate(templateId: string, config: ProjectConfig)
     return null
   }
 }
+
+export async function downloadExample(owner: string, repo: string, exampleId: string): Promise<Blob> {
+  const response = await fetch(`${BASE_URL}/api/v1/examples/${owner}/${repo}/${exampleId}/download`, {
+    headers: { Accept: 'application/zip' }
+  })
+  if (!response.ok) {
+    const problem: ProblemDetail = await response.json()
+    throw problem
+  }
+  return response.blob()
+}

@@ -21,7 +21,7 @@ class ExampleSnapshotTest {
                 .shortDescription("Test example");
 
         var sourceState = new ExampleSnapshot.SourceState("owner/repo", "success", List.of(example), "abc123def456", "2024-01-01T00:00:00Z");
-        var snapshot = new ExampleSnapshot(List.of(sourceState));
+        var snapshot = ExampleSnapshot.of(List.of(sourceState));
 
         assertEquals(1, snapshot.sources().size());
         assertEquals("owner/repo", snapshot.sources().get(0).source());
@@ -32,7 +32,7 @@ class ExampleSnapshotTest {
     @Test
     void snapshot_with_failed_source() {
         var sourceState = new ExampleSnapshot.SourceState("owner/repo", "skipped:timeout", List.of(), null, "2024-01-01T00:00:00Z");
-        var snapshot = new ExampleSnapshot(List.of(sourceState));
+        var snapshot = ExampleSnapshot.of(List.of(sourceState));
 
         assertEquals(1, snapshot.sources().size());
         assertEquals("skipped:timeout", snapshot.sources().get(0).outcome());
@@ -41,14 +41,14 @@ class ExampleSnapshotTest {
 
     @Test
     void empty_snapshot() {
-        var snapshot = new ExampleSnapshot(List.of());
+        var snapshot = ExampleSnapshot.of(List.of());
         assertTrue(snapshot.sources().isEmpty());
     }
 
     @Test
     void snapshot_is_immutable() {
         var sourceState = new ExampleSnapshot.SourceState("owner/repo", "success", List.of(), "abc123", "2024-01-01T00:00:00Z");
-        var snapshot = new ExampleSnapshot(List.of(sourceState));
+        var snapshot = ExampleSnapshot.of(List.of(sourceState));
 
         // Try to modify — this should fail at compile time or runtime
         assertThrows(Exception.class, () -> {
@@ -65,7 +65,7 @@ class ExampleSnapshotTest {
         var source1 = new ExampleSnapshot.SourceState("owner/repo1", "success", List.of(ex1, ex2), "sha1", "2024-01-01T00:00:00Z");
         var source2 = new ExampleSnapshot.SourceState("owner/repo2", "success", List.of(ex3), "sha2", "2024-01-02T00:00:00Z");
 
-        var snapshot = new ExampleSnapshot(List.of(source1, source2));
+        var snapshot = ExampleSnapshot.of(List.of(source1, source2));
         var allExamples = snapshot.allExamples();
 
         assertEquals(3, allExamples.size());

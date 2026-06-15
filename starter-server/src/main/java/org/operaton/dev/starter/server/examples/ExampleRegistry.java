@@ -21,7 +21,7 @@ public class ExampleRegistry {
 
     public ExampleRegistry() {
         // Initialize with empty snapshot to avoid NPE before load completes
-        this.current = new AtomicReference<>(new ExampleSnapshot(List.of()));
+        this.current = new AtomicReference<>(new ExampleSnapshot(List.of(), List.of()));
     }
 
     /**

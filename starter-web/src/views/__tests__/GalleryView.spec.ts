@@ -15,7 +15,10 @@ vi.mock('@/composables/useMetadata', () => ({
             useCaseId: 'uc-01-leave-request',
             title: 'Leave Request',
             description: 'A manager approves employee leave.',
-            tags: ['multi-role', 'human-tasks'],
+            tags: [
+              { label: 'multi-role', category: 'BPMN_CONCEPT' },
+              { label: 'human-tasks', category: 'BPMN_CONCEPT' },
+            ],
             projectType: 'PROCESS_APPLICATION',
             buildSystem: 'MAVEN',
             defaultArtifactId: 'leave-request-example',
@@ -26,7 +29,10 @@ vi.mock('@/composables/useMetadata', () => ({
             useCaseId: 'uc-02-loan-application',
             title: 'Loan Application',
             description: 'DMN credit scoring.',
-            tags: ['dmn', 'docker-compose'],
+            tags: [
+              { label: 'dmn', category: 'BPMN_CONCEPT' },
+              { label: 'docker-compose', category: 'TECHNOLOGY' },
+            ],
             projectType: 'PROCESS_APPLICATION',
             buildSystem: 'MAVEN',
             defaultArtifactId: 'loan-application-example',
@@ -34,9 +40,46 @@ vi.mock('@/composables/useMetadata', () => ({
             dockerCompose: true,
           },
         ],
+        examples: [],
       } as Metadata),
     isLoading: ref(false),
     error: ref(null),
+  }),
+}))
+
+vi.mock('@/features/examples/useExamples', () => ({
+  useExamples: () => ({
+    examples: ref([]),
+    allTags: ref([]),
+    allIntegrations: ref([]),
+    runtimes: ref([]),
+    buildSystems: ref([]),
+    complexities: ref([]),
+  }),
+}))
+
+vi.mock('@/features/examples/useGalleryFilters', () => ({
+  useGalleryFilters: () => ({
+    filters: ref({
+      query: '',
+      runtime: new Set(),
+      buildSystem: new Set(),
+      complexity: new Set(),
+      integrations: new Set(),
+    }),
+    filteredExamples: ref([]),
+    hasActiveFilters: ref(false),
+    toggleFilter: vi.fn(),
+    setQuery: vi.fn(),
+    clear: vi.fn(),
+  }),
+}))
+
+vi.mock('@/features/examples/useExampleDownload', () => ({
+  useExampleDownload: () => ({
+    getStatus: vi.fn(() => ({ state: 'idle' })),
+    download: vi.fn(),
+    retry: vi.fn(),
   }),
 }))
 
@@ -51,11 +94,11 @@ const router = createRouter({
 })
 
 describe('GalleryView — Use Case Examples section', () => {
-  it('renders "Use Case Examples" heading when useCaseExamples present', async () => {
+  it('renders "Use Cases" heading when useCaseExamples present', async () => {
     const wrapper = mount(GalleryView, {
       global: { plugins: [router] },
     })
-    expect(wrapper.text()).toContain('Use Case Examples')
+    expect(wrapper.text()).toContain('Use Cases')
   })
 
   it('renders all use case cards from metadata', async () => {

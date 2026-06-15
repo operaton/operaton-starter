@@ -1,20 +1,57 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMetadata } from '@/composables/useMetadata'
+import { useExamples } from '@/features/examples/useExamples'
+import { useGalleryFilters } from '@/features/examples/useGalleryFilters'
+import { useExampleDownload } from '@/features/examples/useExampleDownload'
 import ProjectTypeCard from '@/components/ProjectTypeCard.vue'
 import SkeletonCard from '@/components/SkeletonCard.vue'
 import ErrorBanner from '@/components/ErrorBanner.vue'
 import UseCaseGalleryCard from '@/components/UseCaseGalleryCard.vue'
+import GallerySearchBar from '@/features/examples/GallerySearchBar.vue'
+import ExampleGalleryCard from '@/features/examples/ExampleGalleryCard.vue'
+import ExamplesEmptyState from '@/features/examples/ExamplesEmptyState.vue'
 import type { UseCaseExample } from '@/generated/types'
 
 const { data: metadata, isLoading, error } = useMetadata()
 const router = useRouter()
 const galleryRef = ref<HTMLElement | null>(null)
+const examplesRef = ref<HTMLElement | null>(null)
 const useCasesRef = ref<HTMLElement | null>(null)
+
+// Composables for examples gallery
+const { examples, runtimes, buildSystems, complexities } = useExamples()
+const { filters, filteredExamples, hasActiveFilters, toggleFilter, setQuery, clear } = useGalleryFilters(examples)
+const { getStatus, download, retry } = useExampleDownload()
+
+// Compute filtered use cases (apply search query to use cases too)
+const useCases = computed(() => metadata.value?.useCaseExamples ?? [])
+const filteredUseCases = computed(() => {
+  if (!filters.value.query) return useCases.value
+  const q = filters.value.query.toLowerCase()
+  return useCases.value.filter(uc =>
+    uc.title?.toLowerCase().includes(q) ||
+    uc.description?.toLowerCase().includes(q) ||
+    uc.tags?.some(tag => tag.label.toLowerCase().includes(q))
+  )
+})
+
+// Get all unique integrations from examples
+const integrations = computed(() => {
+  const ints = new Set<string>()
+  examples.value.forEach(ex => {
+    ex.integrations?.forEach(int => ints.add(int))
+  })
+  return Array.from(ints).sort()
+})
 
 function scrollToGallery() {
   galleryRef.value?.scrollIntoView({ behavior: 'smooth' })
+}
+
+function scrollToExamples() {
+  examplesRef.value?.scrollIntoView({ behavior: 'smooth' })
 }
 
 function scrollToUseCases() {
@@ -37,6 +74,13 @@ function handleUseCaseSelect(entry: UseCaseExample) {
       useCaseId: entry.useCaseId,
     },
   })
+}
+
+function handleExampleDownload(exampleId: string) {
+  const example = examples.value.find(ex => ex.id === exampleId)
+  if (example) {
+    download(example)
+  }
 }
 </script>
 
@@ -68,16 +112,21 @@ function handleUseCaseSelect(entry: UseCaseExample) {
         <button
           type="button"
           class="border border-primary text-primary px-6 py-3 rounded-s font-semibold text-base hover:bg-primary/5 transition-colors"
-          @click="scrollToUseCases"
+          @click="scrollToExamples"
         >
-          Browse Use Cases ↓
+          Examples ↓
         </button>
       </div>
     </section>
 
-    <!-- Gallery Section -->
+    <!-- Gallery Section (Project Types) -->
     <section ref="galleryRef" class="py-12 px-6 md:px-8 max-w-content mx-auto border-b border-neutral-200">
-      <h2 class="text-2xl font-semibold text-neutral-900 mb-8">Choose a project type</h2>
+      <div class="mb-8">
+        <h2 class="text-2xl font-semibold text-neutral-900 mb-2">Project Types</h2>
+        <p class="text-sm text-neutral-500">
+          Choose the architecture that matches your needs. Each type generates a ready-to-build project.
+        </p>
+      </div>
 
       <ErrorBanner :error="error" />
 
@@ -96,21 +145,68 @@ function handleUseCaseSelect(entry: UseCaseExample) {
       </div>
     </section>
 
+    <!-- Examples Gallery Section -->
+    <section
+      v-if="examples.length > 0"
+      ref="examplesRef"
+      class="py-12 px-6 md:px-8 max-w-content mx-auto border-b border-neutral-200"
+    >
+      <div class="mb-8">
+        <h2 class="text-2xl font-semibold text-neutral-900 mb-2">Examples</h2>
+        <p class="text-sm text-neutral-500">
+          Real-world runnable examples with source code. Download, build, and learn.
+        </p>
+      </div>
+
+      <!-- Gallery Search Bar -->
+      <GallerySearchBar
+        :filtered-examples-count="filteredExamples.length"
+        :filtered-use-cases-count="filteredUseCases.length"
+        :runtimes="runtimes"
+        :build-systems="buildSystems"
+        :complexities="complexities"
+        :integrations="integrations"
+        :active-filters="filters"
+        @update:query="setQuery"
+        @toggle-filter="(category, value) => toggleFilter(category as 'runtime' | 'buildSystem' | 'complexity' | 'integrations', value)"
+        @clear-filters="clear"
+      />
+
+      <!-- Empty state or cards -->
+      <div class="mt-6">
+        <ExamplesEmptyState
+          v-if="filteredExamples.length === 0"
+          :has-active-filters="hasActiveFilters"
+          @clear-filters="clear"
+        />
+        <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <ExampleGalleryCard
+            v-for="example in filteredExamples"
+            :key="example.id"
+            :example="example"
+            :download-status="getStatus(example.id ?? '')"
+            @download="handleExampleDownload(example.id ?? '')"
+            @retry="retry(example.id ?? '')"
+          />
+        </div>
+      </div>
+    </section>
+
     <!-- Use Case Examples Section (API-driven) -->
     <section
-      v-if="metadata?.useCaseExamples?.length"
+      v-if="useCases.length > 0"
       ref="useCasesRef"
       class="py-12 px-6 md:px-8 max-w-content mx-auto border-b border-neutral-200"
     >
       <div class="mb-8">
-        <h2 class="text-2xl font-semibold text-neutral-900 mb-2">Use Case Examples</h2>
+        <h2 class="text-2xl font-semibold text-neutral-900 mb-2">Use Cases</h2>
         <p class="text-sm text-neutral-500">
           Self-contained examples covering real-world BPM scenarios. Each generates a runnable project.
         </p>
       </div>
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <UseCaseGalleryCard
-          v-for="uc in metadata.useCaseExamples"
+          v-for="uc in filteredUseCases"
           :key="uc.useCaseId"
           :entry="uc"
           @select="handleUseCaseSelect"

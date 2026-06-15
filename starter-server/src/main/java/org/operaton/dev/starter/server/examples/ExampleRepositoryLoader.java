@@ -56,22 +56,30 @@ public class ExampleRepositoryLoader {
      * collects results into a snapshot, and atomically stores via registry.swap().
      *
      * <p>On any source failure, records skipped:<reason> and continues.
+     *
+     * <p>Architecture A5: Failed source on refresh preserves its previous in-memory snapshot.
+     * Per-source result merged into fresh snapshot builder; missing/failed entries filled from previous.
+     *
+     * @return List of ExampleSourceStatus entries describing the load outcome
      */
-    public void load() {
+    public List<ExampleSourceStatus> load() {
         var sources = properties.examples().repositories();
         if (sources.isEmpty()) {
             log.info("No example sources configured");
-            registry.swap(new ExampleSnapshot(List.of()));
-            return;
+            registry.swap(ExampleSnapshot.of(List.of()));
+            return List.of();
         }
 
         log.info("Loading examples from {} source(s)", sources.size());
         var startTime = System.currentTimeMillis();
 
+        // Get previous snapshot for preserve-previous-on-failure merge
+        ExampleSnapshot previousSnapshot = registry.snapshot();
+
         // Dispatch one parallel task per source
-        List<CompletableFuture<ExampleSnapshot.SourceState>> futures = new ArrayList<>();
+        List<CompletableFuture<LoadSourceResult>> futures = new ArrayList<>();
         for (String sourceToken : sources) {
-            var future = CompletableFuture.supplyAsync(() -> loadSource(sourceToken));
+            var future = CompletableFuture.supplyAsync(() -> loadSourceWithStatus(sourceToken));
             futures.add(future);
         }
 
@@ -80,14 +88,35 @@ public class ExampleRepositoryLoader {
 
         // Collect results
         List<ExampleSnapshot.SourceState> sourceStates = new ArrayList<>();
+        List<ExampleSourceStatus> statuses = new ArrayList<>();
         int successCount = 0;
         int exampleCount = 0;
         List<String> skippedReasons = new ArrayList<>();
 
-        for (CompletableFuture<ExampleSnapshot.SourceState> future : futures) {
+        for (CompletableFuture<LoadSourceResult> future : futures) {
             try {
-                var sourceState = future.join();
+                var result = future.join();
+                ExampleSourceStatus status = result.status();
+                statuses.add(status);
+
+                // Add source state, applying preserve-previous-on-failure
+                ExampleSnapshot.SourceState sourceState = result.sourceState();
+                if (!sourceState.outcome().equals("success")) {
+                    // Try to find and preserve previous state for this source
+                    ExampleSnapshot.SourceState previousState = findPreviousSourceState(previousSnapshot, sourceState.source());
+                    if (previousState != null) {
+                        log.debug("Preserving previous snapshot for failed source {}", sourceState.source());
+                        sourceState = new ExampleSnapshot.SourceState(
+                                sourceState.source(),
+                                "stale:" + extractReasonFromOutcome(sourceState.outcome()),
+                                previousState.examples(),
+                                previousState.resolvedSha(),
+                                Instant.now().toString()
+                        );
+                    }
+                }
                 sourceStates.add(sourceState);
+
                 if (sourceState.outcome().equals("success")) {
                     successCount++;
                     exampleCount += sourceState.examples().size();
@@ -100,7 +129,7 @@ public class ExampleRepositoryLoader {
         }
 
         // Atomic swap
-        var snapshot = new ExampleSnapshot(sourceStates);
+        var snapshot = new ExampleSnapshot(sourceStates, statuses);
         registry.swap(snapshot);
 
         var elapsedMs = System.currentTimeMillis() - startTime;
@@ -110,26 +139,38 @@ public class ExampleRepositoryLoader {
         if (!skippedReasons.isEmpty()) {
             log.warn("Skipped sources: {}", String.join("; ", skippedReasons));
         }
+
+        return statuses;
     }
 
     /**
-     * Loads a single source. Returns a SourceState with outcome and examples.
-     * Never throws — always returns a state (success or skipped).
+     * Loads a single source and captures status. Returns LoadSourceResult with both state and status.
+     * Never throws — always returns a result (success or skipped).
      */
-    private ExampleSnapshot.SourceState loadSource(String sourceToken) {
+    private LoadSourceResult loadSourceWithStatus(String sourceToken) {
         try {
             // Step 1: Fetch manifest
             FetchResult fetchResult;
             try {
                 fetchResult = fetcher.fetch(sourceToken);
             } catch (SourceUnavailable e) {
-                return new ExampleSnapshot.SourceState(
+                var outcome = "skipped:" + e.getReason();
+                var sourceState = new ExampleSnapshot.SourceState(
                         sourceToken,
-                        "skipped:" + e.getReason(),
+                        outcome,
                         List.of(),
                         null,
                         Instant.now().toString()
                 );
+                var status = new ExampleSourceStatus(
+                        sourceToken,
+                        outcome,
+                        0,
+                        null,
+                        Instant.now().toString(),
+                        java.util.Optional.of(e.getReason())
+                );
+                return new LoadSourceResult(sourceState, status);
             }
 
             // Step 2: Parse manifest
@@ -141,13 +182,23 @@ public class ExampleRepositoryLoader {
                         fetchResult.resolvedSha()
                 );
             } catch (ManifestRejected e) {
-                return new ExampleSnapshot.SourceState(
+                var outcome = "skipped:" + e.getReason();
+                var sourceState = new ExampleSnapshot.SourceState(
                         sourceToken,
-                        "skipped:" + e.getReason(),
+                        outcome,
                         List.of(),
                         null,
                         Instant.now().toString()
                 );
+                var status = new ExampleSourceStatus(
+                        sourceToken,
+                        outcome,
+                        0,
+                        null,
+                        Instant.now().toString(),
+                        java.util.Optional.of(e.getReason())
+                );
+                return new LoadSourceResult(sourceState, status);
             }
 
             // Step 3: Convert to Example model and annotate with source info
@@ -164,24 +215,75 @@ public class ExampleRepositoryLoader {
                 examples.add(example);
             }
 
-            return new ExampleSnapshot.SourceState(
+            var sourceState = new ExampleSnapshot.SourceState(
                     sourceToken,
                     "success",
                     examples,
                     parsedManifest.sourceRepoSha(),
                     Instant.now().toString()
             );
+            var status = new ExampleSourceStatus(
+                    sourceToken,
+                    "success",
+                    examples.size(),
+                    parsedManifest.sourceRepoSha(),
+                    Instant.now().toString(),
+                    java.util.Optional.empty()
+            );
+            return new LoadSourceResult(sourceState, status);
 
         } catch (Exception e) {
             log.warn("Unexpected exception loading source {}", sourceToken, e);
-            return new ExampleSnapshot.SourceState(
+            var outcome = "skipped:error";
+            var sourceState = new ExampleSnapshot.SourceState(
                     sourceToken,
-                    "skipped:error",
+                    outcome,
                     List.of(),
                     null,
                     Instant.now().toString()
             );
+            var status = new ExampleSourceStatus(
+                    sourceToken,
+                    outcome,
+                    0,
+                    null,
+                    Instant.now().toString(),
+                    java.util.Optional.of("Unexpected error: " + e.getMessage())
+            );
+            return new LoadSourceResult(sourceState, status);
         }
+    }
+
+    /**
+     * Finds the previous SourceState for a given source token from the prior snapshot.
+     * Used to implement preserve-previous-on-failure.
+     *
+     * @param previousSnapshot the previous snapshot (may be empty)
+     * @param sourceToken the source token to find
+     * @return the previous SourceState, or null if not found
+     */
+    private ExampleSnapshot.SourceState findPreviousSourceState(ExampleSnapshot previousSnapshot, String sourceToken) {
+        for (ExampleSnapshot.SourceState sourceState : previousSnapshot.sources()) {
+            if (sourceState.source().equals(sourceToken)) {
+                return sourceState;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Extracts the reason part from an outcome string.
+     * E.g., "skipped:timeout" -> "timeout"
+     *
+     * @param outcome the outcome string
+     * @return the reason part
+     */
+    private String extractReasonFromOutcome(String outcome) {
+        int colonIndex = outcome.indexOf(':');
+        if (colonIndex > 0 && colonIndex < outcome.length() - 1) {
+            return outcome.substring(colonIndex + 1);
+        }
+        return outcome;
     }
 
     /**
@@ -202,4 +304,12 @@ public class ExampleRepositoryLoader {
     private String buildSourceRepoUrl(String sourceRepo, String sha, String examplePath) {
         return "https://github.com/" + sourceRepo + "/tree/" + sha + "/" + examplePath;
     }
+
+    /**
+     * Internal record to carry both SourceState and ExampleSourceStatus from loadSourceWithStatus.
+     */
+    private record LoadSourceResult(
+            ExampleSnapshot.SourceState sourceState,
+            ExampleSourceStatus status
+    ) {}
 }

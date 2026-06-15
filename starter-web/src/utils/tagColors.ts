@@ -14,3 +14,16 @@ export function tagChipClasses(category: TagCategory | undefined): string {
       return 'bg-neutral-100 text-neutral-600'
   }
 }
+
+/**
+ * Returns classes for metadata badge styling (runtime, buildSystem, complexity).
+ * These render in the monochrome metadata-badge lane per Architecture A10.
+ */
+export function metadataBadgeClasses(category: TagCategory | undefined): string {
+  // Metadata badges (RUNTIME, BUILD_SYSTEM, COMPLEXITY) all use monochrome styling
+  if (category === 'RUNTIME' || category === 'BUILD_SYSTEM' || category === 'COMPLEXITY') {
+    return 'bg-neutral-50 text-neutral-900 border border-neutral-200'
+  }
+  // Fallback for unknown categories
+  return 'bg-neutral-50 text-neutral-900 border border-neutral-200'
+}

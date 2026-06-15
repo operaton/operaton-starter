@@ -1,4 +1,4 @@
-export type TagCategory = 'BPMN_CONCEPT' | 'TECHNOLOGY' | 'PLATFORM' | 'STANDARD'
+export type TagCategory = 'BPMN_CONCEPT' | 'TECHNOLOGY' | 'PLATFORM' | 'STANDARD' | 'RUNTIME' | 'BUILD_SYSTEM' | 'COMPLEXITY'
 
 export interface Tag {
   label: string
@@ -37,12 +37,47 @@ export interface UseCaseExample {
   templateManifest?: TemplateManifestEntry[]
 }
 
+export interface Author {
+  name: string
+  url?: string
+}
+
+export interface Example {
+  id: string
+  title: string
+  icon?: string
+  path: string
+  shortDescription: string
+  longDescription?: string
+  buildSystem?: string
+  runtime?: string
+  operatonVersion?: string
+  javaVersion?: number
+  complexity?: string
+  tags?: Tag[]
+  integrations?: string[]
+  bpmnConcepts?: string[]
+  requires?: string[]
+  authors?: Author[]
+  license?: string
+  documentationUrl?: string
+  demoVideoUrl?: string
+  screenshots?: string[]
+  lastUpdated?: string
+  sourceRepo?: string
+  sourceRepoSha?: string
+  sourceRepoUrl?: string
+  owner?: string
+  repo?: string
+}
+
 export interface Metadata {
   projectTypes: ProjectTypeInfo[]
   buildSystems: BuildSystemInfo[]
   globalOptions: GlobalOptions
   defaultGroupId?: string
   useCaseExamples?: UseCaseExample[]
+  examples?: Example[]
 }
 
 export interface ProjectTypeInfo {

@@ -33,7 +33,7 @@ class ExampleRegistryTest {
                 .shortDescription("Test");
 
         var sourceState = new ExampleSnapshot.SourceState("owner/repo", "success", List.of(example), "abc123", "2024-01-01T00:00:00Z");
-        var newSnapshot = new ExampleSnapshot(List.of(sourceState));
+        var newSnapshot = ExampleSnapshot.of(List.of(sourceState));
 
         registry.swap(newSnapshot);
 
@@ -45,10 +45,10 @@ class ExampleRegistryTest {
     @Test
     void swap_is_atomic() throws InterruptedException {
         var registry = new ExampleRegistry();
-        var snapshot1 = new ExampleSnapshot(List.of(
+        var snapshot1 = ExampleSnapshot.of(List.of(
                 new ExampleSnapshot.SourceState("repo1", "success", List.of(), "sha1", "2024-01-01T00:00:00Z")
         ));
-        var snapshot2 = new ExampleSnapshot(List.of(
+        var snapshot2 = ExampleSnapshot.of(List.of(
                 new ExampleSnapshot.SourceState("repo2", "success", List.of(), "sha2", "2024-01-02T00:00:00Z")
         ));
 
@@ -88,7 +88,7 @@ class ExampleRegistryTest {
         var registry = new ExampleRegistry();
 
         for (int i = 0; i < 5; i++) {
-            var snapshot = new ExampleSnapshot(List.of(
+            var snapshot = ExampleSnapshot.of(List.of(
                     new ExampleSnapshot.SourceState("repo" + i, "success", List.of(), "sha" + i, "2024-01-0" + (i+1) + "T00:00:00Z")
             ));
             registry.swap(snapshot);
