@@ -2,7 +2,7 @@
 title: "Examples Gallery: Remote Example Repositories"
 status: final
 created: 2026-06-13
-updated: 2026-06-13
+updated: 2026-06-15
 ---
 
 # PRD — Examples Gallery: Remote Example Repositories
@@ -24,20 +24,21 @@ The first source repository is **`kthoms/operaton-examples`**. The repository re
 ### Non-Goals (v1)
 - User-configurable repository list in UI. The list is curated by maintainers via configuration.
 - Authentication for private GitHub repositories. Public repos only.
-- Replacing the built-in Use Cases. Examples and Use Cases coexist; deprecation is a future decision.
 - Running, validating, or testing examples server-side. Trust is on the example author.
 - Versioning/branches per example. v1 always reads the default branch.
 
+**Deprecation note:** Built-in Use Cases have been migrated to `kthoms/operaton-examples/use-cases`. The Examples Gallery replaces the Use Cases feature in operaton-starter.
+
 ## 3. Users & Context
 
-Primary users are Operaton evaluators and developers who land on the starter looking for a working starting point. Today they see four built-in use cases; this is too narrow and grows only by changes to the starter codebase. Example authors (community contributors, including Karsten maintaining `kthoms/operaton-examples`) want to publish examples without touching the starter.
+Primary users are Operaton evaluators and developers who land on the starter looking for a working starting point. Example authors (community contributors, including Karsten maintaining `kthoms/operaton-examples`) want to publish examples without touching the starter. Built-in Use Cases have been migrated to the examples repository, consolidating all example content in one place.
 
 Stakes: **internal / project-team**. Single Operaton maintainer team owns both the starter and the seed example repository.
 
 ## 4. User Journeys
 
 **UJ-1 — Developer browses for an example.**
-Anna opens the starter, clicks "Gallery", scrolls past the existing Use Cases section, lands on the new "Examples" section. She types "kafka" into the gallery search box; the list filters to examples tagged with a Kafka integration. She expands one card, reads the long description and the integration list, and clicks "Download ZIP". The starter streams a ZIP of the example subfolder; she unzips and runs `mvn spring-boot:run`.
+Anna opens the starter, clicks "Gallery", and sees the "Examples" section alongside "Project Types". She types "kafka" into the gallery search box; the list filters to examples tagged with a Kafka integration. She expands one card, reads the long description and the integration list, and clicks "Download ZIP". The starter streams a ZIP of the example subfolder; she unzips and runs `mvn spring-boot:run`.
 
 **UJ-2 — Example author publishes a new example.**
 Karsten adds a new subfolder `examples/payment-approval/` to `kthoms/operaton-examples` and appends an entry to the repo's root `.operaton-starter.yml`. He pushes to `main`. The next time an operaton-starter server boots, the new example appears in the gallery.
@@ -81,11 +82,11 @@ A repository's manifest has a YAML syntax error. On startup the loader logs a wa
 - **FR-C7** **Download telemetry.** The download endpoint increments an in-process counter per `(sourceRepo, exampleId)` and exposes the snapshot via `/actuator/examples`. Counters are not persisted across restarts. No PII, no remote reporting. This is the data source for SM-3.
 
 ### FR Group D — Frontend Gallery UI
-- **FR-D1** The existing `GalleryView.vue` renders **two labeled subsections** on one page: **"Examples"** (new, listed first) and **"Use Cases"** (existing, below). A short blurb introduces each.
+- **FR-D1** The existing `GalleryView.vue` renders the **"Examples"** subsection. The existing "Project Types" subsection remains unchanged. A short blurb introduces the Examples section.
 - **FR-D2** A new `ExampleGalleryCard.vue` renders each example: **icon** (emoji or fetched image; falls back to a default), title, shortDescription, tag chips, runtime/build-system badges, complexity badge, "Download ZIP" primary action, "View on GitHub" secondary action, and an expandable section showing longDescription (rendered markdown), integrations, bpmnConcepts, requires, authors, license, lastUpdated, and the pinned commit SHA (short form) as a small footer label.
-- **FR-D3** A single search box at the top of the gallery filters **both** sections by title, description, tags, integrations.
-- **FR-D4** Filter chips let users narrow by `runtime`, `buildSystem`, `complexity`, and `integrations`. **These chips apply only to the Examples subsection**; the Use Cases subsection is unaffected by them and keeps its existing filter behavior. The free-text search box (FR-D3) is the only control that filters both subsections simultaneously.
-- **FR-D5** When **no examples** load (empty list or all sources failed), the Examples section renders an empty state explaining how to register a repo and links to the docs.
+- **FR-D3** A search box filters the Examples section by title, description, tags, and integrations.
+- **FR-D4** Filter chips let users narrow the Examples section by `runtime`, `buildSystem`, `complexity`, and `integrations`.
+- **FR-D5** When no examples load (empty list or all sources failed), the Examples section renders an empty state explaining how to register a repo and links to the docs.
 - **FR-D6** "Download ZIP" triggers a browser download via the new endpoint; while in progress, the button shows a spinner. On failure, an inline error toast surfaces the cause.
 - **FR-D7** Tag chips reuse the existing `Tag` model and `tagColors.ts` styling; new categories (`runtime`, `integration`, `concept`) are added to `TagCategory` if not present.
 
@@ -122,8 +123,8 @@ A repository's manifest has a YAML syntax error. On startup the loader logs a wa
 
 ## 9. Phasing
 
-- **v1 (this PRD):** Preconfigured `kthoms/operaton-examples`, env-overridable list. Startup fetch + manual refresh endpoint. Ref pinning to commit SHA. Server-side ZIP cache. Gallery subsection. Docs.
-- **v2 (future):** UI to register/manage sources; deprecate built-in use cases (migrate to the same manifest format hosted in an Operaton-owned examples repo); per-example version pinning per user; private-repo auth; admin UI for diagnostics.
+- **v1 (this PRD):** Preconfigured `kthoms/operaton-examples`, env-overridable list. Startup fetch + manual refresh endpoint. Ref pinning to commit SHA. Server-side ZIP cache. Gallery subsection. Docs. **Built-in Use Cases have been migrated to `kthoms/operaton-examples/use-cases`.**
+- **v2 (future):** UI to register/manage sources; per-example version pinning per user; private-repo auth; admin UI for diagnostics.
 
 ## 10. Appendix A — Manifest Schema (Reference Skeleton)
 

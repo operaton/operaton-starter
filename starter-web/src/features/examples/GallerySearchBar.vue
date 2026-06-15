@@ -5,7 +5,6 @@ import type { Example } from '@/generated/types'
 
 interface Props {
   filteredExamplesCount: number
-  filteredUseCasesCount: number
   runtimes: string[]
   buildSystems: string[]
   complexities: string[]
@@ -28,21 +27,14 @@ const emit = defineEmits<{
 const searchInput = ref('')
 const debounceTimer = ref<number | null>(null)
 
-const totalResults = computed(
-  () => props.filteredExamplesCount + props.filteredUseCasesCount
-)
-
 const statusMessage = computed(() => {
-  if (props.filteredExamplesCount === 0 && props.filteredUseCasesCount === 0) {
+  if (props.filteredExamplesCount === 0) {
     return 'No results found'
   }
-  if (props.filteredExamplesCount === 1 && props.filteredUseCasesCount === 0) {
+  if (props.filteredExamplesCount === 1) {
     return '1 example found'
   }
-  if (props.filteredExamplesCount !== 1 && props.filteredUseCasesCount === 0) {
-    return `${props.filteredExamplesCount} examples found`
-  }
-  return `${totalResults.value} results found`
+  return `${props.filteredExamplesCount} examples found`
 })
 
 watch(searchInput, (value) => {
@@ -71,8 +63,8 @@ function clearFilters() {
           v-model="searchInput"
           type="search"
           class="search-input"
-          aria-label="Search examples and use cases"
-          placeholder="Search examples and use cases…"
+          aria-label="Search examples"
+          placeholder="Search examples…"
         />
       </div>
 

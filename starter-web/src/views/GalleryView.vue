@@ -8,34 +8,19 @@ import { useExampleDownload } from '@/features/examples/useExampleDownload'
 import ProjectTypeCard from '@/components/ProjectTypeCard.vue'
 import SkeletonCard from '@/components/SkeletonCard.vue'
 import ErrorBanner from '@/components/ErrorBanner.vue'
-import UseCaseGalleryCard from '@/components/UseCaseGalleryCard.vue'
 import GallerySearchBar from '@/features/examples/GallerySearchBar.vue'
 import ExampleGalleryCard from '@/features/examples/ExampleGalleryCard.vue'
 import ExamplesEmptyState from '@/features/examples/ExamplesEmptyState.vue'
-import type { UseCaseExample } from '@/generated/types'
 
 const { data: metadata, isLoading, error } = useMetadata()
 const router = useRouter()
 const galleryRef = ref<HTMLElement | null>(null)
 const examplesRef = ref<HTMLElement | null>(null)
-const useCasesRef = ref<HTMLElement | null>(null)
 
 // Composables for examples gallery
 const { examples, runtimes, buildSystems, complexities } = useExamples()
 const { filters, filteredExamples, hasActiveFilters, toggleFilter, setQuery, clear } = useGalleryFilters(examples)
 const { getStatus, download, retry } = useExampleDownload()
-
-// Compute filtered use cases (apply search query to use cases too)
-const useCases = computed(() => metadata.value?.useCaseExamples ?? [])
-const filteredUseCases = computed(() => {
-  if (!filters.value.query) return useCases.value
-  const q = filters.value.query.toLowerCase()
-  return useCases.value.filter(uc =>
-    uc.title?.toLowerCase().includes(q) ||
-    uc.description?.toLowerCase().includes(q) ||
-    uc.tags?.some(tag => tag.label.toLowerCase().includes(q))
-  )
-})
 
 // Get all unique integrations from examples
 const integrations = computed(() => {
@@ -54,26 +39,8 @@ function scrollToExamples() {
   examplesRef.value?.scrollIntoView({ behavior: 'smooth' })
 }
 
-function scrollToUseCases() {
-  useCasesRef.value?.scrollIntoView({ behavior: 'smooth' })
-}
-
 function goToConfigure() {
   router.push('/configure')
-}
-
-function handleUseCaseSelect(entry: UseCaseExample) {
-  router.push({
-    path: '/configure',
-    query: {
-      projectType: entry.projectType,
-      buildSystem: entry.buildSystem,
-      artifactId: entry.defaultArtifactId,
-      projectName: entry.defaultProjectName,
-      dockerCompose: String(entry.dockerCompose),
-      useCaseId: entry.useCaseId,
-    },
-  })
 }
 
 function handleExampleDownload(exampleId: string) {
@@ -161,7 +128,6 @@ function handleExampleDownload(exampleId: string) {
       <!-- Gallery Search Bar -->
       <GallerySearchBar
         :filtered-examples-count="filteredExamples.length"
-        :filtered-use-cases-count="filteredUseCases.length"
         :runtimes="runtimes"
         :build-systems="buildSystems"
         :complexities="complexities"
@@ -189,28 +155,6 @@ function handleExampleDownload(exampleId: string) {
             @retry="retry(example.id ?? '')"
           />
         </div>
-      </div>
-    </section>
-
-    <!-- Use Case Examples Section (API-driven) -->
-    <section
-      v-if="useCases.length > 0"
-      ref="useCasesRef"
-      class="py-12 px-6 md:px-8 max-w-content mx-auto border-b border-neutral-200"
-    >
-      <div class="mb-8">
-        <h2 class="text-2xl font-semibold text-neutral-900 mb-2">Use Cases</h2>
-        <p class="text-sm text-neutral-500">
-          Self-contained examples covering real-world BPM scenarios. Each generates a runnable project.
-        </p>
-      </div>
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <UseCaseGalleryCard
-          v-for="uc in filteredUseCases"
-          :key="uc.useCaseId"
-          :entry="uc"
-          @select="handleUseCaseSelect"
-        />
       </div>
     </section>
   </div>

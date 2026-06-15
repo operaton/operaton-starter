@@ -7,7 +7,6 @@ describe('GallerySearchBar', () => {
     const wrapper = mount(GallerySearchBar, {
       props: {
         filteredExamplesCount: 5,
-        filteredUseCasesCount: 3,
         runtimes: [],
         buildSystems: [],
         complexities: [],
@@ -22,14 +21,13 @@ describe('GallerySearchBar', () => {
     })
     const input = wrapper.find('input[type="search"]')
     expect(input.exists()).toBe(true)
-    expect(input.attributes('aria-label')).toBe('Search examples and use cases')
+    expect(input.attributes('aria-label')).toBe('Search examples')
   })
 
   it('emits update:query event with debounce', async () => {
     const wrapper = mount(GallerySearchBar, {
       props: {
         filteredExamplesCount: 5,
-        filteredUseCasesCount: 3,
         runtimes: [],
         buildSystems: [],
         complexities: [],
@@ -54,7 +52,6 @@ describe('GallerySearchBar', () => {
     const wrapper = mount(GallerySearchBar, {
       props: {
         filteredExamplesCount: 5,
-        filteredUseCasesCount: 3,
         runtimes: ['Spring Boot', 'Quarkus'],
         buildSystems: [],
         complexities: [],
@@ -75,7 +72,6 @@ describe('GallerySearchBar', () => {
     const wrapper = mount(GallerySearchBar, {
       props: {
         filteredExamplesCount: 2,
-        filteredUseCasesCount: 1,
         runtimes: [],
         buildSystems: [],
         complexities: [],
@@ -89,14 +85,13 @@ describe('GallerySearchBar', () => {
       },
     })
     // Status is in sr-only, check it's there
-    expect(wrapper.text()).toContain('results found')
+    expect(wrapper.text()).toContain('2 examples found')
   })
 
   it('emits toggle-filter event', async () => {
     const wrapper = mount(GallerySearchBar, {
       props: {
         filteredExamplesCount: 5,
-        filteredUseCasesCount: 3,
         runtimes: ['Spring Boot'],
         buildSystems: [],
         complexities: [],
@@ -120,7 +115,6 @@ describe('GallerySearchBar', () => {
     const wrapper = mount(GallerySearchBar, {
       props: {
         filteredExamplesCount: 5,
-        filteredUseCasesCount: 3,
         runtimes: [],
         buildSystems: [],
         complexities: [],
@@ -141,7 +135,6 @@ describe('GallerySearchBar', () => {
     const wrapper = mount(GallerySearchBar, {
       props: {
         filteredExamplesCount: 5,
-        filteredUseCasesCount: 0,
         runtimes: [],
         buildSystems: [],
         complexities: [],
