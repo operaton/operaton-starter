@@ -18,8 +18,9 @@ class ExampleManifestParserTest {
         String yaml = """
                 apiVersion: operaton-starter/v1
                 examples:
-                  - name: My Example
-                    description: A test example
+                  - id: my-example
+                    title: My Example
+                    shortDescription: A test example
                     path: examples/basic
                     tags:
                       - beginner
@@ -37,8 +38,9 @@ class ExampleManifestParserTest {
         assertEquals(1, manifest.examples().size());
 
         ParsedManifest.Example example = manifest.examples().getFirst();
-        assertEquals("My Example", example.name());
-        assertEquals("A test example", example.description());
+        assertEquals("my-example", example.id());
+        assertEquals("My Example", example.title());
+        assertEquals("A test example", example.shortDescription());
         assertEquals("examples/basic", example.path());
         assertEquals(1, example.tags().size());
         assertEquals("beginner", example.tags().getFirst());
@@ -49,11 +51,13 @@ class ExampleManifestParserTest {
         String yaml = """
                 apiVersion: operaton-starter/v1
                 examples:
-                  - name: Example 1
-                    description: First example
+                  - id: example-1
+                    title: Example 1
+                    shortDescription: First example
                     path: ex1
-                  - name: Example 2
-                    description: Second example
+                  - id: example-2
+                    title: Example 2
+                    shortDescription: Second example
                     path: ex2
                     tags:
                       - advanced
@@ -66,8 +70,8 @@ class ExampleManifestParserTest {
         );
 
         assertEquals(2, manifest.examples().size());
-        assertEquals("Example 1", manifest.examples().get(0).name());
-        assertEquals("Example 2", manifest.examples().get(1).name());
+        assertEquals("Example 1", manifest.examples().get(0).title());
+        assertEquals("Example 2", manifest.examples().get(1).title());
     }
 
     @Test
@@ -76,8 +80,9 @@ class ExampleManifestParserTest {
                 apiVersion: operaton-starter/v1
                 unknownField: should be ignored
                 examples:
-                  - name: Example
-                    description: Test
+                  - id: example
+                    title: Example
+                    shortDescription: Test
                     path: test
                     unknownExampleField: ignored
                 """;
@@ -145,7 +150,9 @@ class ExampleManifestParserTest {
         String yaml = """
                 apiVersion: operaton-starter/v1
                 examples:
-                  - name: Bad Example
+                  - id: bad-example
+                    title: Bad Example
+                    shortDescription: test
                     path: ../../etc/passwd
                 """;
 
@@ -164,7 +171,9 @@ class ExampleManifestParserTest {
         String yaml = """
                 apiVersion: operaton-starter/v1
                 examples:
-                  - name: Bad Example
+                  - id: bad-example
+                    title: Bad Example
+                    shortDescription: test
                     path: /etc/passwd
                 """;
 
@@ -184,7 +193,9 @@ class ExampleManifestParserTest {
         String yaml = """
                 apiVersion: operaton-starter/v1
                 examples:
-                  - name: Example
+                  - id: example
+                    title: Example
+                    shortDescription: test
                     path: test file with spaces
                 """;
 
@@ -224,7 +235,9 @@ class ExampleManifestParserTest {
         String yaml = """
                 apiVersion: operaton-starter/v1
                 examples:
-                  - name: Example
+                  - id: example
+                    title: Example
+                    shortDescription: test
                     path: ''
                 """;
 
@@ -239,7 +252,7 @@ class ExampleManifestParserTest {
     }
 
     @Test
-    void testParseWithOptionalFields() throws ManifestRejected {
+    void testParseSkipsExamplesMissingRequiredFields() throws ManifestRejected {
         String yaml = """
                 apiVersion: operaton-starter/v1
                 examples:
@@ -252,10 +265,7 @@ class ExampleManifestParserTest {
                 "sha"
         );
 
-        ParsedManifest.Example example = manifest.examples().getFirst();
-        assertEquals("", example.name());
-        assertEquals("", example.description());
-        assertEquals("minimal", example.path());
-        assertEquals(0, example.tags().size());
+        // Example missing id/title/shortDescription is skipped, not added
+        assertEquals(0, manifest.examples().size());
     }
 }

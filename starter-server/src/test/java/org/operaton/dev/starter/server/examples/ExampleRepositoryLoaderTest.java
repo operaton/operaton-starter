@@ -42,7 +42,7 @@ class ExampleRepositoryLoaderTest {
         var sourceToken = "owner/repo";
         var example = new Example().id("ex1").title("Ex1").path("path1").shortDescription("Desc1");
         var parsedManifest = new ParsedManifest("operaton-starter/v1", List.of(
-                new ParsedManifest.Example("ex1", "Desc1", "path1", List.of())
+                new ParsedManifest.Example("ex1", "Ex1", "Desc1", "path1", List.of())
         ), "owner/repo", "abc123def456");
 
         when(properties.examples()).thenReturn(
@@ -87,7 +87,7 @@ class ExampleRepositoryLoaderTest {
         when(fetcher.fetch(anyString())).thenReturn(new FetchResult("yaml".getBytes(), "sha123"));
         when(parser.parse(any(), anyString(), anyString())).thenReturn(
                 new ParsedManifest("operaton-starter/v1", List.of(
-                        new ParsedManifest.Example("ex1", "Desc", "path", List.of())
+                        new ParsedManifest.Example("ex1", "Ex1", "Desc", "path", List.of())
                 ), "owner/repo1", "sha123")
         );
         when(registry.snapshot()).thenReturn(ExampleSnapshot.of(List.of()));

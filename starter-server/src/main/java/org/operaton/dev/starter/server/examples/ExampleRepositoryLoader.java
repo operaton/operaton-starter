@@ -205,10 +205,10 @@ public class ExampleRepositoryLoader {
             List<Example> examples = new ArrayList<>();
             for (ParsedManifest.Example parsedEx : parsedManifest.examples()) {
                 var example = new Example()
-                        .id(parsedEx.name())
-                        .title(parsedEx.name())
+                        .id(parsedEx.id())
+                        .title(parsedEx.title())
                         .path(parsedEx.path())
-                        .shortDescription(parsedEx.description())
+                        .shortDescription(parsedEx.shortDescription())
                         .sourceRepo(parsedManifest.sourceRepo())
                         .sourceRepoSha(parsedManifest.sourceRepoSha())
                         .sourceRepoUrl(buildSourceRepoUrl(parsedManifest.sourceRepo(), parsedManifest.sourceRepoSha(), parsedEx.path()));

@@ -19,8 +19,9 @@ public record ParsedManifest(
      * Represents a single example within a manifest.
      */
     public record Example(
-            String name,
-            String description,
+            String id,
+            String title,
+            String shortDescription,
             String path,
             List<String> tags
     ) {}

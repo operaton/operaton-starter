@@ -1,5 +1,7 @@
 package org.operaton.dev.starter.server.examples;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
@@ -24,6 +26,7 @@ import java.util.Map;
  */
 @Component
 public class ExampleManifestParser {
+    private static final Logger log = LoggerFactory.getLogger(ExampleManifestParser.class);
     private static final int CODE_POINT_LIMIT = 256 * 1024; // 256 KB
     private static final String REQUIRED_API_VERSION_PREFIX = "operaton-starter/v1";
 
@@ -76,8 +79,10 @@ public class ExampleManifestParser {
                         try {
                             @SuppressWarnings("unchecked")
                             Map<String, Object> exampleMap = (Map<String, Object>) exMap;
-                            ParsedManifest.Example example = parseExample(exampleMap);
-                            examples.add(example);
+                            ParsedManifest.Example example = parseExample(exampleMap, sourceRepo);
+                            if (example != null) {
+                                examples.add(example);
+                            }
                         } catch (ManifestRejected e) {
                             throw e;
                         } catch (Exception e) {
@@ -99,16 +104,26 @@ public class ExampleManifestParser {
 
     /**
      * Parses a single example entry from the manifest.
+     * Returns null if required fields (id, title, shortDescription) are missing — caller skips those entries.
      *
      * @param exampleMap the example map
-     * @return a parsed Example
+     * @param sourceRepo source repo token for logging context
+     * @return a parsed Example, or null if required fields are absent
      * @throws ManifestRejected if path validation fails
      */
-    private ParsedManifest.Example parseExample(Map<String, Object> exampleMap)
+    private ParsedManifest.Example parseExample(Map<String, Object> exampleMap, String sourceRepo)
             throws ManifestRejected {
-        String name = getStringValue(exampleMap, "name", "");
-        String description = getStringValue(exampleMap, "description", "");
+        String id = getStringValue(exampleMap, "id", "");
+        String title = getStringValue(exampleMap, "title", "");
+        String shortDescription = getStringValue(exampleMap, "shortDescription", "");
         String path = getStringValue(exampleMap, "path", "");
+
+        // Validate required fields
+        if (id.isEmpty() || title.isEmpty() || shortDescription.isEmpty()) {
+            log.warn("Skipping example in {} with missing required fields: id='{}', title='{}', shortDescription='{}'",
+                    sourceRepo, id, title, shortDescription.isEmpty() ? "" : "<present>");
+            return null;
+        }
 
         // Validate path
         validatePath(path);
@@ -120,7 +135,7 @@ public class ExampleManifestParser {
                         .toList() :
                 List.of();
 
-        return new ParsedManifest.Example(name, description, path, tags);
+        return new ParsedManifest.Example(id, title, shortDescription, path, tags);
     }
 
     /**
