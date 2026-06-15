@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-03-28
-last_updated: 2026-06-08  # updated by code-review workflow
+last_updated: 2026-06-15  # updated with Examples Gallery v1 epic
 project: operaton-starter
 project_key: NOKEY
 tracking_system: file-system
@@ -212,3 +212,39 @@ development_status:
   14-2-uc-01-email-rejection-mailpit: done
 
   epic-14-retrospective: optional
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Epic 15: Examples Gallery v1 — Remote Repositories, ZIP Download, Validation
+  # ─────────────────────────────────────────────────────────────────────────
+  epic-15: in-progress
+
+  1-1-define-manifest-schema-and-data-model: ready-for-dev
+  1-2-load-manifests-from-github-at-startup: ready-for-dev
+  1-3-resolve-repository-refs-to-commit-shas-ref-pinning: ready-for-dev
+  1-4-asynchronously-validate-example-paths: ready-for-dev
+  1-5-implement-manual-refresh-endpoint: ready-for-dev
+  1-6-expose-load-status-summary-via-diagnostics-endpoint: ready-for-dev
+  1-7-handle-manifest-load-failures-gracefully: ready-for-dev
+  1-8-extend-api-v1-metadata-with-examples-list: ready-for-dev
+
+  2-1-polish-button-styling-per-ui-spec: ready-for-dev
+  2-2-add-warning-icon-to-download-action: ready-for-dev
+  2-3-update-tag-categories-and-styling: ready-for-dev
+  2-4-integration-test-search-filter-flow: ready-for-dev
+  2-5-responsive-layout-test-320px-constraint: ready-for-dev
+  2-6-e2e-test-full-gallery-workflow: ready-for-dev
+
+  3-1-implement-download-endpoint-with-streaming: ready-for-dev
+  3-2-implement-zip-cache-with-lru-eviction: ready-for-dev
+  3-3-implement-download-telemetry-endpoint: ready-for-dev
+  3-4-wire-downloadaction-to-backend-download-endpoint: ready-for-dev
+  3-5-implement-download-progress-ui-and-error-toast: ready-for-dev
+  3-6-integration-test-download-endpoint-and-cache: ready-for-dev
+  3-7-e2e-test-full-download-workflow: ready-for-dev
+
+  4-1-create-examples-repository-format-documentation: ready-for-dev
+  4-2-add-publish-your-own-examples-link-to-gallery-ui: ready-for-dev
+  4-3-update-readme-with-contributing-examples-section: ready-for-dev
+  4-4-publish-examples-documentation-online: ready-for-dev
+
+  epic-15-retrospective: optional
