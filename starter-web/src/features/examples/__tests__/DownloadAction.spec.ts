@@ -14,7 +14,7 @@ describe('DownloadAction', () => {
     })
     const button = wrapper.find('.download-button')
     expect(button.exists()).toBe(true)
-    expect(button.text()).toContain('Download ZIP')
+    expect(button.text()).toContain('Download')
     expect(button.attributes('disabled')).toBeUndefined()
   })
 

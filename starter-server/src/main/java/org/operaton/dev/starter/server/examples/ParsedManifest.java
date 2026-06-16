@@ -18,11 +18,43 @@ public record ParsedManifest(
     /**
      * Represents a single example within a manifest.
      */
+    /**
+     * Represents a tag with label and category from the manifest.
+     */
+    public record Tag(
+            String label,
+            String category
+    ) {}
+
     public record Example(
             String id,
             String title,
             String shortDescription,
             String path,
-            List<String> tags
-    ) {}
+            List<Tag> tags,
+            String icon,
+            String longDescription,
+            String buildSystem,
+            String runtime,
+            String operatonVersion,
+            String javaVersion,
+            String complexity,
+            List<String> integrations,
+            List<String> bpmnConcepts,
+            String requires,
+            List<Author> authors,
+            String license,
+            String documentationUrl,
+            String demoVideoUrl,
+            List<String> screenshots,
+            String lastUpdated
+    ) {
+        /**
+         * Represents an author of an example.
+         */
+        public record Author(
+                String name,
+                String url
+        ) {}
+    }
 }

@@ -119,7 +119,8 @@ function handleEscape(event: KeyboardEvent) {
       @click="toggleDetails"
       @keydown="handleEscape"
     >
-      More details
+      <span class="w-4 h-4 rounded-full bg-neutral-200 text-neutral-500 text-xs inline-flex items-center justify-center font-bold mr-1">?</span>
+      More about this example
     </button>
 
     <!-- Details panel -->
@@ -163,6 +164,12 @@ function handleEscape(event: KeyboardEvent) {
         </div>
       </div>
 
+      <!-- Requires -->
+      <div v-if="example.requires" class="detail-section">
+        <p class="detail-label">Requires</p>
+        <p class="detail-text">{{ example.requires }}</p>
+      </div>
+
       <!-- Authors -->
       <div v-if="example.authors?.length" class="detail-section">
         <p class="detail-label">Authors</p>
@@ -201,6 +208,15 @@ function handleEscape(event: KeyboardEvent) {
         @download="emit('download')"
         @retry="emit('retry')"
       />
+      <a
+        v-if="example.sourceRepoUrl"
+        :href="example.sourceRepoUrl"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="github-link"
+      >
+        View on GitHub
+      </a>
     </div>
   </article>
 </template>
@@ -395,5 +411,20 @@ function handleEscape(event: KeyboardEvent) {
   margin-top: auto;
   padding-top: 1rem;
   border-top: 1px solid rgb(227, 212, 221);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.github-link {
+  font-size: 0.875rem;
+  color: rgb(102, 102, 102);
+  text-decoration: none;
+  align-self: flex-start;
+}
+
+.github-link:hover {
+  color: rgb(24, 74, 239);
+  text-decoration: underline;
 }
 </style>

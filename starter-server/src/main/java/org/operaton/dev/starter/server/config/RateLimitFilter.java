@@ -29,7 +29,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
     private static final Logger log = LoggerFactory.getLogger(RateLimitFilter.class);
 
-    @Value("${rate-limit.requests-per-minute:10}")
+    @Value("${rate-limit.requests-per-minute:60}")
     private int requestsPerMinute;
 
     @Value("${rate-limit.window-seconds:60}")

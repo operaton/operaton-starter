@@ -43,7 +43,7 @@ const isError = computed(() => props.status.state === 'error')
         </svg>
         Downloading…
       </span>
-      <span v-else>Download ZIP</span>
+      <span v-else>Download</span>
     </button>
 
     <!-- Success message -->

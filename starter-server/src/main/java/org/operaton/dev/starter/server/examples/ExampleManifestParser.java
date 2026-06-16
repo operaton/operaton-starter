@@ -128,14 +128,29 @@ public class ExampleManifestParser {
         // Validate path
         validatePath(path);
 
-        @SuppressWarnings("unchecked")
-        List<String> tags = exampleMap.get("tags") instanceof List<?> tagsList ?
-                tagsList.stream()
-                        .map(Object::toString)
-                        .toList() :
-                List.of();
+        List<ParsedManifest.Tag> tags = parseTags(exampleMap);
 
-        return new ParsedManifest.Example(id, title, shortDescription, path, tags);
+        String icon = getStringValue(exampleMap, "icon", null);
+        String longDescription = getStringValue(exampleMap, "longDescription", null);
+        String buildSystem = getStringValue(exampleMap, "buildSystem", null);
+        String runtime = getStringValue(exampleMap, "runtime", null);
+        String operatonVersion = getStringValue(exampleMap, "operatonVersion", null);
+        String javaVersion = getStringValue(exampleMap, "javaVersion", null);
+        String complexity = getStringValue(exampleMap, "complexity", null);
+        List<String> integrations = getStringList(exampleMap, "integrations");
+        List<String> bpmnConcepts = getStringList(exampleMap, "bpmnConcepts");
+        String requires = getStringValue(exampleMap, "requires", null);
+        List<ParsedManifest.Example.Author> authors = parseAuthors(exampleMap);
+        String license = getStringValue(exampleMap, "license", null);
+        String documentationUrl = getStringValue(exampleMap, "documentationUrl", null);
+        String demoVideoUrl = getStringValue(exampleMap, "demoVideoUrl", null);
+        List<String> screenshots = getStringList(exampleMap, "screenshots");
+        String lastUpdated = getStringValue(exampleMap, "lastUpdated", null);
+
+        return new ParsedManifest.Example(id, title, shortDescription, path, tags,
+                icon, longDescription, buildSystem, runtime, operatonVersion, javaVersion,
+                complexity, integrations, bpmnConcepts, requires, authors,
+                license, documentationUrl, demoVideoUrl, screenshots, lastUpdated);
     }
 
     /**
@@ -179,5 +194,67 @@ public class ExampleManifestParser {
             return defaultValue;
         }
         return value.toString();
+    }
+
+    /**
+     * Extracts a list of strings from a map value.
+     */
+    private List<String> getStringList(Map<String, Object> map, String key) {
+        Object value = map.get(key);
+        if (value instanceof List<?> list) {
+            return list.stream().map(Object::toString).toList();
+        }
+        return List.of();
+    }
+
+    /**
+     * Parses the tags field — supports both a list of strings and a list of maps with label/category.
+     * Prioritizes the map form (extracts both label and category).
+     */
+    private List<ParsedManifest.Tag> parseTags(Map<String, Object> exampleMap) {
+        Object tagsObj = exampleMap.get("tags");
+        if (!(tagsObj instanceof List<?> tagsList)) {
+            return List.of();
+        }
+        List<ParsedManifest.Tag> result = new ArrayList<>();
+        for (Object tag : tagsList) {
+            if (tag instanceof Map<?, ?> tagMap) {
+                Object label = tagMap.get("label");
+                Object category = tagMap.get("category");
+                if (label != null) {
+                    result.add(new ParsedManifest.Tag(
+                            label.toString(),
+                            category != null ? category.toString() : null
+                    ));
+                }
+            } else if (tag != null) {
+                result.add(new ParsedManifest.Tag(tag.toString(), null));
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Parses the authors field — a list of maps with name and optional url.
+     */
+    private List<ParsedManifest.Example.Author> parseAuthors(Map<String, Object> exampleMap) {
+        Object authorsObj = exampleMap.get("authors");
+        if (!(authorsObj instanceof List<?> authorsList)) {
+            return List.of();
+        }
+        List<ParsedManifest.Example.Author> result = new ArrayList<>();
+        for (Object author : authorsList) {
+            if (author instanceof Map<?, ?> authorMap) {
+                Object name = authorMap.get("name");
+                Object url = authorMap.get("url");
+                if (name != null) {
+                    result.add(new ParsedManifest.Example.Author(
+                            name.toString(),
+                            url != null ? url.toString() : null
+                    ));
+                }
+            }
+        }
+        return result;
     }
 }

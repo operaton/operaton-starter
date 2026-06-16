@@ -3,7 +3,10 @@ package org.operaton.dev.starter.server.examples;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.operaton.dev.starter.server.config.StarterProperties;
+import org.operaton.dev.starter.server.model.Author;
 import org.operaton.dev.starter.server.model.Example;
+import org.operaton.dev.starter.server.model.Tag;
+import org.operaton.dev.starter.server.model.TagCategory;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
@@ -211,7 +214,71 @@ public class ExampleRepositoryLoader {
                         .shortDescription(parsedEx.shortDescription())
                         .sourceRepo(parsedManifest.sourceRepo())
                         .sourceRepoSha(parsedManifest.sourceRepoSha())
-                        .sourceRepoUrl(buildSourceRepoUrl(parsedManifest.sourceRepo(), parsedManifest.sourceRepoSha(), parsedEx.path()));
+                        .sourceRepoUrl(buildSourceRepoUrl(parsedManifest.sourceRepo(), parsedManifest.sourceRepoSha(), parsedEx.path()))
+                        .icon(parsedEx.icon())
+                        .longDescription(parsedEx.longDescription())
+                        .operatonVersion(parsedEx.operatonVersion())
+                        .javaVersion(parsedEx.javaVersion())
+                        .integrations(parsedEx.integrations().isEmpty() ? null : parsedEx.integrations())
+                        .bpmnConcepts(parsedEx.bpmnConcepts().isEmpty() ? null : parsedEx.bpmnConcepts())
+                        .requires(parsedEx.requires())
+                        .license(parsedEx.license())
+                        .documentationUrl(parsedEx.documentationUrl())
+                        .demoVideoUrl(parsedEx.demoVideoUrl())
+                        .screenshots(parsedEx.screenshots().isEmpty() ? null : parsedEx.screenshots());
+
+                // Map buildSystem string to enum
+                if (parsedEx.buildSystem() != null) {
+                    try {
+                        example.buildSystem(Example.BuildSystemEnum.fromValue(parsedEx.buildSystem()));
+                    } catch (IllegalArgumentException e) {
+                        log.debug("Unknown buildSystem value: {}", parsedEx.buildSystem());
+                    }
+                }
+
+                // Map runtime string to enum
+                if (parsedEx.runtime() != null) {
+                    try {
+                        example.runtime(Example.RuntimeEnum.fromValue(parsedEx.runtime()));
+                    } catch (IllegalArgumentException e) {
+                        log.debug("Unknown runtime value: {}", parsedEx.runtime());
+                    }
+                }
+
+                // Map complexity string to enum
+                if (parsedEx.complexity() != null) {
+                    try {
+                        example.complexity(Example.ComplexityEnum.fromValue(parsedEx.complexity()));
+                    } catch (IllegalArgumentException e) {
+                        log.debug("Unknown complexity value: {}", parsedEx.complexity());
+                    }
+                }
+
+                // Map lastUpdated string to LocalDate
+                if (parsedEx.lastUpdated() != null) {
+                    try {
+                        example.lastUpdated(java.time.LocalDate.parse(parsedEx.lastUpdated()));
+                    } catch (Exception e) {
+                        log.debug("Could not parse lastUpdated date: {}", parsedEx.lastUpdated());
+                    }
+                }
+
+                // Map parsed tags to model Tags
+                if (!parsedEx.tags().isEmpty()) {
+                    List<Tag> modelTags = parsedEx.tags().stream()
+                            .map(t -> new Tag().label(t.label()).category(mapTagCategory(t.category())))
+                            .toList();
+                    example.tags(modelTags);
+                }
+
+                // Map authors
+                if (!parsedEx.authors().isEmpty()) {
+                    List<Author> modelAuthors = parsedEx.authors().stream()
+                            .map(a -> new Author().name(a.name()).url(a.url()))
+                            .toList();
+                    example.authors(modelAuthors);
+                }
+
                 examples.add(example);
             }
 
@@ -252,6 +319,26 @@ public class ExampleRepositoryLoader {
             );
             return new LoadSourceResult(sourceState, status);
         }
+    }
+
+    /**
+     * Maps a manifest tag category string (lowercase) to a TagCategory enum value.
+     * Unknown categories fall back to TECHNOLOGY.
+     */
+    private TagCategory mapTagCategory(String category) {
+        if (category == null) {
+            return TagCategory.TECHNOLOGY;
+        }
+        return switch (category.toLowerCase()) {
+            case "concept", "bpmn_concept", "bpmn-concept" -> TagCategory.BPMN_CONCEPT;
+            case "runtime" -> TagCategory.RUNTIME;
+            case "integration", "technology" -> TagCategory.TECHNOLOGY;
+            case "platform" -> TagCategory.PLATFORM;
+            case "standard" -> TagCategory.STANDARD;
+            case "build_system", "build-system", "buildsystem" -> TagCategory.BUILD_SYSTEM;
+            case "complexity" -> TagCategory.COMPLEXITY;
+            default -> TagCategory.TECHNOLOGY;
+        };
     }
 
     /**

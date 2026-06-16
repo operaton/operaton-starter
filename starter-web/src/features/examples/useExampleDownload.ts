@@ -26,7 +26,8 @@ export function useExampleDownload() {
     setStatus(exampleId, { state: 'downloading' })
 
     try {
-      const blob = await downloadExample(example.owner ?? '', example.repo ?? '', exampleId)
+      const [owner = '', repo = ''] = (example.sourceRepo ?? '').split('/')
+      const blob = await downloadExample(owner, repo, exampleId)
       const url = URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = url

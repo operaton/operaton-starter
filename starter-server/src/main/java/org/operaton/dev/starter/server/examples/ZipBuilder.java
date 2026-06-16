@@ -2,13 +2,13 @@ package org.operaton.dev.starter.server.examples;
 
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
+import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -194,7 +194,7 @@ public class ZipBuilder {
         long totalSizeBytes = 0;
 
         try (TarArchiveInputStream tar = new TarArchiveInputStream(
-                new BufferedInputStream(tarInputStream));
+                new GzipCompressorInputStream(new BufferedInputStream(tarInputStream)));
              FileOutputStream fos = new FileOutputStream(tmpPath.toFile());
              ZipOutputStream zip = new ZipOutputStream(fos)) {
 
