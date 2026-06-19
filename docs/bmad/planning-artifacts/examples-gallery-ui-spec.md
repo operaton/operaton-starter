@@ -326,11 +326,11 @@ When download endpoint encounters a missing example path, return 404 with struct
   "status": "not_found",
   "error": "Example path does not exist in repository",
   "details": {
-    "sourceRepo": "kthoms/operaton-examples",
+    "sourceRepo": "operaton/operaton-examples",
     "sourceSha": "abc1234567890abcdef",
     "exampleId": "kafka-saga",
     "expectedPath": "examples/kafka-saga",
-    "sourceRepoUrl": "https://github.com/kthoms/operaton-examples/tree/abc1234567890abcdef/examples/kafka-saga"
+    "sourceRepoUrl": "https://github.com/operaton/operaton-examples/tree/abc1234567890abcdef/examples/kafka-saga"
   },
   "suggestion": "The example may have been moved or deleted. Check the repository."
 }
@@ -377,7 +377,7 @@ ZIP cache is bounded by total size (default 512 MB) and uses LRU eviction. Docum
 **Cache Key:**
 ```
 {owner}/{repo}/{sha}/{exampleId}.zip
-Example: kthoms/operaton-examples/abc1234567890abcdef/kafka-saga.zip
+Example: operaton/operaton-examples/abc1234567890abcdef/kafka-saga.zip
 ```
 
 **Eviction Strategy:**

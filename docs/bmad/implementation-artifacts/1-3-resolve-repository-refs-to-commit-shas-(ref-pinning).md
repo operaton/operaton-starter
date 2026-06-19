@@ -15,7 +15,7 @@ So that **the downloaded ZIP matches the manifest metadata exactly (no mid-sessi
 
 ## Acceptance Criteria
 
-**Given** a configured repository ref like `kthoms/operaton-examples@main` (or default branch if `@ref` omitted)  
+**Given** a configured repository ref like `operaton/operaton-examples@main` (or default branch if `@ref` omitted)  
 **When** the loader initializes or manual refresh is triggered  
 **Then** the loader calls GitHub commits API to resolve the ref to a concrete commit SHA  
 **And** API call: `GET /repos/{owner}/{repo}/commits/{ref}` with `Accept: application/vnd.github.sha` header  

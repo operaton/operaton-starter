@@ -63,13 +63,13 @@ See PRD section 2 for details.
 
 **Spring property:**
 ```properties
-starter.examples.repositories[0]=kthoms/operaton-examples
+starter.examples.repositories[0]=operaton/operaton-examples
 starter.examples.repositories[1]=... # Add more as needed
 ```
 
 **Environment variable override:**
 ```bash
-STARTER_EXAMPLES_REPOSITORIES=kthoms/operaton-examples,acme/operaton-samples
+STARTER_EXAMPLES_REPOSITORIES=operaton/operaton-examples,acme/operaton-samples
 ```
 
 **Cache:**
@@ -81,7 +81,7 @@ starter.examples.maxDownloadSizeMb=50              # Max uncompressed ZIP size
 
 ## Success Metrics (v1)
 
-- ≥ 3 community examples in `kthoms/operaton-examples` within 90 days of release
+- ≥ 3 community examples in `operaton/operaton-examples` within 90 days of release
 - ≥ 1 third-party repo registered within 6 months
 - Examples ZIP download used ≥ as often as use-case generation within 6 months
 - Zero increase in starter startup failures

@@ -594,7 +594,7 @@ components:
         documentationUrl:
           type: string
           description: URL to the example documentation
-          example: https://github.com/kthoms/operaton-examples/blob/main/examples/leave-request-spring-boot/README.md
+          example: https://github.com/operaton/operaton-examples/blob/main/examples/leave-request-spring-boot/README.md
         demoVideoUrl:
           type: string
           description: URL to a demo video (optional)
@@ -611,8 +611,8 @@ components:
           example: "2026-06-10"
         sourceRepo:
           type: string
-          description: Computed field - repository owner/repo (e.g., kthoms/operaton-examples)
-          example: kthoms/operaton-examples
+          description: Computed field - repository owner/repo (e.g., operaton/operaton-examples)
+          example: operaton/operaton-examples
         sourceRepoSha:
           type: string
           description: Computed field - resolved commit SHA from the source repository
@@ -620,7 +620,7 @@ components:
         sourceRepoUrl:
           type: string
           description: Computed field - GitHub HTML URL to the example folder
-          example: https://github.com/kthoms/operaton-examples/tree/main/examples/leave-request-spring-boot
+          example: https://github.com/operaton/operaton-examples/tree/main/examples/leave-request-spring-boot
 
     ProblemDetail:
       type: object

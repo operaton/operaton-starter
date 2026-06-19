@@ -28,7 +28,7 @@ So that **I can diagnose connectivity or manifest issues without reading logs**.
   "timestamp": "2026-06-15T14:30:00Z",
   "sources": [
     {
-      "repo": "kthoms/operaton-examples",
+      "repo": "operaton/operaton-examples",
       "status": "loaded",
       "exampleCount": 12,
       "resolvedSha": "abc1234567890abcdef",

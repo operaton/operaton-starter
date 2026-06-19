@@ -43,7 +43,7 @@ class ExampleManifestParserTest {
         assertEquals("A test example", example.shortDescription());
         assertEquals("examples/basic", example.path());
         assertEquals(1, example.tags().size());
-        assertEquals("beginner", example.tags().getFirst());
+        assertEquals("beginner", example.tags().getFirst().label());
     }
 
     @Test

@@ -161,7 +161,7 @@ Want to share your Operaton example with the community?
 3. **Register your repository** either via environment variable (self-hosted) or by opening a PR to add it to the default configuration
 4. **Your examples appear** in the public Examples Gallery once deployed
 
-See the [seed repository](https://github.com/kthoms/operaton-examples) for a complete example.
+See the [seed repository](https://github.com/operaton/operaton-examples) for a complete example.
 
 ## Development
 

@@ -15,7 +15,7 @@ So that **examples are available immediately without manual intervention**.
 
 ## Acceptance Criteria
 
-**Given** `starter.examples.repositories` Spring property configured (e.g., `starter.examples.repositories[0]=kthoms/operaton-examples`)  
+**Given** `starter.examples.repositories` Spring property configured (e.g., `starter.examples.repositories[0]=operaton/operaton-examples`)  
 **When** the ExampleRepositoryLoader bean initializes at application startup  
 **Then** for each registered repository, the loader fetches `.operaton-starter.yml` from GitHub raw content URL  
 **And** fetches succeed within 5 seconds per source (hard timeout); sources exceeding timeout are skipped with a warning  

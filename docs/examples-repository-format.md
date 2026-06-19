@@ -155,7 +155,7 @@ examples:
     authors:
       - { name: "Karsten Thoms", url: "https://github.com/kthoms" }
     license: "Apache-2.0"
-    documentationUrl: "https://github.com/kthoms/operaton-examples/blob/main/examples/leave-request-spring-boot/README.md"
+    documentationUrl: "https://github.com/operaton/operaton-examples/blob/main/examples/leave-request-spring-boot/README.md"
     screenshots:
       - examples/leave-request-spring-boot/docs/process.png
     lastUpdated: "2026-06-10"
@@ -188,7 +188,7 @@ examples:
     authors:
       - { name: "Karsten Thoms", url: "https://github.com/kthoms" }
     license: "Apache-2.0"
-    documentationUrl: "https://github.com/kthoms/operaton-examples/blob/main/examples/order-fulfillment-quarkus/README.md"
+    documentationUrl: "https://github.com/operaton/operaton-examples/blob/main/examples/order-fulfillment-quarkus/README.md"
     lastUpdated: "2026-06-12"
 
   # Plain Java embedded: Minimal footprint with timers
@@ -259,7 +259,7 @@ When running operaton-starter in Docker or standalone mode, set the `STARTER_EXA
 
 ```bash
 docker run -p 8080:8080 \
-  -e STARTER_EXAMPLES_REPOSITORIES="kthoms/operaton-examples,myorg/my-examples" \
+  -e STARTER_EXAMPLES_REPOSITORIES="operaton/operaton-examples,myorg/my-examples" \
   operaton/operaton-starter:latest
 ```
 
@@ -272,7 +272,7 @@ Contribute your repository to the default configuration by opening a PR to the o
 1. Edit [`starter-server/src/main/resources/application.properties`](../starter-server/src/main/resources/application.properties)
 2. Extend `starter.examples.repositories` with your repository token, e.g.:
    ```
-   starter.examples.repositories=${STARTER_EXAMPLES_REPOSITORIES:kthoms/operaton-examples,myorg/my-examples}
+   starter.examples.repositories=${STARTER_EXAMPLES_REPOSITORIES:operaton/operaton-examples,myorg/my-examples}
    ```
 3. Open a PR and describe your examples in the commit message
 4. Once merged and released, your examples appear in the public `start.operaton.org` gallery
@@ -320,4 +320,4 @@ The response includes per-source success/failure details and example counts.
 
 - **Architecture Decisions**: [`docs/arc42/decisions.md`](../arc42/decisions.md) (Decisions A4, A12, A13)
 - **API Schema**: Auto-generated OpenAPI documentation at `/v3/api-docs` (see `Example` model)
-- **Seed Repository**: [`kthoms/operaton-examples`](https://github.com/kthoms/operaton-examples) with 3+ examples
+- **Seed Repository**: [`operaton/operaton-examples`](https://github.com/operaton/operaton-examples) with 3+ examples

@@ -31,7 +31,7 @@ This document provides the complete epic and story breakdown for Examples Galler
 **FR Group B — Repository Registration & Loading**
 - FR-B1: The starter holds a **maintainer-controlled** list of example-repository sources. v1 sources are configuration properties, not a UI surface.
 - FR-B2: Each registered source is a GitHub repository identifier of the form `owner/repo[@ref]`. If `@ref` is omitted, the repo's default branch is used.
-- FR-B3: v1 ships with **`kthoms/operaton-examples`** preconfigured.
+- FR-B3: v1 ships with **`operaton/operaton-examples`** preconfigured.
 - FR-B4: Repository sources are configured via Spring properties (`starter.examples.repositories[]`) and overridable via `STARTER_EXAMPLES_REPOSITORIES` env var (comma-separated).
 - FR-B5: Manifests are fetched at server startup and on demand via a manual refresh endpoint (FR-B9). v1 fetches manifests only at startup and on manual refresh (no automatic periodic refresh).
 - FR-B6: Manifests are fetched via the GitHub raw content URL for the configured ref. No GitHub API token required for public repos.
@@ -261,7 +261,7 @@ So that **examples are available immediately without manual intervention**.
 
 **Acceptance Criteria:**
 
-**Given** `starter.examples.repositories` Spring property configured (e.g., `starter.examples.repositories[0]=kthoms/operaton-examples`)  
+**Given** `starter.examples.repositories` Spring property configured (e.g., `starter.examples.repositories[0]=operaton/operaton-examples`)  
 **When** the ExampleRepositoryLoader bean initializes at application startup  
 **Then** for each registered repository, the loader fetches `.operaton-starter.yml` from GitHub raw content URL  
 **And** fetches succeed within 5 seconds per source (hard timeout); sources exceeding timeout are skipped with a warning  
@@ -281,7 +281,7 @@ So that **the downloaded ZIP matches the manifest metadata exactly (no mid-sessi
 
 **Acceptance Criteria:**
 
-**Given** a configured repository ref like `kthoms/operaton-examples@main` (or default branch if `@ref` omitted)  
+**Given** a configured repository ref like `operaton/operaton-examples@main` (or default branch if `@ref` omitted)  
 **When** the loader initializes or manual refresh is triggered  
 **Then** the loader calls GitHub commits API to resolve the ref to a concrete commit SHA  
 **And** API call: `GET /repos/{owner}/{repo}/commits/{ref}` with `Accept: application/vnd.github.sha` header  
@@ -336,7 +336,7 @@ So that **new examples from a repository are available immediately when I update
   "status": "refresh_complete",
   "sources": [
     {
-      "repo": "kthoms/operaton-examples",
+      "repo": "operaton/operaton-examples",
       "status": "loaded",
       "exampleCount": 12,
       "resolvedSha": "abc1234567890abcdef",
@@ -378,7 +378,7 @@ So that **I can diagnose connectivity or manifest issues without reading logs**.
   "timestamp": "2026-06-15T14:30:00Z",
   "sources": [
     {
-      "repo": "kthoms/operaton-examples",
+      "repo": "operaton/operaton-examples",
       "status": "loaded",
       "exampleCount": 12,
       "resolvedSha": "abc1234567890abcdef",
@@ -440,7 +440,7 @@ So that **I have a single API contract for all gallery content**.
 **When** a request is made to `GET /api/v1/metadata`  
 **Then** the response includes an `examples` array (in addition to existing `projectTypes`)  
 **And** each example in the array includes: all manifest fields plus computed fields: `sourceRepo`, `sourceRepoSha`, `sourceRepoUrl`, `isDownloadable`  
-**And** `sourceRepoUrl` is an HTML GitHub URL to the example folder at the pinned SHA (e.g., `https://github.com/kthoms/operaton-examples/tree/abc1234567890abcdef/examples/kafka-saga`)  
+**And** `sourceRepoUrl` is an HTML GitHub URL to the example folder at the pinned SHA (e.g., `https://github.com/operaton/operaton-examples/tree/abc1234567890abcdef/examples/kafka-saga`)  
 **And** if no examples are loaded, the `examples` array is empty (never null)  
 **And** existing clients that ignore the `examples` field continue to work unchanged (backward compatibility per NFR-5)  
 
@@ -456,9 +456,9 @@ So that **I have a single API contract for all gallery content**.
       "path": "examples/kafka-saga",
       "tags": [{ "label": "kafka", "category": "INTEGRATION" }],
       "complexity": "intermediate",
-      "sourceRepo": "kthoms/operaton-examples",
+      "sourceRepo": "operaton/operaton-examples",
       "sourceRepoSha": "abc1234567890abcdef",
-      "sourceRepoUrl": "https://github.com/kthoms/operaton-examples/tree/abc1234567890abcdef/examples/kafka-saga",
+      "sourceRepoUrl": "https://github.com/operaton/operaton-examples/tree/abc1234567890abcdef/examples/kafka-saga",
       "isDownloadable": true,
       // ... all other manifest fields
     }
@@ -763,11 +763,11 @@ So that **I can extract the example code and start working immediately**.
   "status": "not_found",
   "error": "Example path does not exist in repository",
   "details": {
-    "sourceRepo": "kthoms/operaton-examples",
+    "sourceRepo": "operaton/operaton-examples",
     "sourceSha": "abc1234567890abcdef",
     "exampleId": "kafka-saga",
     "expectedPath": "examples/kafka-saga",
-    "sourceRepoUrl": "https://github.com/kthoms/operaton-examples/tree/abc1234567890abcdef/examples/kafka-saga"
+    "sourceRepoUrl": "https://github.com/operaton/operaton-examples/tree/abc1234567890abcdef/examples/kafka-saga"
   }
 }
 ```
@@ -839,7 +839,7 @@ So that **I can identify which examples are most valuable to the community**.
 {
   "timestamp": "2026-06-15T14:30:00Z",
   "downloads": {
-    "kthoms/operaton-examples": {
+    "operaton/operaton-examples": {
       "kafka-saga": 42,
       "dmn-rules": 15,
       "rest-service": 8

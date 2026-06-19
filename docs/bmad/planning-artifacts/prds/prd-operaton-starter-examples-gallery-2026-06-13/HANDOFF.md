@@ -63,7 +63,7 @@
 
 **Configuration:**
 - Spring property: `starter.examples.repositories[]` (overridable by `STARTER_EXAMPLES_REPOSITORIES` env var).
-- Default: `kthoms/operaton-examples`.
+- Default: `operaton/operaton-examples`.
 - Cache path: `${java.io.tmpdir}/operaton-starter/examples-cache/{owner}/{repo}/{sha}/{exampleId}.zip` (overridable).
 - Cache size: 512 MB default (configurable via `starter.examples.cache.maxSizeMb`).
 

@@ -11,11 +11,11 @@ updated: 2026-06-15
 
 Add an **Examples** section to the operaton-starter gallery that lists ready-to-download example projects sourced from external GitHub repositories. Each repository publishes a `.operaton-starter.yml` manifest describing one or more examples (title, descriptions, build system, runtime, integrations, etc.). The starter aggregates manifests from a maintainer-controlled list of repositories, displays examples in a searchable/filterable gallery, and lets users download an example as a ZIP with one click.
 
-The first source repository is **`kthoms/operaton-examples`**. The repository registration format is documented in user-facing docs and linked from the gallery.
+The first source repository is **`operaton/operaton-examples`**. The repository registration format is documented in user-facing docs and linked from the gallery.
 
 ## Deprecation Note
 
-Built-in Use Cases have been migrated to `kthoms/operaton-examples/use-cases`. The Examples Gallery **replaces** the Use Cases feature in operaton-starter, consolidating all example content into a single external registry.
+Built-in Use Cases have been migrated to `operaton/operaton-examples/use-cases`. The Examples Gallery **replaces** the Use Cases feature in operaton-starter, consolidating all example content into a single external registry.
 
 ## 2. Goals & Non-Goals
 
@@ -33,7 +33,7 @@ Built-in Use Cases have been migrated to `kthoms/operaton-examples/use-cases`. T
 
 ## 3. Users & Context
 
-Primary users are Operaton evaluators and developers who land on the starter looking for a working starting point. Example authors (community contributors, including Karsten maintaining `kthoms/operaton-examples`) want to publish examples without touching the starter.
+Primary users are Operaton evaluators and developers who land on the starter looking for a working starting point. Example authors (community contributors, including Karsten maintaining `operaton/operaton-examples`) want to publish examples without touching the starter.
 
 Stakes: **internal / project-team**. Single Operaton maintainer team owns both the starter and the seed example repository.
 
@@ -43,7 +43,7 @@ Stakes: **internal / project-team**. Single Operaton maintainer team owns both t
 Anna opens the starter, clicks "Gallery", and sees the "Examples" section alongside "Project Types". She types "kafka" into the gallery search box; the list filters to examples tagged with a Kafka integration. She expands one card, reads the long description and the integration list, and clicks "Download ZIP". The starter streams a ZIP of the example subfolder; she unzips and runs `mvn spring-boot:run`.
 
 **UJ-2 — Example author publishes a new example.**
-Karsten adds a new subfolder `examples/payment-approval/` to `kthoms/operaton-examples` and appends an entry to the repo's root `.operaton-starter.yml`. He pushes to `main`. The next time an operaton-starter server boots, the new example appears in the gallery.
+Karsten adds a new subfolder `examples/payment-approval/` to `operaton/operaton-examples` and appends an entry to the repo's root `.operaton-starter.yml`. He pushes to `main`. The next time an operaton-starter server boots, the new example appears in the gallery.
 
 **UJ-3 — Operator adds a new source repo.**
 The Operaton maintainer team wants to onboard `acme/operaton-bpmn-samples`. They append the repo URL to `STARTER_EXAMPLES_REPOSITORIES` env var (or `application.properties`) and restart the starter. The repo's manifest is fetched at startup, parsed, and its examples join the gallery.
@@ -70,7 +70,7 @@ A repository's manifest has a YAML syntax error. On startup the loader logs a wa
 ### FR Group B — Repository Registration & Loading
 - **FR-B1** The starter holds a **maintainer-controlled** list of example-repository sources. v1 sources are configuration properties, not a UI surface.
 - **FR-B2** Each registered source is a GitHub repository identifier of the form `owner/repo[@ref]`. If `@ref` is omitted, the repo's default branch is used.
-- **FR-B3** v1 ships with **`kthoms/operaton-examples`** preconfigured.
+- **FR-B3** v1 ships with **`operaton/operaton-examples`** preconfigured.
 - **FR-B4** Repository sources are configured via Spring properties (`starter.examples.repositories[]`) and overridable via `STARTER_EXAMPLES_REPOSITORIES` env var (comma-separated).
 - **FR-B5** Manifests are fetched at server startup and on demand via a manual refresh endpoint (FR-B9). v1 fetches manifests only at startup and on manual refresh (no automatic periodic refresh).
 - **FR-B6** Manifests are fetched via the GitHub raw content URL for the configured ref (e.g., `https://raw.githubusercontent.com/{owner}/{repo}/{ref}/.operaton-starter.yml`). No GitHub API token required for public repos.
@@ -116,7 +116,7 @@ A repository's manifest has a YAML syntax error. On startup the loader logs a wa
 
 ## 7. Success Metrics
 
-- ≥ 3 community-contributed examples published in `kthoms/operaton-examples` within 90 days of release.
+- ≥ 3 community-contributed examples published in `operaton/operaton-examples` within 90 days of release.
 - ≥ 1 third-party repository registered within 6 months.
 - Examples ZIP download is used at least as often as use-case generation within 6 months (telemetry permitting).
 - **Counter-metrics:** zero increase in starter startup failures attributable to example loading; ≤ 1% of `/api/v1/metadata` responses are "degraded," where **degraded** means the `examples` field is empty or missing while at least one source is configured (i.e. all configured sources failed to load).
@@ -132,12 +132,12 @@ A repository's manifest has a YAML syntax error. On startup the loader logs a wa
 
 ## 9. Phasing
 
-- **v1 (this PRD):** Preconfigured `kthoms/operaton-examples`, env-overridable list. Startup fetch + manual refresh endpoint. Ref pinning to commit SHA. Server-side ZIP cache. Gallery subsection. Docs. **Built-in Use Cases have been migrated to `kthoms/operaton-examples/use-cases`.**
+- **v1 (this PRD):** Preconfigured `operaton/operaton-examples`, env-overridable list. Startup fetch + manual refresh endpoint. Ref pinning to commit SHA. Server-side ZIP cache. Gallery subsection. Docs. **Built-in Use Cases have been migrated to `operaton/operaton-examples/use-cases`.**
 - **v2 (future):** UI to register/manage sources; per-example version pinning per user; private-repo auth; admin UI for diagnostics.
 
 ## 10. Appendix A — Manifest Schema (Reference Skeleton)
 
-See `addendum.md` for the full schema and the sample `.operaton-starter.yml` for `kthoms/operaton-examples`.
+See `addendum.md` for the full schema and the sample `.operaton-starter.yml` for `operaton/operaton-examples`.
 
 ## 11. Implementation Notes (Pointer)
 

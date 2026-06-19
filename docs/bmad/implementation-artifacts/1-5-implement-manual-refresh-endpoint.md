@@ -28,7 +28,7 @@ So that **new examples from a repository are available immediately when I update
   "status": "refresh_complete",
   "sources": [
     {
-      "repo": "kthoms/operaton-examples",
+      "repo": "operaton/operaton-examples",
       "status": "loaded",
       "exampleCount": 12,
       "resolvedSha": "abc1234567890abcdef",

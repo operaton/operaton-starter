@@ -16,7 +16,7 @@ So that the loader can read a configured list of repositories and reject malform
 ## Acceptance Criteria
 
 1. Given `StarterProperties` is extended with a nested `Examples` record. When the application boots. Then `repositories: List<String>`, `cache.dir: Path` (default `${java.io.tmpdir}/operaton-starter/examples-cache`), `cache.maxSizeMb: long` (default 512), and `maxDownloadSizeMb: long` (default 50) are bound from `application.properties` and from the env vars `STARTER_EXAMPLES_REPOSITORIES`, `STARTER_EXAMPLES_CACHE_DIR`, `STARTER_EXAMPLES_CACHE_MAXSIZEMB`, `STARTER_EXAMPLES_MAXDOWNLOADSIZEMB`.
-2. Given the default Spring properties ship preconfigured. When no environment overrides are present. Then `starter.examples.repositories` contains the single entry `kthoms/operaton-examples`.
+2. Given the default Spring properties ship preconfigured. When no environment overrides are present. Then `starter.examples.repositories` contains the single entry `operaton/operaton-examples`.
 3. Given a source token is invalid (does not match `^[A-Za-z0-9._-]+/[A-Za-z0-9._-]+(@[A-Za-z0-9._/-]+)?$`). When `StarterProperties` is validated at `@PostConstruct`. Then the invalid token is dropped, a startup warning is logged identifying the token, and the application boots normally.
 4. Given `ExampleManifestParser` is invoked with a well-formed manifest. When parsing completes. Then the parser returns a populated `ParsedManifest` containing each example with its computed `sourceRepo` and `sourceRepoSha`; `apiVersion` is checked against the major prefix `operaton-starter/v1`; unknown fields are silently ignored.
 5. Given `ExampleManifestParser` is invoked with a manifest > 256 KB, an unknown major `apiVersion`, an invalid `path` (absolute, contains `..`, or contains `\0`), or syntactically broken YAML. When parsing runs. Then the parser throws a typed `ManifestRejected` exception with a `reason` field; no partial result is returned.
@@ -25,7 +25,7 @@ So that the loader can read a configured list of repositories and reject malform
 ## Tasks/Subtasks
 
 - [ ] Task 1: Extend `StarterProperties` with nested `Examples` record
-  - [ ] 1.1: Add `repositories: List<String>` with default `kthoms/operaton-examples`
+  - [ ] 1.1: Add `repositories: List<String>` with default `operaton/operaton-examples`
   - [ ] 1.2: Add `Cache` nested record with `dir: Path` (default `${java.io.tmpdir}/operaton-starter/examples-cache`) and `maxSizeMb: long` (default 512)
   - [ ] 1.3: Add `maxDownloadSizeMb: long` (default 50)
   - [ ] 1.4: Wire env var bindings: `STARTER_EXAMPLES_REPOSITORIES`, `STARTER_EXAMPLES_CACHE_DIR`, `STARTER_EXAMPLES_CACHE_MAXSIZEMB`, `STARTER_EXAMPLES_MAXDOWNLOADSIZEMB`
@@ -41,7 +41,7 @@ So that the loader can read a configured list of repositories and reject malform
 - [ ] Task 4: Define `ParsedManifest` record and `ManifestRejected` exception with `reason` field
 - [ ] Task 5: Add `NoArbitraryYamlInstantiationTest` ArchUnit test
 - [ ] Task 6: Write unit tests for parser: valid manifest, manifest > 256 KB, bad apiVersion, path traversal, broken YAML
-- [ ] Task 7: Update `application.properties` with default `starter.examples.repositories=kthoms/operaton-examples`
+- [ ] Task 7: Update `application.properties` with default `starter.examples.repositories=operaton/operaton-examples`
 
 ## Dev Notes
 

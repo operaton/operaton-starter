@@ -39,7 +39,7 @@ examples:
     authors:
       - { name: "Karsten Thoms", url: "https://github.com/kthoms" }
     license: "Apache-2.0"
-    documentationUrl: "https://github.com/kthoms/operaton-examples/blob/main/examples/leave-request-spring-boot/README.md"
+    documentationUrl: "https://github.com/operaton/operaton-examples/blob/main/examples/leave-request-spring-boot/README.md"
     screenshots:
       - examples/leave-request-spring-boot/docs/process.png
     lastUpdated: "2026-06-10"
@@ -71,7 +71,7 @@ examples:
     authors:
       - { name: "Karsten Thoms", url: "https://github.com/kthoms" }
     license: "Apache-2.0"
-    documentationUrl: "https://github.com/kthoms/operaton-examples/blob/main/examples/order-fulfillment-quarkus/README.md"
+    documentationUrl: "https://github.com/operaton/operaton-examples/blob/main/examples/order-fulfillment-quarkus/README.md"
     lastUpdated: "2026-06-12"
 
   - id: incident-escalation-plain-java

@@ -19,7 +19,7 @@ So that **I have a single API contract for all gallery content**.
 **When** a request is made to `GET /api/v1/metadata`  
 **Then** the response includes an `examples` array (in addition to existing `projectTypes`)  
 **And** each example in the array includes: all manifest fields plus computed fields: `sourceRepo`, `sourceRepoSha`, `sourceRepoUrl`, `isDownloadable`  
-**And** `sourceRepoUrl` is an HTML GitHub URL to the example folder at the pinned SHA (e.g., `https://github.com/kthoms/operaton-examples/tree/abc1234567890abcdef/examples/kafka-saga`)  
+**And** `sourceRepoUrl` is an HTML GitHub URL to the example folder at the pinned SHA (e.g., `https://github.com/operaton/operaton-examples/tree/abc1234567890abcdef/examples/kafka-saga`)  
 **And** if no examples are loaded, the `examples` array is empty (never null)  
 **And** existing clients that ignore the `examples` field continue to work unchanged (backward compatibility per NFR-5)  
 **Example response:**
@@ -34,9 +34,9 @@ So that **I have a single API contract for all gallery content**.
       "path": "examples/kafka-saga",
       "tags": [{ "label": "kafka", "category": "INTEGRATION" }],
       "complexity": "intermediate",
-      "sourceRepo": "kthoms/operaton-examples",
+      "sourceRepo": "operaton/operaton-examples",
       "sourceRepoSha": "abc1234567890abcdef",
-      "sourceRepoUrl": "https://github.com/kthoms/operaton-examples/tree/abc1234567890abcdef/examples/kafka-saga",
+      "sourceRepoUrl": "https://github.com/operaton/operaton-examples/tree/abc1234567890abcdef/examples/kafka-saga",
       "isDownloadable": true,
       // ... all other manifest fields
     }

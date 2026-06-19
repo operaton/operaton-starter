@@ -1277,7 +1277,7 @@ public record Examples(
 ```
 
 Environment binding:
-- `STARTER_EXAMPLES_REPOSITORIES` — comma-separated source list. Seed default: `kthoms/operaton-examples`.
+- `STARTER_EXAMPLES_REPOSITORIES` — comma-separated source list. Seed default: `operaton/operaton-examples`.
 - `STARTER_EXAMPLES_CACHE_DIR`, `STARTER_EXAMPLES_CACHE_MAXSIZEMB`, `STARTER_EXAMPLES_MAXDOWNLOADSIZEMB`.
 
 Validation runs at `@PostConstruct` on `StarterProperties`: source tokens must match `^[A-Za-z0-9._-]+/[A-Za-z0-9._-]+(@[A-Za-z0-9._/-]+)?$`. Invalid tokens are dropped with a startup warning — the application never fails to boot because of a configured source.
@@ -1441,7 +1441,7 @@ Stories should land in this order to avoid integration thrash:
 5. **Download path.** `ExampleZipCache` + `ZipBuilder` + `ExampleDownloadController`; WireMock-backed tests for 200 / 404 / 413 / 502; running-size-cap test with a 60 MB synthetic tarball.
 6. **Refresh + diagnostics.** `ExampleRefreshController` + `ExampleSourcesEndpoint`; preserve-previous-on-failure test.
 7. **Frontend.** Composables + components per UX spines; ArchUnit tests added before merge.
-8. **Docs.** `docs/examples-repository-format.md` published; README linked; seed-repo sample manifest committed at `kthoms/operaton-examples`.
+8. **Docs.** `docs/examples-repository-format.md` published; README linked; seed-repo sample manifest committed at `operaton/operaton-examples`.
 
 Each story is independently shippable behind no flag — the feature is invisible until at least one source is configured (which v1 ships preconfigured).
 

@@ -63,7 +63,7 @@ public record StarterProperties(
     ) {}
 
     public record Examples(
-            @DefaultValue("kthoms/operaton-examples") List<String> repositories,
+            @DefaultValue("operaton/operaton-examples") List<String> repositories,
             @DefaultValue Cache cache,
             @DefaultValue("50") long maxDownloadSizeMb
     ) {

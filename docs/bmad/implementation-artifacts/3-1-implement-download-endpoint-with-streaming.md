@@ -35,11 +35,11 @@ So that **I can extract the example code and start working immediately**.
   "status": "not_found",
   "error": "Example path does not exist in repository",
   "details": {
-    "sourceRepo": "kthoms/operaton-examples",
+    "sourceRepo": "operaton/operaton-examples",
     "sourceSha": "abc1234567890abcdef",
     "exampleId": "kafka-saga",
     "expectedPath": "examples/kafka-saga",
-    "sourceRepoUrl": "https://github.com/kthoms/operaton-examples/tree/abc1234567890abcdef/examples/kafka-saga"
+    "sourceRepoUrl": "https://github.com/operaton/operaton-examples/tree/abc1234567890abcdef/examples/kafka-saga"
   }
 }
 ```

@@ -35,7 +35,7 @@ examples:                         # required, list
     authors:
       - { name: "Karsten Thoms", url: "https://github.com/kthoms" }
     license: "Apache-2.0"
-    documentationUrl: "https://github.com/kthoms/operaton-examples/blob/main/examples/leave-request-spring-boot/README.md"
+    documentationUrl: "https://github.com/operaton/operaton-examples/blob/main/examples/leave-request-spring-boot/README.md"
     demoVideoUrl: null
     screenshots:
       - examples/leave-request-spring-boot/docs/process.png

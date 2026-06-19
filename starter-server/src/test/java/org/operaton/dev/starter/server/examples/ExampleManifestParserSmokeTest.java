@@ -40,14 +40,14 @@ class ExampleManifestParserSmokeTest {
         // Parse the sample manifest
         ParsedManifest manifest = parser.parse(
                 manifestBytes,
-                "kthoms/operaton-examples",
+                "operaton/operaton-examples",
                 "main"
         );
 
         // Verify basic structure
         assertNotNull(manifest);
         assertEquals("operaton-starter/v1", manifest.apiVersion());
-        assertEquals("kthoms/operaton-examples", manifest.sourceRepo());
+        assertEquals("operaton/operaton-examples", manifest.sourceRepo());
         assertEquals("main", manifest.sourceRepoSha());
 
         // Verify examples are present
@@ -72,7 +72,7 @@ class ExampleManifestParserSmokeTest {
         Path fixturePath = Paths.get("src/test/resources/fixtures/sample-operaton-starter.yml");
         byte[] manifestBytes = Files.readAllBytes(fixturePath);
 
-        ParsedManifest manifest = parser.parse(manifestBytes, "kthoms/operaton-examples", "main");
+        ParsedManifest manifest = parser.parse(manifestBytes, "operaton/operaton-examples", "main");
 
         // Verify we have at least 3 examples (requirement from story AC#3)
         assertEquals(3, manifest.examples().size(),

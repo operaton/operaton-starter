@@ -1212,7 +1212,7 @@ So that I can quickly scan for projects using specific technologies, platforms, 
 **Architecture:** `architecture.md` Amendment 2026-06-13 (sections A1–A13)
 **UX:** `ux-designs/ux-operaton-starter-2026-05-31/` (revised 2026-06-13)
 
-**Goal:** Allow the operaton-starter to aggregate example projects from maintainer-configured remote GitHub repositories that publish a `.operaton-starter.yml` manifest, surface them in a new Gallery subsection alongside Project Types and Use Cases, and let users download any example as a ZIP with one click. The list of source repositories is configuration-driven and seeded with `kthoms/operaton-examples`.
+**Goal:** Allow the operaton-starter to aggregate example projects from maintainer-configured remote GitHub repositories that publish a `.operaton-starter.yml` manifest, surface them in a new Gallery subsection alongside Project Types and Use Cases, and let users download any example as a ZIP with one click. The list of source repositories is configuration-driven and seeded with `operaton/operaton-examples`.
 
 Story sequencing follows architecture §A12: spec freeze first, then loader, then download, then UI, then docs. Each story is independently shippable behind no flag — the feature is invisible until at least one source is configured.
 
@@ -1254,7 +1254,7 @@ So that the loader can read a configured list of repositories and reject malform
 
 **Given** the default Spring properties ship preconfigured
 **When** no environment overrides are present
-**Then** `starter.examples.repositories` contains the single entry `kthoms/operaton-examples`
+**Then** `starter.examples.repositories` contains the single entry `operaton/operaton-examples`
 
 **Given** a source token is invalid (does not match `^[A-Za-z0-9._-]+/[A-Za-z0-9._-]+(@[A-Za-z0-9._/-]+)?$`)
 **When** `StarterProperties` is validated at `@PostConstruct`
@@ -1468,7 +1468,7 @@ So that I can publish a new example without trial-and-error and without reading 
 **When** read
 **Then** a "Contributing examples" section links to `docs/examples-repository-format.md`; the Examples Gallery section of the deployed site includes a "Publish your own examples →" link to the same doc
 
-**Given** the seed sample manifest at `kthoms/operaton-examples`
+**Given** the seed sample manifest at `operaton/operaton-examples`
 **When** committed to that repository's `main` branch
 **Then** it lists at least three examples covering the runtime matrix (Spring Boot + Maven, Quarkus + Gradle, plain-Java embedded), each with a populated long description, an icon (emoji), tags spanning the new `runtime` / `buildSystem` / `complexity` categories plus existing `concept` / `integration` categories, and a `path:` pointing at a real example subfolder
 

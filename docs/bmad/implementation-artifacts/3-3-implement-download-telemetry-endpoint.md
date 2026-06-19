@@ -26,7 +26,7 @@ So that **I can identify which examples are most valuable to the community**.
 {
   "timestamp": "2026-06-15T14:30:00Z",
   "downloads": {
-    "kthoms/operaton-examples": {
+    "operaton/operaton-examples": {
       "kafka-saga": 42,
       "dmn-rules": 15,
       "rest-service": 8
