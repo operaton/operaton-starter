@@ -66,10 +66,6 @@ public record ExampleSnapshot(
      * Useful for the metadata response.
      */
     public List<Example> allExamples() {
-        List<Example> all = new ArrayList<>();
-        for (SourceState source : sources) {
-            all.addAll(source.examples());
-        }
-        return all;
+        return sources.stream().flatMap(s -> s.examples().stream()).toList();
     }
 }

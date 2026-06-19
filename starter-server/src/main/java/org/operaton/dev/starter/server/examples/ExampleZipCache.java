@@ -119,8 +119,8 @@ public class ExampleZipCache {
         log.debug("Starting cache pruning task");
 
         try {
-            // Calculate current cache size
-            long currentSizeBytes = calculateCacheSize();
+            List<CacheFile> cacheFiles = getCacheFiles();
+            long currentSizeBytes = cacheFiles.stream().mapToLong(CacheFile::sizeBytes).sum();
             long maxSizeBytes = maxCacheSizeMb * 1024 * 1024;
 
             if (currentSizeBytes <= maxSizeBytes) {
@@ -133,9 +133,6 @@ public class ExampleZipCache {
             log.info("Cache size {} MB exceeds limit {} MB, pruning oldest files",
                     currentSizeBytes / (1024 * 1024),
                     maxCacheSizeMb);
-
-            // Get list of all .zip files (excluding .tmp files)
-            List<CacheFile> cacheFiles = getCacheFiles();
 
             // Sort by last-modified time (oldest first)
             cacheFiles.sort(Comparator.comparing(CacheFile::lastModifiedTime));
@@ -163,60 +160,28 @@ public class ExampleZipCache {
     }
 
     /**
-     * Calculates the total size of the cache directory.
-     *
-     * @return total size in bytes
-     * @throws IOException if reading the directory fails
-     */
-    private long calculateCacheSize() throws IOException {
-        if (!Files.exists(cacheDir)) {
-            return 0;
-        }
-
-        try (Stream<Path> paths = Files.walk(cacheDir)) {
-            return paths
-                    .filter(Files::isRegularFile)
-                    .filter(p -> !p.getFileName().toString().endsWith(".tmp"))
-                    .mapToLong(path -> {
-                        try {
-                            return Files.size(path);
-                        } catch (IOException e) {
-                            log.warn("Failed to get size of file: {}", path, e);
-                            return 0;
-                        }
-                    })
-                    .sum();
-        }
-    }
-
-    /**
-     * Gets a list of all cache files (excluding .tmp files).
+     * Collects all non-.tmp cache files and their metadata in a single directory walk.
      *
      * @return list of CacheFile records
      * @throws IOException if reading the directory fails
      */
     private List<CacheFile> getCacheFiles() throws IOException {
-        List<CacheFile> files = new ArrayList<>();
-
         if (!Files.exists(cacheDir)) {
-            return files;
+            return List.of();
         }
 
+        List<CacheFile> files = new ArrayList<>();
         try (Stream<Path> paths = Files.walk(cacheDir)) {
-            paths
-                    .filter(Files::isRegularFile)
+            paths.filter(Files::isRegularFile)
                     .filter(p -> !p.getFileName().toString().endsWith(".tmp"))
                     .forEach(path -> {
                         try {
-                            long sizeBytes = Files.size(path);
-                            long lastModifiedTime = Files.getLastModifiedTime(path).toMillis();
-                            files.add(new CacheFile(path, sizeBytes, lastModifiedTime));
+                            files.add(new CacheFile(path, Files.size(path), Files.getLastModifiedTime(path).toMillis()));
                         } catch (IOException e) {
                             log.warn("Failed to get metadata for cache file: {}", path, e);
                         }
                     });
         }
-
         return files;
     }
 

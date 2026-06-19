@@ -105,13 +105,17 @@ public class ExampleRepositoryLoader {
                 // Add source state, applying preserve-previous-on-failure
                 ExampleSnapshot.SourceState sourceState = result.sourceState();
                 if (!sourceState.outcome().equals("success")) {
-                    // Try to find and preserve previous state for this source
-                    ExampleSnapshot.SourceState previousState = findPreviousSourceState(previousSnapshot, sourceState.source());
+                    var sourceToken = sourceState.source();
+                    var previousState = previousSnapshot.sources().stream()
+                            .filter(s -> s.source().equals(sourceToken))
+                            .findFirst().orElse(null);
                     if (previousState != null) {
                         log.debug("Preserving previous snapshot for failed source {}", sourceState.source());
+                        var outcome = sourceState.outcome();
+                        var reason = outcome.contains(":") ? outcome.substring(outcome.indexOf(':') + 1) : outcome;
                         sourceState = new ExampleSnapshot.SourceState(
                                 sourceState.source(),
-                                "stale:" + extractReasonFromOutcome(sourceState.outcome()),
+                                "stale:" + reason,
                                 previousState.examples(),
                                 previousState.resolvedSha(),
                                 Instant.now().toString()
@@ -146,6 +150,14 @@ public class ExampleRepositoryLoader {
         return statuses;
     }
 
+    private LoadSourceResult failedResult(String sourceToken, String outcome, String reason) {
+        var now = Instant.now().toString();
+        return new LoadSourceResult(
+                new ExampleSnapshot.SourceState(sourceToken, outcome, List.of(), null, now),
+                new ExampleSourceStatus(sourceToken, outcome, 0, null, now, java.util.Optional.of(reason))
+        );
+    }
+
     /**
      * Loads a single source and captures status. Returns LoadSourceResult with both state and status.
      * Never throws — always returns a result (success or skipped).
@@ -157,51 +169,16 @@ public class ExampleRepositoryLoader {
             try {
                 fetchResult = fetcher.fetch(sourceToken);
             } catch (SourceUnavailable e) {
-                var outcome = "skipped:" + e.getReason();
-                var sourceState = new ExampleSnapshot.SourceState(
-                        sourceToken,
-                        outcome,
-                        List.of(),
-                        null,
-                        Instant.now().toString()
-                );
-                var status = new ExampleSourceStatus(
-                        sourceToken,
-                        outcome,
-                        0,
-                        null,
-                        Instant.now().toString(),
-                        java.util.Optional.of(e.getReason())
-                );
-                return new LoadSourceResult(sourceState, status);
+                return failedResult(sourceToken, "skipped:" + e.getReason(), e.getReason());
             }
 
             // Step 2: Parse manifest
+            String repo = sourceToken.contains("@") ? sourceToken.substring(0, sourceToken.indexOf('@')) : sourceToken;
             ParsedManifest parsedManifest;
             try {
-                parsedManifest = parser.parse(
-                        fetchResult.yamlBytes(),
-                        extractRepoFromToken(sourceToken),
-                        fetchResult.resolvedSha()
-                );
+                parsedManifest = parser.parse(fetchResult.yamlBytes(), repo, fetchResult.resolvedSha());
             } catch (ManifestRejected e) {
-                var outcome = "skipped:" + e.getReason();
-                var sourceState = new ExampleSnapshot.SourceState(
-                        sourceToken,
-                        outcome,
-                        List.of(),
-                        null,
-                        Instant.now().toString()
-                );
-                var status = new ExampleSourceStatus(
-                        sourceToken,
-                        outcome,
-                        0,
-                        null,
-                        Instant.now().toString(),
-                        java.util.Optional.of(e.getReason())
-                );
-                return new LoadSourceResult(sourceState, status);
+                return failedResult(sourceToken, "skipped:" + e.getReason(), e.getReason());
             }
 
             // Step 3: Convert to Example model and annotate with source info
@@ -214,7 +191,7 @@ public class ExampleRepositoryLoader {
                         .shortDescription(parsedEx.shortDescription())
                         .sourceRepo(parsedManifest.sourceRepo())
                         .sourceRepoSha(parsedManifest.sourceRepoSha())
-                        .sourceRepoUrl(buildSourceRepoUrl(parsedManifest.sourceRepo(), parsedManifest.sourceRepoSha(), parsedEx.path()))
+                        .sourceRepoUrl("https://github.com/" + parsedManifest.sourceRepo() + "/tree/" + parsedManifest.sourceRepoSha() + "/" + parsedEx.path())
                         .icon(parsedEx.icon())
                         .longDescription(parsedEx.longDescription())
                         .operatonVersion(parsedEx.operatonVersion())
@@ -301,23 +278,7 @@ public class ExampleRepositoryLoader {
 
         } catch (Exception e) {
             log.warn("Unexpected exception loading source {}", sourceToken, e);
-            var outcome = "skipped:error";
-            var sourceState = new ExampleSnapshot.SourceState(
-                    sourceToken,
-                    outcome,
-                    List.of(),
-                    null,
-                    Instant.now().toString()
-            );
-            var status = new ExampleSourceStatus(
-                    sourceToken,
-                    outcome,
-                    0,
-                    null,
-                    Instant.now().toString(),
-                    java.util.Optional.of("Unexpected error: " + e.getMessage())
-            );
-            return new LoadSourceResult(sourceState, status);
+            return failedResult(sourceToken, "skipped:error", "Unexpected error: " + e.getMessage());
         }
     }
 
@@ -339,57 +300,6 @@ public class ExampleRepositoryLoader {
             case "complexity" -> TagCategory.COMPLEXITY;
             default -> TagCategory.TECHNOLOGY;
         };
-    }
-
-    /**
-     * Finds the previous SourceState for a given source token from the prior snapshot.
-     * Used to implement preserve-previous-on-failure.
-     *
-     * @param previousSnapshot the previous snapshot (may be empty)
-     * @param sourceToken the source token to find
-     * @return the previous SourceState, or null if not found
-     */
-    private ExampleSnapshot.SourceState findPreviousSourceState(ExampleSnapshot previousSnapshot, String sourceToken) {
-        for (ExampleSnapshot.SourceState sourceState : previousSnapshot.sources()) {
-            if (sourceState.source().equals(sourceToken)) {
-                return sourceState;
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Extracts the reason part from an outcome string.
-     * E.g., "skipped:timeout" -> "timeout"
-     *
-     * @param outcome the outcome string
-     * @return the reason part
-     */
-    private String extractReasonFromOutcome(String outcome) {
-        int colonIndex = outcome.indexOf(':');
-        if (colonIndex > 0 && colonIndex < outcome.length() - 1) {
-            return outcome.substring(colonIndex + 1);
-        }
-        return outcome;
-    }
-
-    /**
-     * Extracts the owner/repo portion from a source token (e.g., "owner/repo@ref" -> "owner/repo").
-     */
-    private String extractRepoFromToken(String sourceToken) {
-        int atIndex = sourceToken.indexOf('@');
-        if (atIndex > 0) {
-            return sourceToken.substring(0, atIndex);
-        }
-        return sourceToken;
-    }
-
-    /**
-     * Builds the GitHub HTML URL to the example folder at the pinned SHA.
-     * Format: https://github.com/{owner}/{repo}/tree/{sha}/{examplePath}
-     */
-    private String buildSourceRepoUrl(String sourceRepo, String sha, String examplePath) {
-        return "https://github.com/" + sourceRepo + "/tree/" + sha + "/" + examplePath;
     }
 
     /**

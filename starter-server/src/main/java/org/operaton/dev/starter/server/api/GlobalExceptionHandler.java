@@ -3,6 +3,7 @@ package org.operaton.dev.starter.server.api;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -22,6 +23,7 @@ public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
     private static final String BASE_URI = "https://start.operaton.org/problems/";
+    private static final MediaType PROBLEM_JSON = MediaType.parseMediaType("application/problem+json");
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ProblemDetail> handleValidation(MethodArgumentNotValidException ex) {
@@ -34,7 +36,7 @@ public class GlobalExceptionHandler {
         problem.setTitle("Validation Error");
         problem.setDetail(fields);
         return ResponseEntity.badRequest()
-                .contentType(org.springframework.http.MediaType.parseMediaType("application/problem+json"))
+                .contentType(PROBLEM_JSON)
                 .body(problem);
     }
 
@@ -46,7 +48,7 @@ public class GlobalExceptionHandler {
         problem.setTitle("Invalid Request");
         problem.setDetail("Request body could not be parsed. Check enum values and field types.");
         return ResponseEntity.badRequest()
-                .contentType(org.springframework.http.MediaType.parseMediaType("application/problem+json"))
+                .contentType(PROBLEM_JSON)
                 .body(problem);
     }
 
@@ -57,7 +59,7 @@ public class GlobalExceptionHandler {
         problem.setTitle("Validation Error");
         problem.setDetail(ex.getMessage());
         return ResponseEntity.badRequest()
-                .contentType(org.springframework.http.MediaType.parseMediaType("application/problem+json"))
+                .contentType(PROBLEM_JSON)
                 .body(problem);
     }
 
@@ -68,7 +70,7 @@ public class GlobalExceptionHandler {
         problem.setTitle("Invalid Request");
         problem.setDetail(ex.getMessage());
         return ResponseEntity.badRequest()
-                .contentType(org.springframework.http.MediaType.parseMediaType("application/problem+json"))
+                .contentType(PROBLEM_JSON)
                 .body(problem);
     }
 
@@ -80,7 +82,7 @@ public class GlobalExceptionHandler {
         problem.setTitle("Internal Server Error");
         problem.setDetail("An unexpected error occurred. Please try again later.");
         return ResponseEntity.internalServerError()
-                .contentType(org.springframework.http.MediaType.parseMediaType("application/problem+json"))
+                .contentType(PROBLEM_JSON)
                 .body(problem);
     }
 }
