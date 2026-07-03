@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { marked } from 'marked'
 import type { Example } from '@/generated/types'
-import { tagChipClasses, metadataBadgeClasses } from '@/utils/tagColors'
+import { tagChipClasses, metadataBadgeClasses, integrationChipClasses, bpmnConceptChipClasses } from '@/utils/tagColors'
 import DownloadAction from './DownloadAction.vue'
 import type { DownloadStatus } from './useExampleDownload'
 
@@ -42,6 +43,12 @@ const shortSha = computed(() => {
   return props.example.sourceRepoSha.substring(0, 7)
 })
 
+const screenshotUrls = computed(() =>
+  (props.example.screenshots ?? []).map(path =>
+    `https://raw.githubusercontent.com/${props.example.owner}/${props.example.repo}/${props.example.sourceRepoSha}${path}`
+  )
+)
+
 const hasDetails = computed(() => {
   return !!(
     props.example.longDescription ||
@@ -50,7 +57,8 @@ const hasDetails = computed(() => {
     props.example.requires ||
     props.example.authors?.length ||
     props.example.license ||
-    props.example.lastUpdated
+    props.example.lastUpdated ||
+    screenshotUrls.value.length
   )
 })
 
@@ -86,16 +94,46 @@ function handleEscape(event: KeyboardEvent) {
       </div>
 
       <div class="card-title-desc">
-        <h3 class="card-title">{{ example.title }}</h3>
+        <h3 class="card-title">
+          {{ example.title }}
+          <a
+            v-if="example.documentationUrl"
+            :href="example.documentationUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="doc-link"
+            aria-label="Documentation"
+          >📄</a>
+        </h3>
         <p class="card-description">{{ example.shortDescription }}</p>
       </div>
     </div>
 
-    <!-- Tags -->
-    <div v-if="example.tags?.length" class="tags-section">
+    <!-- Chips: runtime, integrations, bpmnConcepts, tags (excluding BPMN_CONCEPT) -->
+    <div
+      v-if="example.runtime || example.integrations?.length || example.bpmnConcepts?.length || example.tags?.length"
+      class="tags-section"
+    >
       <div class="tags-row">
+        <span v-if="example.runtime" :class="['tag-badge', metadataBadgeClasses('RUNTIME')]">
+          {{ example.runtime }}
+        </span>
         <span
-          v-for="tag in example.tags"
+          v-for="integration in example.integrations"
+          :key="`int-${integration}`"
+          :class="['tag-badge', integrationChipClasses()]"
+        >
+          {{ integration }}
+        </span>
+        <span
+          v-for="concept in example.bpmnConcepts"
+          :key="`bpmn-${concept}`"
+          :class="['tag-badge', bpmnConceptChipClasses()]"
+        >
+          {{ concept }}
+        </span>
+        <span
+          v-for="tag in example.tags?.filter(t => t.category !== 'BPMN_CONCEPT')"
           :key="tag.label"
           :class="[
             'tag-badge',
@@ -132,34 +170,20 @@ function handleEscape(event: KeyboardEvent) {
       @keydown="handleEscape"
     >
       <!-- Long description -->
-      <div v-if="example.longDescription" class="detail-section">
-        {{ example.longDescription }}
-      </div>
+      <!-- ponytail: marked parses trusted content from our own GitHub repos -->
+      <div v-if="example.longDescription" class="detail-section long-description" v-html="marked.parse(example.longDescription)" />
 
-      <!-- BPMN concepts -->
-      <div v-if="example.bpmnConcepts?.length" class="detail-section">
-        <p class="detail-label">BPMN concepts</p>
-        <div class="detail-tags">
+      <!-- Screenshots -->
+      <div v-if="screenshotUrls.length" class="detail-section">
+        <p class="detail-label">Screenshots</p>
+        <div class="screenshots-row">
           <span
-            v-for="concept in example.bpmnConcepts"
-            :key="concept"
-            class="detail-tag"
+            v-for="(url, i) in screenshotUrls"
+            :key="i"
+            class="screenshot-thumb-wrapper"
           >
-            {{ concept }}
-          </span>
-        </div>
-      </div>
-
-      <!-- Integrations -->
-      <div v-if="example.integrations?.length" class="detail-section">
-        <p class="detail-label">Integrations</p>
-        <div class="detail-tags">
-          <span
-            v-for="integration in example.integrations"
-            :key="integration"
-            class="detail-tag"
-          >
-            {{ integration }}
+            <img :src="url" :alt="`Screenshot ${i + 1}`" class="screenshot-thumb" />
+            <img :src="url" :alt="`Screenshot ${i + 1} preview`" class="screenshot-preview" />
           </span>
         </div>
       </div>
@@ -363,6 +387,12 @@ function handleEscape(event: KeyboardEvent) {
   line-height: 1.5;
 }
 
+.long-description :deep(p) { margin: 0 0 0.5rem 0; line-height: 1.5; }
+.long-description :deep(ul) { margin: 0 0 0.5rem 1.25rem; padding: 0; list-style: disc; }
+.long-description :deep(li) { margin-bottom: 0.25rem; line-height: 1.5; }
+.long-description :deep(strong) { font-weight: 600; }
+.long-description :deep(code) { font-family: monospace; font-size: 0.85em; background: rgba(0,0,0,0.06); padding: 0.1em 0.3em; border-radius: 3px; }
+
 .detail-tags {
   display: flex;
   flex-wrap: wrap;
@@ -426,5 +456,57 @@ function handleEscape(event: KeyboardEvent) {
 .github-link:hover {
   color: rgb(24, 74, 239);
   text-decoration: underline;
+}
+
+.doc-link {
+  margin-left: 0.4rem;
+  text-decoration: none;
+  font-size: 1rem;
+  vertical-align: middle;
+  opacity: 0.75;
+  transition: opacity 150ms ease;
+}
+
+.doc-link:hover {
+  opacity: 1;
+}
+
+.screenshots-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.screenshot-thumb-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.screenshot-thumb {
+  width: 3rem;
+  height: 3rem;
+  object-fit: cover;
+  border-radius: 0.25em;
+  border: 1px solid rgb(227, 212, 221);
+  cursor: pointer;
+}
+
+.screenshot-preview {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 0.5rem);
+  left: 0;
+  max-width: 20rem;
+  max-height: 15rem;
+  object-fit: contain;
+  border-radius: 0.5em;
+  border: 1px solid rgb(227, 212, 221);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  z-index: 50;
+  background: white;
+}
+
+.screenshot-thumb-wrapper:hover .screenshot-preview {
+  display: block;
 }
 </style>
