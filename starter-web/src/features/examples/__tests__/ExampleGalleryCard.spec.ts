@@ -50,11 +50,9 @@ describe('ExampleGalleryCard', () => {
     })
   })
 
-  it('renders accent tags (BPMN_CONCEPT) with colored styling', () => {
+  it('excludes BPMN_CONCEPT tags from the chip row (use bpmnConcepts field instead)', () => {
     const example = makeExample({
-      tags: [
-        { label: 'Multi-role', category: 'BPMN_CONCEPT' },
-      ],
+      tags: [{ label: 'Multi-role', category: 'BPMN_CONCEPT' }],
     })
     const wrapper = mount(ExampleGalleryCard, {
       props: {
@@ -62,9 +60,8 @@ describe('ExampleGalleryCard', () => {
         downloadStatus: { state: 'idle' },
       },
     })
-    const badge = wrapper.find('.tag-badge')
-    expect(badge.text()).toContain('Multi-role')
-    expect(badge.classes()).toContain('bg-blue-100')
+    // BPMN_CONCEPT tags are filtered out; no chip should appear
+    expect(wrapper.findAll('.tag-badge').length).toBe(0)
   })
 
   it('does not show details button when no details available', () => {
@@ -213,9 +210,8 @@ describe('ExampleGalleryCard', () => {
     expect(wrapper.find('.details-panel').text()).toContain('Bob Builder')
   })
 
-  it('displays BPMN concepts in details panel', async () => {
+  it('displays BPMN concepts as chips in the card', () => {
     const example = makeExample({
-      longDescription: 'A description.',
       bpmnConcepts: ['Multi-instance Task', 'Exclusive Gateway'],
     })
     const wrapper = mount(ExampleGalleryCard, {
@@ -224,16 +220,14 @@ describe('ExampleGalleryCard', () => {
         downloadStatus: { state: 'idle' },
       },
     })
-    const detailsButton = wrapper.find('.details-button')
-    await detailsButton.trigger('click')
-    await wrapper.vm.$nextTick()
-    expect(wrapper.find('.details-panel').text()).toContain('Multi-instance Task')
-    expect(wrapper.find('.details-panel').text()).toContain('Exclusive Gateway')
+    expect(wrapper.text()).toContain('Multi-instance Task')
+    expect(wrapper.text()).toContain('Exclusive Gateway')
+    const chips = wrapper.findAll('.tag-badge')
+    expect(chips.some(c => c.classes().includes('bg-blue-100'))).toBe(true)
   })
 
-  it('displays integrations in details panel', async () => {
+  it('displays integrations as chips in the card', () => {
     const example = makeExample({
-      longDescription: 'A description.',
       integrations: ['Kafka', 'REST API'],
     })
     const wrapper = mount(ExampleGalleryCard, {
@@ -242,11 +236,10 @@ describe('ExampleGalleryCard', () => {
         downloadStatus: { state: 'idle' },
       },
     })
-    const detailsButton = wrapper.find('.details-button')
-    await detailsButton.trigger('click')
-    await wrapper.vm.$nextTick()
-    expect(wrapper.find('.details-panel').text()).toContain('Kafka')
-    expect(wrapper.find('.details-panel').text()).toContain('REST API')
+    expect(wrapper.text()).toContain('Kafka')
+    expect(wrapper.text()).toContain('REST API')
+    const chips = wrapper.findAll('.tag-badge')
+    expect(chips.some(c => c.classes().includes('bg-amber-100'))).toBe(true)
   })
 
   it('displays license in details panel', async () => {
