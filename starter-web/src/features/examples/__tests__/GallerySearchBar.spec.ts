@@ -11,11 +11,13 @@ describe('GallerySearchBar', () => {
         buildSystems: [],
         complexities: [],
         integrations: [],
+        bpmnConcepts: [],
         activeFilters: {
           runtime: new Set(),
           buildSystem: new Set(),
           complexity: new Set(),
           integrations: new Set(),
+          bpmnConcepts: new Set(),
         },
       },
     })
@@ -32,11 +34,13 @@ describe('GallerySearchBar', () => {
         buildSystems: [],
         complexities: [],
         integrations: [],
+        bpmnConcepts: [],
         activeFilters: {
           runtime: new Set(),
           buildSystem: new Set(),
           complexity: new Set(),
           integrations: new Set(),
+          bpmnConcepts: new Set(),
         },
       },
     })
@@ -56,11 +60,13 @@ describe('GallerySearchBar', () => {
         buildSystems: [],
         complexities: [],
         integrations: [],
+        bpmnConcepts: [],
         activeFilters: {
           runtime: new Set(),
           buildSystem: new Set(),
           complexity: new Set(),
           integrations: new Set(),
+          bpmnConcepts: new Set(),
         },
       },
     })
@@ -76,11 +82,13 @@ describe('GallerySearchBar', () => {
         buildSystems: [],
         complexities: [],
         integrations: [],
+        bpmnConcepts: [],
         activeFilters: {
           runtime: new Set(),
           buildSystem: new Set(),
           complexity: new Set(),
           integrations: new Set(),
+          bpmnConcepts: new Set(),
         },
       },
     })
@@ -96,11 +104,13 @@ describe('GallerySearchBar', () => {
         buildSystems: [],
         complexities: [],
         integrations: [],
+        bpmnConcepts: [],
         activeFilters: {
           runtime: new Set(),
           buildSystem: new Set(),
           complexity: new Set(),
           integrations: new Set(),
+          bpmnConcepts: new Set(),
         },
       },
     })
@@ -119,11 +129,13 @@ describe('GallerySearchBar', () => {
         buildSystems: [],
         complexities: [],
         integrations: [],
+        bpmnConcepts: [],
         activeFilters: {
           runtime: new Set(),
           buildSystem: new Set(),
           complexity: new Set(),
           integrations: new Set(),
+          bpmnConcepts: new Set(),
         },
       },
     })
@@ -139,11 +151,13 @@ describe('GallerySearchBar', () => {
         buildSystems: [],
         complexities: [],
         integrations: [],
+        bpmnConcepts: [],
         activeFilters: {
           runtime: new Set(),
           buildSystem: new Set(),
           complexity: new Set(),
           integrations: new Set(),
+          bpmnConcepts: new Set(),
         },
       },
     })

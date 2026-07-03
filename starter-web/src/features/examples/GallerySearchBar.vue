@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import FilterChip from './FilterChip.vue'
-import type { Example } from '@/generated/types'
 
 interface Props {
   filteredExamplesCount: number
@@ -9,11 +8,13 @@ interface Props {
   buildSystems: string[]
   complexities: string[]
   integrations: string[]
+  bpmnConcepts: string[]
   activeFilters: {
     runtime: Set<string>
     buildSystem: Set<string>
     complexity: Set<string>
     integrations: Set<string>
+    bpmnConcepts: Set<string>
   }
 }
 
@@ -46,7 +47,7 @@ watch(searchInput, (value) => {
   }, 200)
 })
 
-function toggleFilter(category: 'runtime' | 'buildSystem' | 'complexity' | 'integrations', value: string) {
+function toggleFilter(category: 'runtime' | 'buildSystem' | 'complexity' | 'integrations' | 'bpmnConcepts', value: string) {
   emit('toggle-filter', category, value)
 }
 
@@ -76,6 +77,7 @@ function clearFilters() {
             :label="runtime"
             :is-active="activeFilters.runtime.has(runtime)"
             :category="'runtime'"
+            color-classes="bg-neutral-50 text-neutral-900 border border-neutral-200"
             @toggle="toggleFilter('runtime', runtime)"
           />
         </div>
@@ -89,6 +91,7 @@ function clearFilters() {
             :label="buildSystem"
             :is-active="activeFilters.buildSystem.has(buildSystem)"
             :category="'buildSystem'"
+            color-classes="bg-neutral-50 text-neutral-900 border border-neutral-200"
             @toggle="toggleFilter('buildSystem', buildSystem)"
           />
         </div>
@@ -102,6 +105,7 @@ function clearFilters() {
             :label="complexity"
             :is-active="activeFilters.complexity.has(complexity)"
             :category="'complexity'"
+            color-classes="bg-neutral-50 text-neutral-900 border border-neutral-200"
             @toggle="toggleFilter('complexity', complexity)"
           />
         </div>
@@ -115,7 +119,22 @@ function clearFilters() {
             :label="integration"
             :is-active="activeFilters.integrations.has(integration)"
             :category="'integrations'"
+            color-classes="bg-amber-100 text-amber-800"
             @toggle="toggleFilter('integrations', integration)"
+          />
+        </div>
+      </div>
+
+      <div v-if="bpmnConcepts.length > 0" class="filter-group">
+        <div role="toolbar" aria-label="Filter by BPMN concept">
+          <FilterChip
+            v-for="concept in bpmnConcepts"
+            :key="`bpmnConcept-${concept}`"
+            :label="concept"
+            :is-active="activeFilters.bpmnConcepts.has(concept)"
+            :category="'bpmnConcepts'"
+            color-classes="bg-blue-100 text-blue-800"
+            @toggle="toggleFilter('bpmnConcepts', concept)"
           />
         </div>
       </div>

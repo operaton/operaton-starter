@@ -9,6 +9,7 @@ export function useExamples(): {
   runtimes: Ref<string[]>
   buildSystems: Ref<string[]>
   complexities: Ref<string[]>
+  bpmnConcepts: Ref<string[]>
 } {
   const { data: metadata } = useMetadata()
 
@@ -60,6 +61,14 @@ export function useExamples(): {
     return Array.from(complexities).sort()
   })
 
+  const bpmnConcepts = computed(() => {
+    const concepts = new Set<string>()
+    examples.value.forEach(ex => {
+      ex.bpmnConcepts?.forEach(c => concepts.add(c))
+    })
+    return Array.from(concepts).sort()
+  })
+
   return {
     examples,
     allTags,
@@ -67,5 +76,6 @@ export function useExamples(): {
     runtimes,
     buildSystems,
     complexities,
+    bpmnConcepts,
   }
 }

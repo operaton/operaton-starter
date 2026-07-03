@@ -5,9 +5,10 @@ interface Props {
   label: string
   isActive: boolean
   category: string
+  colorClasses?: string
 }
 
-const props = withDefaults(defineProps<Props>(), {})
+const props = withDefaults(defineProps<Props>(), { colorClasses: '' })
 const emit = defineEmits<{ toggle: [] }>()
 
 const ariaPressedValue = computed(() => props.isActive)
@@ -29,7 +30,7 @@ function handleKeydown(event: KeyboardEvent) {
     type="button"
     :aria-pressed="ariaPressedValue"
     class="filter-chip"
-    :class="{ 'filter-chip-active': isActive }"
+    :class="[{ 'filter-chip-active': isActive }, !isActive && colorClasses ? colorClasses : '']"
     @click="handleClick"
     @keydown="handleKeydown"
   >

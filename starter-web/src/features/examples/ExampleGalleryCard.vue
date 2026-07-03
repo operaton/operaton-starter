@@ -45,7 +45,7 @@ const shortSha = computed(() => {
 
 const screenshotUrls = computed(() =>
   (props.example.screenshots ?? []).map(path =>
-    `https://raw.githubusercontent.com/${props.example.owner}/${props.example.repo}/${props.example.sourceRepoSha}${path}`
+    `https://raw.githubusercontent.com/${props.example.owner}/${props.example.repo}/${props.example.sourceRepoSha}/${path}`
   )
 )
 

@@ -18,11 +18,10 @@ const galleryRef = ref<HTMLElement | null>(null)
 const examplesRef = ref<HTMLElement | null>(null)
 
 // Composables for examples gallery
-const { examples, runtimes, buildSystems, complexities } = useExamples()
+const { examples, runtimes, buildSystems, complexities, bpmnConcepts } = useExamples()
 const { filters, filteredExamples, hasActiveFilters, toggleFilter, setQuery, clear } = useGalleryFilters(examples)
 const { getStatus, download, retry } = useExampleDownload()
 
-// Get all unique integrations from examples
 const integrations = computed(() => {
   const ints = new Set<string>()
   examples.value.forEach(ex => {
@@ -132,9 +131,10 @@ function handleExampleDownload(exampleId: string) {
         :build-systems="buildSystems"
         :complexities="complexities"
         :integrations="integrations"
+        :bpmn-concepts="bpmnConcepts"
         :active-filters="filters"
         @update:query="setQuery"
-        @toggle-filter="(category, value) => toggleFilter(category as 'runtime' | 'buildSystem' | 'complexity' | 'integrations', value)"
+        @toggle-filter="(category, value) => toggleFilter(category as 'runtime' | 'buildSystem' | 'complexity' | 'integrations' | 'bpmnConcepts', value)"
         @clear-filters="clear"
       />
 

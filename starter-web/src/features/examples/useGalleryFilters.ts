@@ -7,6 +7,7 @@ export interface FilterState {
   buildSystem: Set<string>
   complexity: Set<string>
   integrations: Set<string>
+  bpmnConcepts: Set<string>
 }
 
 export function useGalleryFilters(examples: Ref<Example[]>) {
@@ -16,9 +17,10 @@ export function useGalleryFilters(examples: Ref<Example[]>) {
     buildSystem: new Set(),
     complexity: new Set(),
     integrations: new Set(),
+    bpmnConcepts: new Set(),
   })
 
-  function toggleFilter(category: 'runtime' | 'buildSystem' | 'complexity' | 'integrations', value: string) {
+  function toggleFilter(category: 'runtime' | 'buildSystem' | 'complexity' | 'integrations' | 'bpmnConcepts', value: string) {
     const filterSet = filters.value[category]
     if (filterSet.has(value)) {
       filterSet.delete(value)
@@ -37,6 +39,7 @@ export function useGalleryFilters(examples: Ref<Example[]>) {
     filters.value.buildSystem.clear()
     filters.value.complexity.clear()
     filters.value.integrations.clear()
+    filters.value.bpmnConcepts.clear()
   }
 
   const filteredExamples = computed(() => {
@@ -85,6 +88,12 @@ export function useGalleryFilters(examples: Ref<Example[]>) {
       )
     }
 
+    if (filters.value.bpmnConcepts.size > 0) {
+      result = result.filter(ex =>
+        ex.bpmnConcepts?.some(c => filters.value.bpmnConcepts.has(c))
+      )
+    }
+
     return result
   })
 
@@ -92,7 +101,8 @@ export function useGalleryFilters(examples: Ref<Example[]>) {
     filters.value.runtime.size > 0 ||
     filters.value.buildSystem.size > 0 ||
     filters.value.complexity.size > 0 ||
-    filters.value.integrations.size > 0
+    filters.value.integrations.size > 0 ||
+    filters.value.bpmnConcepts.size > 0
   )
 
   return {
