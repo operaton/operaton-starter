@@ -69,75 +69,80 @@ function clearFilters() {
         />
       </div>
 
-      <div v-if="runtimes.length > 0" class="filter-group">
-        <div role="toolbar" aria-label="Filter by runtime">
-          <FilterChip
-            v-for="runtime in runtimes"
-            :key="`runtime-${runtime}`"
-            :label="runtime"
-            :is-active="activeFilters.runtime.has(runtime)"
-            :category="'runtime'"
-            color-classes="bg-neutral-50 text-neutral-900 border border-neutral-200"
-            @toggle="toggleFilter('runtime', runtime)"
-          />
-        </div>
-      </div>
+      <details class="filter-details">
+        <summary class="filter-summary">Filters</summary>
+        <div class="filter-groups">
+          <div v-if="runtimes.length > 0" class="filter-group">
+            <div role="toolbar" aria-label="Filter by runtime">
+              <FilterChip
+                v-for="runtime in runtimes"
+                :key="`runtime-${runtime}`"
+                :label="runtime"
+                :is-active="activeFilters.runtime.has(runtime)"
+                :category="'runtime'"
+                color-classes="bg-neutral-50 text-neutral-900 border border-neutral-200"
+                @toggle="toggleFilter('runtime', runtime)"
+              />
+            </div>
+          </div>
 
-      <div v-if="buildSystems.length > 0" class="filter-group">
-        <div role="toolbar" aria-label="Filter by build system">
-          <FilterChip
-            v-for="buildSystem in buildSystems"
-            :key="`buildSystem-${buildSystem}`"
-            :label="buildSystem"
-            :is-active="activeFilters.buildSystem.has(buildSystem)"
-            :category="'buildSystem'"
-            color-classes="bg-neutral-50 text-neutral-900 border border-neutral-200"
-            @toggle="toggleFilter('buildSystem', buildSystem)"
-          />
-        </div>
-      </div>
+          <div v-if="buildSystems.length > 0" class="filter-group">
+            <div role="toolbar" aria-label="Filter by build system">
+              <FilterChip
+                v-for="buildSystem in buildSystems"
+                :key="`buildSystem-${buildSystem}`"
+                :label="buildSystem"
+                :is-active="activeFilters.buildSystem.has(buildSystem)"
+                :category="'buildSystem'"
+                color-classes="bg-neutral-50 text-neutral-900 border border-neutral-200"
+                @toggle="toggleFilter('buildSystem', buildSystem)"
+              />
+            </div>
+          </div>
 
-      <div v-if="complexities.length > 0" class="filter-group">
-        <div role="toolbar" aria-label="Filter by complexity">
-          <FilterChip
-            v-for="complexity in complexities"
-            :key="`complexity-${complexity}`"
-            :label="complexity"
-            :is-active="activeFilters.complexity.has(complexity)"
-            :category="'complexity'"
-            color-classes="bg-neutral-50 text-neutral-900 border border-neutral-200"
-            @toggle="toggleFilter('complexity', complexity)"
-          />
-        </div>
-      </div>
+          <div v-if="complexities.length > 0" class="filter-group">
+            <div role="toolbar" aria-label="Filter by complexity">
+              <FilterChip
+                v-for="complexity in complexities"
+                :key="`complexity-${complexity}`"
+                :label="complexity"
+                :is-active="activeFilters.complexity.has(complexity)"
+                :category="'complexity'"
+                color-classes="bg-neutral-50 text-neutral-900 border border-neutral-200"
+                @toggle="toggleFilter('complexity', complexity)"
+              />
+            </div>
+          </div>
 
-      <div v-if="integrations.length > 0" class="filter-group">
-        <div role="toolbar" aria-label="Filter by integration">
-          <FilterChip
-            v-for="integration in integrations"
-            :key="`integration-${integration}`"
-            :label="integration"
-            :is-active="activeFilters.integrations.has(integration)"
-            :category="'integrations'"
-            color-classes="bg-amber-100 text-amber-800"
-            @toggle="toggleFilter('integrations', integration)"
-          />
-        </div>
-      </div>
+          <div v-if="integrations.length > 0" class="filter-group">
+            <div role="toolbar" aria-label="Filter by integration">
+              <FilterChip
+                v-for="integration in integrations"
+                :key="`integration-${integration}`"
+                :label="integration"
+                :is-active="activeFilters.integrations.has(integration)"
+                :category="'integrations'"
+                color-classes="bg-amber-100 text-amber-800"
+                @toggle="toggleFilter('integrations', integration)"
+              />
+            </div>
+          </div>
 
-      <div v-if="bpmnConcepts.length > 0" class="filter-group">
-        <div role="toolbar" aria-label="Filter by BPMN concept">
-          <FilterChip
-            v-for="concept in bpmnConcepts"
-            :key="`bpmnConcept-${concept}`"
-            :label="concept"
-            :is-active="activeFilters.bpmnConcepts.has(concept)"
-            :category="'bpmnConcepts'"
-            color-classes="bg-blue-100 text-blue-800"
-            @toggle="toggleFilter('bpmnConcepts', concept)"
-          />
+          <div v-if="bpmnConcepts.length > 0" class="filter-group">
+            <div role="toolbar" aria-label="Filter by BPMN concept">
+              <FilterChip
+                v-for="concept in bpmnConcepts"
+                :key="`bpmnConcept-${concept}`"
+                :label="concept"
+                :is-active="activeFilters.bpmnConcepts.has(concept)"
+                :category="'bpmnConcepts'"
+                color-classes="bg-blue-100 text-blue-800"
+                @toggle="toggleFilter('bpmnConcepts', concept)"
+              />
+            </div>
+          </div>
         </div>
-      </div>
+      </details>
 
       <span role="status" aria-live="polite" class="sr-only">
         {{ statusMessage }}
@@ -183,8 +188,47 @@ function clearFilters() {
   border-color: rgb(24, 74, 239);
 }
 
+.filter-details {
+  margin-top: 0.5rem;
+}
+
+.filter-summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: rgb(102, 102, 102);
+  cursor: pointer;
+  user-select: none;
+  padding: 0.25rem 0;
+  list-style: none;
+}
+
+.filter-summary::-webkit-details-marker { display: none; }
+
+.filter-summary::before {
+  content: '▶';
+  font-size: 0.65rem;
+  transition: transform 150ms ease;
+}
+
+.filter-details[open] .filter-summary::before {
+  transform: rotate(90deg);
+}
+
+.filter-summary:hover {
+  color: rgb(24, 74, 239);
+}
+
+.filter-groups {
+  padding-top: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
 .filter-group {
-  margin-bottom: 0.5rem;
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
