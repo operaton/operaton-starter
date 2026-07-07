@@ -49,7 +49,32 @@ class ExampleRepositoryLoaderTest {
         verify(registry).swap(argThat(snapshot -> {
             List<Example> examples = snapshot.sources().get(0).examples();
             // Root descriptor: path relative to root stays unchanged
-            return examples.size() == 1 && "examples/foo".equals(examples.get(0).getPath());
+            return examples.size() == 1
+                    && "examples/foo".equals(examples.get(0).getPath())
+                    && !examples.get(0).getSourceRepoUrl().endsWith("/.");
+        }));
+    }
+
+    @Test
+    void loader_root_descriptor_null_path_resolves_to_empty_string() throws Exception {
+        var sourceToken = "owner/repo";
+        var located = new LocatedFetchResult("yaml".getBytes(), "sha1", ".operaton-starter.yml");
+        var manifest = new ParsedManifest("operaton-starter/v1",
+                List.of(parsedEx("ex1", null)), "owner/repo", "sha1");
+
+        when(properties.examples()).thenReturn(new StarterProperties.Examples(List.of(sourceToken), null, 50));
+        when(fetcher.fetch(sourceToken)).thenReturn(List.of(located));
+        when(parser.parse(any(), eq("owner/repo"), eq("sha1"))).thenReturn(manifest);
+        when(registry.snapshot()).thenReturn(ExampleSnapshot.of(List.of()));
+
+        loader.onApplicationReady(mock(ApplicationReadyEvent.class));
+
+        verify(registry).swap(argThat(snapshot -> {
+            List<Example> examples = snapshot.sources().get(0).examples();
+            // Root descriptor + null path → empty string path, clean sourceRepoUrl
+            return examples.size() == 1
+                    && "".equals(examples.get(0).getPath())
+                    && examples.get(0).getSourceRepoUrl().equals("https://github.com/owner/repo/tree/sha1");
         }));
     }
 

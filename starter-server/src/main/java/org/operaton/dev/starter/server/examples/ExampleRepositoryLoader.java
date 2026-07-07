@@ -220,7 +220,7 @@ public class ExampleRepositoryLoader {
                             .sourceRepo(parsedManifest.sourceRepo())
                             .sourceRepoSha(parsedManifest.sourceRepoSha())
                             .sourceRepoUrl("https://github.com/" + parsedManifest.sourceRepo()
-                                    + "/tree/" + parsedManifest.sourceRepoSha() + "/" + resolvedPath)
+                                    + "/tree/" + parsedManifest.sourceRepoSha() + (resolvedPath.isEmpty() ? "" : "/" + resolvedPath))
                             .icon(parsedEx.icon())
                             .longDescription(parsedEx.longDescription())
                             .operatonVersion(parsedEx.operatonVersion())
@@ -298,7 +298,7 @@ public class ExampleRepositoryLoader {
     static String resolveExamplePath(String descriptorDir, String examplePath) {
         String effective = (examplePath == null || examplePath.isEmpty()) ? "." : examplePath;
         if (effective.equals(".")) {
-            return descriptorDir.isEmpty() ? "." : descriptorDir;
+            return descriptorDir;  // "" for root-level descriptor, "examples/foo" for sub-dir
         }
         return descriptorDir.isEmpty() ? effective : descriptorDir + "/" + effective;
     }

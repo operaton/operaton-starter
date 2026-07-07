@@ -213,7 +213,7 @@ public class ZipBuilder {
                 }
 
                 // Check if this entry is under the examplePath
-                if (!relativePath.startsWith(examplePath + "/") && !relativePath.equals(examplePath)) {
+                if (!examplePath.isEmpty() && !relativePath.startsWith(examplePath + "/") && !relativePath.equals(examplePath)) {
                     continue;
                 }
 
@@ -288,6 +288,9 @@ public class ZipBuilder {
      * @return the path within the example (e.g., "README.md"), or null if this is the example dir itself
      */
     private String getPathUnderExample(String relativePath, String examplePath) {
+        if (examplePath.isEmpty()) {
+            return relativePath;
+        }
         if (relativePath.equals(examplePath)) {
             return null;
         }
