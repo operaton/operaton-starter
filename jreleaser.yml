@@ -10,14 +10,34 @@ project:
     - Operaton Contributors
   license: Apache-2.0
   inceptionYear: "2026"
-
+  languages:
+    java:
+      groupId: org.operaton.starter
+      artifactId: starter-server
+      mainClass: org.operaton.dev.starter.server.StarterServerApplication
+      version: 21
 release:
   github:
+    overwrite: true
+    sign: false
     owner: operaton
     name: operaton-starter
+    draft: false
+    skipTag: false
+    releaseName: '{{tagName}}'
+    prerelease:
+      enabled: true
+    issues:
+      enabled: true
+      comment: '🎉 This issue has been resolved in `{{tagName}}` ([Release Notes]({{releaseNotesUrl}}))'
+      applyMilestone: ALWAYS
     changelog:
       formatted: ALWAYS
       preset: conventional-commits
+      enabled: true
+      sort: ASC
+      links: true
+      skipMergeCommits: true
       contributors:
         format: '- {{contributorName}}{{#contributorUsernameAsLink}} ({{.}}){{/contributorUsernameAsLink}}'
       labelers:
@@ -30,50 +50,57 @@ release:
         - label: chore
           title: 'chore'
       categories:
-        - title: '🚀 Features'
-          labels:
-            - feature
         - title: '🐛 Bug Fixes'
           labels:
             - fix
-        - title: '📝 Documentation'
-          labels:
-            - docs
         - title: '🔧 Maintenance'
           labels:
             - chore
+      hide:
+        contributors:
+          - 'Claude Sonnet 4.6'
+          - 'Copilot'
+          - 'Copilot Autofix powered by AI'
+          - 'GitHub'
+checksum:
+  algorithms:
+    - SHA_256
 
 signing:
-  active: ALWAYS
-  armored: true
+  active: NEVER
+  pgp:
+    armored: true
+
+distributions:
+  operaton-starter:
+    type: SINGLE_JAR
+    artifacts:
+      - path: 'starter-server/target/starter-server-{{projectVersion}}.jar'
+    java:
+      groupId: org.operaton.starter
+      artifactId: starter-server
+      mainClass: org.operaton.dev.starter.server.StarterServerApplication
 
 packagers:
   docker:
     active: ALWAYS
     commitAuthor:
       email: jreleaser@operaton.org
-
-distributions:
-  operaton-starter-mcp:
-    type: NPM
-    artifacts:
-      - path: starter-mcp/operaton-starter-mcp-{{projectVersion}}.tgz
-
-  operaton-starter:
-    type: NPM
-    artifacts:
-      - path: starter-cli/operaton-starter-{{projectVersion}}.tgz
-
-  operaton-starter-docker:
-    type: DOCKER
-    docker:
-      active: ALWAYS
-      registries:
-        - serverName: DEFAULT
-          username: '{{env.DOCKERHUB_USERNAME}}'
-      imageNames:
-        - 'operaton/operaton-starter:{{projectVersion}}'
-        - 'operaton/operaton-starter:latest'
+    registries:
+      - serverName: DEFAULT
+        username: '{{env.DOCKERHUB_USERNAME}}'
+        password: '{{env.DOCKERHUB_TOKEN}}'
+    buildx:
+      enabled: true
+      createBuilder: true
+      platforms:
+        - linux/amd64
+        - linux/arm64
+    imageNames:
+      - "operaton/operaton-starter:{{tagName}}"
+      - "operaton/operaton-starter:v{{projectVersionMajor}}"
+      - "operaton/operaton-starter:v{{projectVersionMajor}}.{{projectVersionMinor}}"
+      - "operaton/operaton-starter:latest"
 
 
 announce:
