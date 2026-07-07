@@ -48,7 +48,7 @@ class ExampleRepositoryLoaderTest {
         when(properties.examples()).thenReturn(
                 new StarterProperties.Examples(List.of(sourceToken), null, 50)
         );
-        when(fetcher.fetch(sourceToken)).thenReturn(new FetchResult("yaml content".getBytes(), "abc123def456"));
+        when(fetcher.fetch(sourceToken)).thenReturn(List.of(new LocatedFetchResult("yaml content".getBytes(), "abc123def456", ".operaton-starter.yml")));
         when(parser.parse(any(), eq("owner/repo"), eq("abc123def456"))).thenReturn(parsedManifest);
         when(registry.snapshot()).thenReturn(ExampleSnapshot.of(List.of()));
 
@@ -84,7 +84,7 @@ class ExampleRepositoryLoaderTest {
         when(properties.examples()).thenReturn(
                 new StarterProperties.Examples(sources, null, 50)
         );
-        when(fetcher.fetch(anyString())).thenReturn(new FetchResult("yaml".getBytes(), "sha123"));
+        when(fetcher.fetch(anyString())).thenReturn(List.of(new LocatedFetchResult("yaml".getBytes(), "sha123", ".operaton-starter.yml")));
         when(parser.parse(any(), anyString(), anyString())).thenReturn(
                 new ParsedManifest("operaton-starter/v1", List.of(
                         new ParsedManifest.Example("ex1", "Ex1", "Desc", "path", List.of(), null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null)
@@ -105,8 +105,8 @@ class ExampleRepositoryLoaderTest {
         when(properties.examples()).thenReturn(
                 new StarterProperties.Examples(sources, null, 50)
         );
-        when(fetcher.fetch("owner/repo1")).thenReturn(new FetchResult("yaml".getBytes(), "sha1"));
-        when(fetcher.fetch("owner/repo2")).thenReturn(new FetchResult("yaml".getBytes(), "sha2"));
+        when(fetcher.fetch("owner/repo1")).thenReturn(List.of(new LocatedFetchResult("yaml".getBytes(), "sha1", ".operaton-starter.yml")));
+        when(fetcher.fetch("owner/repo2")).thenReturn(List.of(new LocatedFetchResult("yaml".getBytes(), "sha2", ".operaton-starter.yml")));
         when(parser.parse(any(), eq("owner/repo1"), eq("sha1"))).thenThrow(new ManifestRejected("malformed-yaml"));
         when(parser.parse(any(), eq("owner/repo2"), eq("sha2"))).thenReturn(
                 new ParsedManifest("operaton-starter/v1", List.of(), "owner/repo2", "sha2")

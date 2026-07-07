@@ -164,13 +164,18 @@ public class ExampleRepositoryLoader {
      */
     private LoadSourceResult loadSourceWithStatus(String sourceToken) {
         try {
-            // Step 1: Fetch manifest
-            FetchResult fetchResult;
+            // Step 1: Fetch manifest(s)
+            // TODO(task-3): iterate all LocatedFetchResults; currently uses first result only
+            List<LocatedFetchResult> fetchResults;
             try {
-                fetchResult = fetcher.fetch(sourceToken);
+                fetchResults = fetcher.fetch(sourceToken);
             } catch (SourceUnavailable e) {
                 return failedResult(sourceToken, "skipped:" + e.getReason(), e.getReason());
             }
+            if (fetchResults.isEmpty()) {
+                return failedResult(sourceToken, "skipped:no-descriptor", "no-descriptor");
+            }
+            LocatedFetchResult fetchResult = fetchResults.get(0);
 
             // Step 2: Parse manifest
             String repo = sourceToken.contains("@") ? sourceToken.substring(0, sourceToken.indexOf('@')) : sourceToken;

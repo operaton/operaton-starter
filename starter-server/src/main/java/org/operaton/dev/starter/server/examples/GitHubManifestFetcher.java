@@ -1,5 +1,7 @@
 package org.operaton.dev.starter.server.examples;
 
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -10,25 +12,27 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.*;
 import java.util.regex.Pattern;
 
 /**
- * Fetches example manifests from GitHub repositories, resolving source tokens to SHAs.
+ * Fetches example descriptor files from GitHub repositories by scanning the full repository tree.
  *
- * <p>Architecture A5: SHA resolution via {@code GET /repos/{o}/{r}/commits/{ref}} with
- * {@code Accept: application/vnd.github.sha}; raw manifest via
- * {@code raw.githubusercontent.com/{o}/{r}/{sha}/.operaton-starter.yml}.
- *
- * <p>Architecture A9: Outbound surface limited to {@code raw.githubusercontent.com} and
- * {@code api.github.com}. No credentials.
- *
- * <p>Architecture A11: Resolves {@code @ref} → SHA at each load for manifest/download consistency.
+ * <p>Fetch flow per source token:
+ * <ol>
+ *   <li>Resolve {@code ref} → commit SHA via {@code GET /repos/{o}/{r}/commits/{ref}}</li>
+ *   <li>Enumerate all files via {@code GET /repos/{o}/{r}/git/trees/{sha}?recursive=1}</li>
+ *   <li>Filter for {@code .operaton-starter.yml} / {@code .operaton-starter.yaml} blobs</li>
+ *   <li>Resolve .yml/.yaml collisions in the same directory (.yml wins)</li>
+ *   <li>Fetch each descriptor via {@code raw.githubusercontent.com}</li>
+ * </ol>
  *
  * <p>Key behaviors:
  * <ul>
  *   <li>5-second per-call timeout; throws {@code SourceUnavailable("timeout")} on timeout</li>
  *   <li>On any non-2xx HTTP, throws {@code SourceUnavailable("http-{status}")}</li>
- *   <li>Parses source token "owner/repo" or "owner/repo@ref"; default ref is "HEAD"</li>
+ *   <li>If the tree response is truncated, logs a warning and processes visible descriptors</li>
+ *   <li>Returns an empty list when no descriptor files are found (not an error)</li>
  * </ul>
  */
 @Component
@@ -38,25 +42,20 @@ public class GitHubManifestFetcher {
     private static final String DEFAULT_GITHUB_API_BASE = "https://api.github.com";
     private static final String DEFAULT_RAW_GITHUB_BASE = "https://raw.githubusercontent.com";
     private static final Duration TIMEOUT = Duration.ofSeconds(5);
-    private static final String MANIFEST_FILENAME = ".operaton-starter.yml";
+    private static final Set<String> DESCRIPTOR_FILENAMES =
+            Set.of(".operaton-starter.yml", ".operaton-starter.yaml");
 
-    // 40-character hex SHA pattern
     private static final Pattern SHA_PATTERN = Pattern.compile("^[a-f0-9]{40}$");
 
     private final HttpClient httpClient;
     private final String githubApiBase;
     private final String rawGithubBase;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public GitHubManifestFetcher() {
         this(DEFAULT_GITHUB_API_BASE, DEFAULT_RAW_GITHUB_BASE);
     }
 
-    /**
-     * Constructor for testing with custom API endpoints.
-     *
-     * @param githubApiBase the base URL for GitHub API (e.g., "https://api.github.com")
-     * @param rawGithubBase the base URL for raw GitHub content (e.g., "https://raw.githubusercontent.com")
-     */
     protected GitHubManifestFetcher(String githubApiBase, String rawGithubBase) {
         this.httpClient = HttpClient.newHttpClient();
         this.githubApiBase = githubApiBase;
@@ -64,51 +63,39 @@ public class GitHubManifestFetcher {
     }
 
     /**
-     * Fetches a manifest from a GitHub source token.
+     * Scans a repository for descriptor files and fetches each one.
      *
-     * @param sourceToken the source token in format "owner/repo" or "owner/repo@ref"
-     * @return a FetchResult containing the YAML bytes and resolved SHA
-     * @throws SourceUnavailable if the fetch fails due to timeout or HTTP error
+     * @param sourceToken "owner/repo" or "owner/repo@ref"
+     * @return one {@link LocatedFetchResult} per descriptor found; empty if none exist
+     * @throws SourceUnavailable on network error or non-2xx from SHA resolution or tree API
      */
-    public FetchResult fetch(String sourceToken) throws SourceUnavailable {
-        // Parse token
-        String[] parts = sourceToken.split("@");
-        String repo = parts[0]; // "owner/repo"
-        String ref = parts.length > 1 ? parts[1] : "HEAD"; // default to HEAD
+    public List<LocatedFetchResult> fetch(String sourceToken) throws SourceUnavailable {
+        String[] parts = sourceToken.split("@", 2);
+        String repo = parts[0];
+        String ref = parts.length > 1 ? parts[1] : "HEAD";
 
-        // Validate repo format
-        if (!repo.contains("/")) {
-            throw new SourceUnavailable("invalid-token");
-        }
-
-        String[] repoParts = repo.split("/");
-        if (repoParts.length != 2) {
-            throw new SourceUnavailable("invalid-token");
-        }
+        if (!repo.contains("/")) throw new SourceUnavailable("invalid-token");
+        String[] repoParts = repo.split("/", 2);
+        if (repoParts.length != 2) throw new SourceUnavailable("invalid-token");
         String owner = repoParts[0];
         String repoName = repoParts[1];
 
-        // Step 1: Resolve ref to SHA via GitHub commits API
         String sha = resolveSha(owner, repoName, ref);
+        List<String> descriptorPaths = findDescriptorPaths(owner, repoName, sha);
 
-        // Step 2: Fetch manifest from raw.githubusercontent.com
-        byte[] yamlBytes = fetchManifest(owner, repoName, sha);
-
-        return new FetchResult(yamlBytes, sha);
+        List<LocatedFetchResult> results = new ArrayList<>();
+        for (String descriptorPath : descriptorPaths) {
+            byte[] yamlBytes = fetchDescriptor(owner, repoName, sha, descriptorPath);
+            results.add(new LocatedFetchResult(yamlBytes, sha, descriptorPath));
+        }
+        return results;
     }
 
     /**
-     * Resolves a ref (branch, tag, or "HEAD") to a commit SHA.
-     *
-     * @param owner the repository owner
-     * @param repo the repository name
-     * @param ref the ref to resolve (e.g., "HEAD", "main", "v1.0.0")
-     * @return the 40-character commit SHA
-     * @throws SourceUnavailable if resolution fails
+     * Resolves a ref to a 40-character commit SHA.
      */
     protected String resolveSha(String owner, String repo, String ref) throws SourceUnavailable {
         String url = githubApiBase + "/repos/" + owner + "/" + repo + "/commits/" + ref;
-
         try {
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(url))
@@ -116,26 +103,14 @@ public class GitHubManifestFetcher {
                     .timeout(TIMEOUT)
                     .GET()
                     .build();
-
-            log.debug("Resolving SHA for {}/{} ref={} from {}", owner, repo, ref, url);
-
+            log.debug("Resolving SHA for {}/{} ref={}", owner, repo, ref);
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-
-            if (response.statusCode() != 200) {
-                throw new SourceUnavailable("http-" + response.statusCode());
-            }
-
+            if (response.statusCode() != 200) throw new SourceUnavailable("http-" + response.statusCode());
             String sha = response.body().trim();
-
-            // Validate SHA format
-            if (!SHA_PATTERN.matcher(sha).matches()) {
-                throw new SourceUnavailable("invalid-sha");
-            }
-
+            if (!SHA_PATTERN.matcher(sha).matches()) throw new SourceUnavailable("invalid-sha");
             log.debug("Resolved SHA for {}/{}: {}", owner, repo, sha);
             return sha;
         } catch (IOException e) {
-            // Network error (including connection timeouts)
             throw new SourceUnavailable("timeout", e);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -148,36 +123,101 @@ public class GitHubManifestFetcher {
     }
 
     /**
-     * Fetches the manifest YAML from raw.githubusercontent.com.
-     *
-     * @param owner the repository owner
-     * @param repo the repository name
-     * @param sha the commit SHA
-     * @return the YAML content as bytes
-     * @throws SourceUnavailable if the fetch fails
+     * Uses the GitHub Git Trees API to find all descriptor file paths in the repository.
+     * Applies .yml/.yaml collision resolution (see FR-5.2: .yml wins, .yaml skipped with warning).
      */
-    protected byte[] fetchManifest(String owner, String repo, String sha) throws SourceUnavailable {
-        String url = rawGithubBase + "/" + owner + "/" + repo + "/" + sha + "/" + MANIFEST_FILENAME;
+    protected List<String> findDescriptorPaths(String owner, String repo, String sha)
+            throws SourceUnavailable {
+        String url = githubApiBase + "/repos/" + owner + "/" + repo + "/git/trees/" + sha + "?recursive=1";
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .header("Accept", "application/vnd.github+json")
+                    .timeout(TIMEOUT)
+                    .GET()
+                    .build();
+            log.debug("Scanning tree for {}/{} at {}", owner, repo, sha);
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() != 200) throw new SourceUnavailable("http-" + response.statusCode());
 
+            JsonNode root = objectMapper.readTree(response.body());
+            if (root.path("truncated").asBoolean(false)) {
+                log.warn("Repository tree for {}/{} was truncated; some descriptors may be missed", owner, repo);
+            }
+
+            List<String> found = new ArrayList<>();
+            for (JsonNode entry : root.path("tree")) {
+                if (!"blob".equals(entry.path("type").asText())) continue;
+                String entryPath = entry.path("path").asText();
+                String filename = entryPath.contains("/")
+                        ? entryPath.substring(entryPath.lastIndexOf('/') + 1)
+                        : entryPath;
+                if (DESCRIPTOR_FILENAMES.contains(filename)) {
+                    found.add(entryPath);
+                }
+            }
+
+            return resolveCollisions(found, owner, repo);
+        } catch (IOException e) {
+            throw new SourceUnavailable("timeout", e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new SourceUnavailable("timeout", e);
+        } catch (SourceUnavailable e) {
+            throw e;
+        } catch (Exception e) {
+            throw new SourceUnavailable("fetch-error", e);
+        }
+    }
+
+    /**
+     * For each directory that has both .yml and .yaml, keeps .yml and logs a warning about .yaml.
+     */
+    private List<String> resolveCollisions(List<String> paths, String owner, String repo) {
+        Map<String, List<String>> byDir = new LinkedHashMap<>();
+        for (String p : paths) {
+            String dir = p.contains("/") ? p.substring(0, p.lastIndexOf('/')) : "";
+            byDir.computeIfAbsent(dir, k -> new ArrayList<>()).add(p);
+        }
+
+        List<String> resolved = new ArrayList<>();
+        for (Map.Entry<String, List<String>> entry : byDir.entrySet()) {
+            List<String> dirPaths = entry.getValue();
+            if (dirPaths.size() == 1) {
+                resolved.add(dirPaths.get(0));
+            } else {
+                Optional<String> yml = dirPaths.stream().filter(p -> p.endsWith(".yml")).findFirst();
+                Optional<String> yaml = dirPaths.stream().filter(p -> p.endsWith(".yaml")).findFirst();
+                if (yml.isPresent() && yaml.isPresent()) {
+                    log.warn("Both .operaton-starter.yml and .operaton-starter.yaml found in '{}' of {}/{};"
+                            + " using .yml, skipping .yaml", entry.getKey(), owner, repo);
+                    resolved.add(yml.get());
+                } else {
+                    resolved.addAll(dirPaths);
+                }
+            }
+        }
+        return resolved;
+    }
+
+    /**
+     * Fetches a single descriptor file from raw.githubusercontent.com.
+     */
+    protected byte[] fetchDescriptor(String owner, String repo, String sha, String descriptorPath)
+            throws SourceUnavailable {
+        String url = rawGithubBase + "/" + owner + "/" + repo + "/" + sha + "/" + descriptorPath;
         try {
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(url))
                     .timeout(TIMEOUT)
                     .GET()
                     .build();
-
-            log.debug("Fetching manifest from {}", url);
-
+            log.debug("Fetching descriptor {} from {}", descriptorPath, url);
             HttpResponse<byte[]> response = httpClient.send(request, HttpResponse.BodyHandlers.ofByteArray());
-
-            if (response.statusCode() != 200) {
-                throw new SourceUnavailable("http-" + response.statusCode());
-            }
-
-            log.debug("Manifest fetched successfully ({} bytes)", response.body().length);
+            if (response.statusCode() != 200) throw new SourceUnavailable("http-" + response.statusCode());
+            log.debug("Descriptor fetched ({} bytes): {}", response.body().length, descriptorPath);
             return response.body();
         } catch (IOException e) {
-            // Network error (including connection timeouts)
             throw new SourceUnavailable("timeout", e);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
