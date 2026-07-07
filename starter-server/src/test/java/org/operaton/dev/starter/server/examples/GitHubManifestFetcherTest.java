@@ -8,223 +8,235 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-/**
- * Integration tests for {@link GitHubManifestFetcher} using WireMock.
- *
- * <p>Covers:
- * <ul>
- *   <li>Happy path: 200 with valid SHA and manifest</li>
- *   <li>404 on commits API</li>
- *   <li>404 on raw content URL</li>
- *   <li>5xx error from commits API</li>
- *   <li>Network timeout</li>
- *   <li>Non-default branch ref</li>
- * </ul>
- */
 class GitHubManifestFetcherTest {
 
     private WireMockServer wireMockServer;
     private GitHubManifestFetcher fetcher;
 
-    // Test data
     private static final String TEST_SHA = "abcdef0123456789abcdef0123456789abcdef01";
     private static final String TEST_OWNER = "test-owner";
     private static final String TEST_REPO = "test-repo";
     private static final String TEST_MANIFEST_CONTENT = """
             apiVersion: operaton-starter/v1
             examples:
-              - name: Test Example
+              - id: test-example
+                title: Test
+                shortDescription: Test example
                 path: test-path
             """;
 
     @BeforeEach
     void setUp() {
-        // Start WireMock server on a random port
         wireMockServer = new WireMockServer(WireMockConfiguration.wireMockConfig().dynamicPort());
         wireMockServer.start();
         WireMock.configureFor("localhost", wireMockServer.port());
-
-        // Create fetcher with custom URLs pointing to WireMock
         String baseUrl = "http://localhost:" + wireMockServer.port();
         fetcher = new GitHubManifestFetcher(baseUrl, baseUrl);
     }
 
     @AfterEach
     void tearDown() {
-        if (wireMockServer != null) {
-            wireMockServer.stop();
-        }
+        if (wireMockServer != null) wireMockServer.stop();
     }
 
-    @Test
-    void testHappyPath_200WithValidShaAndManifest() throws SourceUnavailable {
-        // Setup: commits API returns valid SHA
+    // --- helpers ---
+
+    private void stubSha() {
         stubFor(get(urlPathEqualTo("/repos/" + TEST_OWNER + "/" + TEST_REPO + "/commits/HEAD"))
                 .withHeader("Accept", equalTo("application/vnd.github.sha"))
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withBody(TEST_SHA)));
+                .willReturn(aResponse().withStatus(200).withBody(TEST_SHA)));
+    }
 
-        // Setup: raw content API returns manifest
-        stubFor(get(urlPathEqualTo(
-                "/" + TEST_OWNER + "/" + TEST_REPO + "/" + TEST_SHA + "/.operaton-starter.yml"))
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withBody(TEST_MANIFEST_CONTENT)));
+    private void stubTree(String treeJson) {
+        stubFor(get(urlPathEqualTo("/repos/" + TEST_OWNER + "/" + TEST_REPO + "/git/trees/" + TEST_SHA))
+                .withQueryParam("recursive", equalTo("1"))
+                .willReturn(aResponse().withStatus(200).withBody(treeJson)));
+    }
 
-        // Execute
-        FetchResult result = fetcher.fetch(TEST_OWNER + "/" + TEST_REPO);
+    private void stubDescriptor(String path, String content) {
+        stubFor(get(urlPathEqualTo("/" + TEST_OWNER + "/" + TEST_REPO + "/" + TEST_SHA + "/" + path))
+                .willReturn(aResponse().withStatus(200).withBody(content)));
+    }
 
-        // Assert
-        assertNotNull(result);
-        assertEquals(TEST_SHA, result.resolvedSha());
-        assertEquals(TEST_MANIFEST_CONTENT, new String(result.yamlBytes(), StandardCharsets.UTF_8));
+    // --- tests ---
+
+    @Test
+    void fetch_singleRootDescriptor_yml() throws SourceUnavailable {
+        stubSha();
+        stubTree("""
+                {"tree":[{"path":".operaton-starter.yml","type":"blob"}],"truncated":false}
+                """);
+        stubDescriptor(".operaton-starter.yml", TEST_MANIFEST_CONTENT);
+
+        List<LocatedFetchResult> results = fetcher.fetch(TEST_OWNER + "/" + TEST_REPO);
+
+        assertEquals(1, results.size());
+        assertEquals(TEST_SHA, results.get(0).resolvedSha());
+        assertEquals(".operaton-starter.yml", results.get(0).descriptorPath());
+        assertEquals(TEST_MANIFEST_CONTENT, new String(results.get(0).yamlBytes(), StandardCharsets.UTF_8));
     }
 
     @Test
-    void testHappyPath_WithNonDefaultBranchRef() throws SourceUnavailable {
-        String testBranch = "develop";
+    void fetch_singleRootDescriptor_yaml_extension() throws SourceUnavailable {
+        stubSha();
+        stubTree("""
+                {"tree":[{"path":".operaton-starter.yaml","type":"blob"}],"truncated":false}
+                """);
+        stubDescriptor(".operaton-starter.yaml", TEST_MANIFEST_CONTENT);
 
-        // Setup: commits API returns valid SHA for the branch
-        stubFor(get(urlPathEqualTo("/repos/" + TEST_OWNER + "/" + TEST_REPO + "/commits/" + testBranch))
+        List<LocatedFetchResult> results = fetcher.fetch(TEST_OWNER + "/" + TEST_REPO);
+
+        assertEquals(1, results.size());
+        assertEquals(".operaton-starter.yaml", results.get(0).descriptorPath());
+    }
+
+    @Test
+    void fetch_multipleDescriptors_inDifferentDirectories() throws SourceUnavailable {
+        String manifest2 = """
+                apiVersion: operaton-starter/v1
+                examples:
+                  - id: foo-example
+                    title: Foo
+                    shortDescription: Foo example
+                """;
+        stubSha();
+        stubTree("""
+                {"tree":[
+                  {"path":".operaton-starter.yml","type":"blob"},
+                  {"path":"examples/foo/.operaton-starter.yml","type":"blob"}
+                ],"truncated":false}
+                """);
+        stubDescriptor(".operaton-starter.yml", TEST_MANIFEST_CONTENT);
+        stubDescriptor("examples/foo/.operaton-starter.yml", manifest2);
+
+        List<LocatedFetchResult> results = fetcher.fetch(TEST_OWNER + "/" + TEST_REPO);
+
+        assertEquals(2, results.size());
+        assertEquals(".operaton-starter.yml", results.get(0).descriptorPath());
+        assertEquals("examples/foo/.operaton-starter.yml", results.get(1).descriptorPath());
+        // Both share same SHA
+        assertEquals(TEST_SHA, results.get(0).resolvedSha());
+        assertEquals(TEST_SHA, results.get(1).resolvedSha());
+    }
+
+    @Test
+    void fetch_ymlAndYamlInSameDir_prefersYml_skipsYaml() throws SourceUnavailable {
+        stubSha();
+        stubTree("""
+                {"tree":[
+                  {"path":".operaton-starter.yml","type":"blob"},
+                  {"path":".operaton-starter.yaml","type":"blob"}
+                ],"truncated":false}
+                """);
+        stubDescriptor(".operaton-starter.yml", TEST_MANIFEST_CONTENT);
+
+        List<LocatedFetchResult> results = fetcher.fetch(TEST_OWNER + "/" + TEST_REPO);
+
+        assertEquals(1, results.size());
+        assertEquals(".operaton-starter.yml", results.get(0).descriptorPath());
+    }
+
+    @Test
+    void fetch_noDescriptors_returnsEmptyList() throws SourceUnavailable {
+        stubSha();
+        stubTree("""
+                {"tree":[
+                  {"path":"README.md","type":"blob"},
+                  {"path":"pom.xml","type":"blob"}
+                ],"truncated":false}
+                """);
+
+        List<LocatedFetchResult> results = fetcher.fetch(TEST_OWNER + "/" + TEST_REPO);
+
+        assertTrue(results.isEmpty());
+    }
+
+    @Test
+    void fetch_truncatedTree_logsWarning_returnsVisibleDescriptors() throws SourceUnavailable {
+        stubSha();
+        stubTree("""
+                {"tree":[{"path":".operaton-starter.yml","type":"blob"}],"truncated":true}
+                """);
+        stubDescriptor(".operaton-starter.yml", TEST_MANIFEST_CONTENT);
+
+        // Should succeed (warning logged, partial results returned)
+        List<LocatedFetchResult> results = fetcher.fetch(TEST_OWNER + "/" + TEST_REPO);
+        assertEquals(1, results.size());
+    }
+
+    @Test
+    void fetch_nonDefaultBranchRef() throws SourceUnavailable {
+        stubFor(get(urlPathEqualTo("/repos/" + TEST_OWNER + "/" + TEST_REPO + "/commits/develop"))
                 .withHeader("Accept", equalTo("application/vnd.github.sha"))
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withBody(TEST_SHA)));
+                .willReturn(aResponse().withStatus(200).withBody(TEST_SHA)));
+        stubTree("""
+                {"tree":[{"path":".operaton-starter.yml","type":"blob"}],"truncated":false}
+                """);
+        stubDescriptor(".operaton-starter.yml", TEST_MANIFEST_CONTENT);
 
-        // Setup: raw content API returns manifest using the resolved SHA (not the branch name)
-        stubFor(get(urlPathEqualTo(
-                "/" + TEST_OWNER + "/" + TEST_REPO + "/" + TEST_SHA + "/.operaton-starter.yml"))
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withBody(TEST_MANIFEST_CONTENT)));
+        List<LocatedFetchResult> results = fetcher.fetch(TEST_OWNER + "/" + TEST_REPO + "@develop");
 
-        // Execute
-        FetchResult result = fetcher.fetch(TEST_OWNER + "/" + TEST_REPO + "@" + testBranch);
-
-        // Assert
-        assertNotNull(result);
-        assertEquals(TEST_SHA, result.resolvedSha());
-        assertEquals(TEST_MANIFEST_CONTENT, new String(result.yamlBytes(), StandardCharsets.UTF_8));
+        assertEquals(1, results.size());
+        assertEquals(TEST_SHA, results.get(0).resolvedSha());
     }
 
     @Test
-    void testError_404OnCommitsApi() {
-        // Setup: commits API returns 404
+    void fetch_404OnCommitsApi_throwsSourceUnavailable() {
         stubFor(get(urlPathEqualTo("/repos/" + TEST_OWNER + "/" + TEST_REPO + "/commits/HEAD"))
-                .willReturn(aResponse()
-                        .withStatus(404)
-                        .withBody("Not Found")));
+                .willReturn(aResponse().withStatus(404).withBody("Not Found")));
 
-        // Execute & Assert
-        SourceUnavailable exception = assertThrows(SourceUnavailable.class,
+        SourceUnavailable ex = assertThrows(SourceUnavailable.class,
                 () -> fetcher.fetch(TEST_OWNER + "/" + TEST_REPO));
-
-        assertEquals("http-404", exception.getReason());
+        assertEquals("http-404", ex.getReason());
     }
 
     @Test
-    void testError_404OnRawContentUrl() throws SourceUnavailable {
-        // Setup: commits API returns valid SHA
-        stubFor(get(urlPathEqualTo("/repos/" + TEST_OWNER + "/" + TEST_REPO + "/commits/HEAD"))
-                .withHeader("Accept", equalTo("application/vnd.github.sha"))
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withBody(TEST_SHA)));
+    void fetch_404OnTreesApi_throwsSourceUnavailable() {
+        stubSha();
+        stubFor(get(urlPathEqualTo("/repos/" + TEST_OWNER + "/" + TEST_REPO + "/git/trees/" + TEST_SHA))
+                .willReturn(aResponse().withStatus(404).withBody("Not Found")));
 
-        // Setup: raw content API returns 404
-        stubFor(get(urlPathEqualTo(
-                "/" + TEST_OWNER + "/" + TEST_REPO + "/" + TEST_SHA + "/.operaton-starter.yml"))
-                .willReturn(aResponse()
-                        .withStatus(404)
-                        .withBody("Manifest not found")));
-
-        // Execute & Assert
-        SourceUnavailable exception = assertThrows(SourceUnavailable.class,
+        SourceUnavailable ex = assertThrows(SourceUnavailable.class,
                 () -> fetcher.fetch(TEST_OWNER + "/" + TEST_REPO));
-
-        assertEquals("http-404", exception.getReason());
+        assertEquals("http-404", ex.getReason());
     }
 
     @Test
-    void testError_5xxFromCommitsApi() {
-        // Setup: commits API returns 500
-        stubFor(get(urlPathEqualTo("/repos/" + TEST_OWNER + "/" + TEST_REPO + "/commits/HEAD"))
-                .willReturn(aResponse()
-                        .withStatus(500)
-                        .withBody("Internal Server Error")));
+    void fetch_404OnDescriptorFetch_throwsSourceUnavailable() {
+        stubSha();
+        stubTree("""
+                {"tree":[{"path":".operaton-starter.yml","type":"blob"}],"truncated":false}
+                """);
+        stubFor(get(urlPathEqualTo("/" + TEST_OWNER + "/" + TEST_REPO + "/" + TEST_SHA + "/.operaton-starter.yml"))
+                .willReturn(aResponse().withStatus(404)));
 
-        // Execute & Assert
-        SourceUnavailable exception = assertThrows(SourceUnavailable.class,
+        SourceUnavailable ex = assertThrows(SourceUnavailable.class,
                 () -> fetcher.fetch(TEST_OWNER + "/" + TEST_REPO));
-
-        assertEquals("http-500", exception.getReason());
+        assertEquals("http-404", ex.getReason());
     }
 
     @Test
-    void testError_5xxFromRawContentApi() throws SourceUnavailable {
-        // Setup: commits API returns valid SHA
+    void fetch_5xxFromCommitsApi_throwsSourceUnavailable() {
         stubFor(get(urlPathEqualTo("/repos/" + TEST_OWNER + "/" + TEST_REPO + "/commits/HEAD"))
-                .withHeader("Accept", equalTo("application/vnd.github.sha"))
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withBody(TEST_SHA)));
+                .willReturn(aResponse().withStatus(500).withBody("Internal Server Error")));
 
-        // Setup: raw content API returns 502
-        stubFor(get(urlPathEqualTo(
-                "/" + TEST_OWNER + "/" + TEST_REPO + "/" + TEST_SHA + "/.operaton-starter.yml"))
-                .willReturn(aResponse()
-                        .withStatus(502)
-                        .withBody("Bad Gateway")));
-
-        // Execute & Assert
-        SourceUnavailable exception = assertThrows(SourceUnavailable.class,
+        SourceUnavailable ex = assertThrows(SourceUnavailable.class,
                 () -> fetcher.fetch(TEST_OWNER + "/" + TEST_REPO));
-
-        assertEquals("http-502", exception.getReason());
+        assertEquals("http-500", ex.getReason());
     }
 
     @Test
-    void testError_NetworkTimeoutOnCommitsApi() {
-        // Setup: commits API delays response beyond timeout
+    void fetch_timeoutOnCommitsApi_throwsSourceUnavailable() {
         stubFor(get(urlPathEqualTo("/repos/" + TEST_OWNER + "/" + TEST_REPO + "/commits/HEAD"))
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withFixedDelay(6000) // 6 seconds, exceeds 5-second timeout
-                        .withBody(TEST_SHA)));
+                .willReturn(aResponse().withStatus(200).withFixedDelay(6000).withBody(TEST_SHA)));
 
-        // Execute & Assert
-        SourceUnavailable exception = assertThrows(SourceUnavailable.class,
+        SourceUnavailable ex = assertThrows(SourceUnavailable.class,
                 () -> fetcher.fetch(TEST_OWNER + "/" + TEST_REPO));
-
-        assertEquals("timeout", exception.getReason());
-    }
-
-    @Test
-    void testError_NetworkTimeoutOnRawContentApi() throws SourceUnavailable {
-        // Setup: commits API returns valid SHA quickly
-        stubFor(get(urlPathEqualTo("/repos/" + TEST_OWNER + "/" + TEST_REPO + "/commits/HEAD"))
-                .withHeader("Accept", equalTo("application/vnd.github.sha"))
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withBody(TEST_SHA)));
-
-        // Setup: raw content API delays response beyond timeout
-        stubFor(get(urlPathEqualTo(
-                "/" + TEST_OWNER + "/" + TEST_REPO + "/" + TEST_SHA + "/.operaton-starter.yml"))
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withFixedDelay(6000) // 6 seconds, exceeds 5-second timeout
-                        .withBody(TEST_MANIFEST_CONTENT)));
-
-        // Execute & Assert
-        SourceUnavailable exception = assertThrows(SourceUnavailable.class,
-                () -> fetcher.fetch(TEST_OWNER + "/" + TEST_REPO));
-
-        assertEquals("timeout", exception.getReason());
+        assertEquals("timeout", ex.getReason());
     }
 }

@@ -9,147 +9,261 @@ import org.operaton.dev.starter.server.config.StarterProperties;
 import org.operaton.dev.starter.server.model.Example;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 
-import java.time.Instant;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-/**
- * Tests for ExampleRepositoryLoader startup loading behavior.
- */
 @ExtendWith(MockitoExtension.class)
 class ExampleRepositoryLoaderTest {
 
-    @Mock
-    private GitHubManifestFetcher fetcher;
-
-    @Mock
-    private ExampleManifestParser parser;
-
-    @Mock
-    private ExampleRegistry registry;
-
-    @Mock
-    private StarterProperties properties;
+    @Mock private GitHubManifestFetcher fetcher;
+    @Mock private ExampleManifestParser parser;
+    @Mock private ExampleRegistry registry;
+    @Mock private StarterProperties properties;
 
     @InjectMocks
     private ExampleRepositoryLoader loader;
 
-    @Test
-    void loader_handles_single_source() throws Exception {
-        var sourceToken = "owner/repo";
-        var example = new Example().id("ex1").title("Ex1").path("path1").shortDescription("Desc1");
-        var parsedManifest = new ParsedManifest("operaton-starter/v1", List.of(
-                new ParsedManifest.Example("ex1", "Ex1", "Desc1", "path1", List.of(), null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null)
-        ), "owner/repo", "abc123def456");
+    private static ParsedManifest.Example parsedEx(String id, String path) {
+        return new ParsedManifest.Example(id, "Title " + id, "Desc " + id, path,
+                List.of(), null, null, null, null, null, null, null,
+                List.of(), List.of(), null, List.of(), null, null, null, List.of(), null);
+    }
 
-        when(properties.examples()).thenReturn(
-                new StarterProperties.Examples(List.of(sourceToken), null, 50)
-        );
-        when(fetcher.fetch(sourceToken)).thenReturn(new FetchResult("yaml content".getBytes(), "abc123def456"));
-        when(parser.parse(any(), eq("owner/repo"), eq("abc123def456"))).thenReturn(parsedManifest);
+    @Test
+    void loader_handles_single_root_descriptor() throws Exception {
+        var sourceToken = "owner/repo";
+        var located = new LocatedFetchResult("yaml".getBytes(), "sha1", ".operaton-starter.yml");
+        var manifest = new ParsedManifest("operaton-starter/v1",
+                List.of(parsedEx("ex1", "examples/foo")), "owner/repo", "sha1");
+
+        when(properties.examples()).thenReturn(new StarterProperties.Examples(List.of(sourceToken), null, 50));
+        when(fetcher.fetch(sourceToken)).thenReturn(List.of(located));
+        when(parser.parse(any(), eq("owner/repo"), eq("sha1"))).thenReturn(manifest);
         when(registry.snapshot()).thenReturn(ExampleSnapshot.of(List.of()));
 
-        var event = mock(ApplicationReadyEvent.class);
-        loader.onApplicationReady(event);
+        loader.onApplicationReady(mock(ApplicationReadyEvent.class));
 
-        verify(registry, times(1)).swap(any());
+        verify(registry).swap(argThat(snapshot -> {
+            List<Example> examples = snapshot.sources().get(0).examples();
+            // Root descriptor: path relative to root stays unchanged
+            return examples.size() == 1
+                    && "examples/foo".equals(examples.get(0).getPath())
+                    && !examples.get(0).getSourceRepoUrl().endsWith("/.");
+        }));
+    }
+
+    @Test
+    void loader_root_descriptor_null_path_resolves_to_empty_string() throws Exception {
+        var sourceToken = "owner/repo";
+        var located = new LocatedFetchResult("yaml".getBytes(), "sha1", ".operaton-starter.yml");
+        var manifest = new ParsedManifest("operaton-starter/v1",
+                List.of(parsedEx("ex1", null)), "owner/repo", "sha1");
+
+        when(properties.examples()).thenReturn(new StarterProperties.Examples(List.of(sourceToken), null, 50));
+        when(fetcher.fetch(sourceToken)).thenReturn(List.of(located));
+        when(parser.parse(any(), eq("owner/repo"), eq("sha1"))).thenReturn(manifest);
+        when(registry.snapshot()).thenReturn(ExampleSnapshot.of(List.of()));
+
+        loader.onApplicationReady(mock(ApplicationReadyEvent.class));
+
+        verify(registry).swap(argThat(snapshot -> {
+            List<Example> examples = snapshot.sources().get(0).examples();
+            // Root descriptor + null path → empty string path, clean sourceRepoUrl
+            return examples.size() == 1
+                    && "".equals(examples.get(0).getPath())
+                    && examples.get(0).getSourceRepoUrl().equals("https://github.com/owner/repo/tree/sha1");
+        }));
+    }
+
+    @Test
+    void loader_resolves_path_relative_to_descriptor_directory() throws Exception {
+        var sourceToken = "owner/repo";
+        var located = new LocatedFetchResult("yaml".getBytes(), "sha1",
+                "examples/foo/.operaton-starter.yml");
+        // path: "bar" in a descriptor at "examples/foo/" → resolved "examples/foo/bar"
+        var manifest = new ParsedManifest("operaton-starter/v1",
+                List.of(parsedEx("ex1", "bar")), "owner/repo", "sha1");
+
+        when(properties.examples()).thenReturn(new StarterProperties.Examples(List.of(sourceToken), null, 50));
+        when(fetcher.fetch(sourceToken)).thenReturn(List.of(located));
+        when(parser.parse(any(), eq("owner/repo"), eq("sha1"))).thenReturn(manifest);
+        when(registry.snapshot()).thenReturn(ExampleSnapshot.of(List.of()));
+
+        loader.onApplicationReady(mock(ApplicationReadyEvent.class));
+
+        verify(registry).swap(argThat(snapshot -> {
+            List<Example> examples = snapshot.sources().get(0).examples();
+            return examples.size() == 1 && "examples/foo/bar".equals(examples.get(0).getPath());
+        }));
+    }
+
+    @Test
+    void loader_defaults_null_path_to_descriptor_directory() throws Exception {
+        var sourceToken = "owner/repo";
+        var located = new LocatedFetchResult("yaml".getBytes(), "sha1",
+                "examples/foo/.operaton-starter.yml");
+        // path: null → resolved to "examples/foo"
+        var manifest = new ParsedManifest("operaton-starter/v1",
+                List.of(parsedEx("ex1", null)), "owner/repo", "sha1");
+
+        when(properties.examples()).thenReturn(new StarterProperties.Examples(List.of(sourceToken), null, 50));
+        when(fetcher.fetch(sourceToken)).thenReturn(List.of(located));
+        when(parser.parse(any(), eq("owner/repo"), eq("sha1"))).thenReturn(manifest);
+        when(registry.snapshot()).thenReturn(ExampleSnapshot.of(List.of()));
+
+        loader.onApplicationReady(mock(ApplicationReadyEvent.class));
+
+        verify(registry).swap(argThat(snapshot -> {
+            List<Example> examples = snapshot.sources().get(0).examples();
+            return examples.size() == 1 && "examples/foo".equals(examples.get(0).getPath());
+        }));
+    }
+
+    @Test
+    void loader_merges_examples_from_multiple_descriptors() throws Exception {
+        var sourceToken = "owner/repo";
+        var located1 = new LocatedFetchResult("yaml1".getBytes(), "sha1", ".operaton-starter.yml");
+        var located2 = new LocatedFetchResult("yaml2".getBytes(), "sha1",
+                "examples/foo/.operaton-starter.yml");
+        var manifest1 = new ParsedManifest("operaton-starter/v1",
+                List.of(parsedEx("ex1", "root-path")), "owner/repo", "sha1");
+        var manifest2 = new ParsedManifest("operaton-starter/v1",
+                List.of(parsedEx("ex2", null)), "owner/repo", "sha1");
+
+        when(properties.examples()).thenReturn(new StarterProperties.Examples(List.of(sourceToken), null, 50));
+        when(fetcher.fetch(sourceToken)).thenReturn(List.of(located1, located2));
+        when(parser.parse(same(located1.yamlBytes()), eq("owner/repo"), eq("sha1"))).thenReturn(manifest1);
+        when(parser.parse(same(located2.yamlBytes()), eq("owner/repo"), eq("sha1"))).thenReturn(manifest2);
+        when(registry.snapshot()).thenReturn(ExampleSnapshot.of(List.of()));
+
+        loader.onApplicationReady(mock(ApplicationReadyEvent.class));
+
+        verify(registry).swap(argThat(snapshot -> {
+            List<Example> examples = snapshot.sources().get(0).examples();
+            return examples.size() == 2;
+        }));
+    }
+
+    @Test
+    void loader_skips_duplicate_ids_across_descriptors() throws Exception {
+        var sourceToken = "owner/repo";
+        var located1 = new LocatedFetchResult("yaml1".getBytes(), "sha1", ".operaton-starter.yml");
+        var located2 = new LocatedFetchResult("yaml2".getBytes(), "sha1",
+                "examples/foo/.operaton-starter.yml");
+        // Both descriptors declare the same id "ex1"
+        var manifest1 = new ParsedManifest("operaton-starter/v1",
+                List.of(parsedEx("ex1", "path1")), "owner/repo", "sha1");
+        var manifest2 = new ParsedManifest("operaton-starter/v1",
+                List.of(parsedEx("ex1", null)), "owner/repo", "sha1");
+
+        when(properties.examples()).thenReturn(new StarterProperties.Examples(List.of(sourceToken), null, 50));
+        when(fetcher.fetch(sourceToken)).thenReturn(List.of(located1, located2));
+        when(parser.parse(same(located1.yamlBytes()), eq("owner/repo"), eq("sha1"))).thenReturn(manifest1);
+        when(parser.parse(same(located2.yamlBytes()), eq("owner/repo"), eq("sha1"))).thenReturn(manifest2);
+        when(registry.snapshot()).thenReturn(ExampleSnapshot.of(List.of()));
+
+        loader.onApplicationReady(mock(ApplicationReadyEvent.class));
+
+        verify(registry).swap(argThat(snapshot -> {
+            List<Example> examples = snapshot.sources().get(0).examples();
+            // Duplicate id skipped: only one example survives
+            return examples.size() == 1 && "path1".equals(examples.get(0).getPath());
+        }));
     }
 
     @Test
     void loader_skips_on_fetch_failure() throws Exception {
         var sourceToken = "owner/repo";
 
-        when(properties.examples()).thenReturn(
-                new StarterProperties.Examples(List.of(sourceToken), null, 50)
-        );
+        when(properties.examples()).thenReturn(new StarterProperties.Examples(List.of(sourceToken), null, 50));
         when(fetcher.fetch(sourceToken)).thenThrow(new SourceUnavailable("timeout"));
         when(registry.snapshot()).thenReturn(ExampleSnapshot.of(List.of()));
 
-        var event = mock(ApplicationReadyEvent.class);
-        loader.onApplicationReady(event);
+        loader.onApplicationReady(mock(ApplicationReadyEvent.class));
 
-        // Should still call swap, but with skipped source
-        verify(registry, times(1)).swap(argThat(snapshot ->
-                snapshot.sources().stream().anyMatch(s -> s.outcome().contains("skipped"))
-        ));
+        verify(registry).swap(argThat(snapshot ->
+                snapshot.sources().stream().anyMatch(s -> s.outcome().contains("skipped"))));
+    }
+
+    @Test
+    void loader_skips_source_when_no_descriptors_found() throws Exception {
+        var sourceToken = "owner/repo";
+
+        when(properties.examples()).thenReturn(new StarterProperties.Examples(List.of(sourceToken), null, 50));
+        when(fetcher.fetch(sourceToken)).thenReturn(List.of());
+        when(registry.snapshot()).thenReturn(ExampleSnapshot.of(List.of()));
+
+        loader.onApplicationReady(mock(ApplicationReadyEvent.class));
+
+        verify(registry).swap(argThat(snapshot ->
+                snapshot.sources().stream().anyMatch(s -> s.outcome().contains("no-descriptors"))));
+    }
+
+    @Test
+    void loader_isolates_per_descriptor_parse_failure() throws Exception {
+        var sourceToken = "owner/repo";
+        var located1 = new LocatedFetchResult("bad".getBytes(), "sha1", ".operaton-starter.yml");
+        var located2 = new LocatedFetchResult("good".getBytes(), "sha1",
+                "examples/foo/.operaton-starter.yml");
+        var goodManifest = new ParsedManifest("operaton-starter/v1",
+                List.of(parsedEx("ex1", null)), "owner/repo", "sha1");
+
+        when(properties.examples()).thenReturn(new StarterProperties.Examples(List.of(sourceToken), null, 50));
+        when(fetcher.fetch(sourceToken)).thenReturn(List.of(located1, located2));
+        when(parser.parse(same(located1.yamlBytes()), any(), any()))
+                .thenThrow(new ManifestRejected("malformed-yaml"));
+        when(parser.parse(same(located2.yamlBytes()), any(), any())).thenReturn(goodManifest);
+        when(registry.snapshot()).thenReturn(ExampleSnapshot.of(List.of()));
+
+        loader.onApplicationReady(mock(ApplicationReadyEvent.class));
+
+        // Second descriptor still contributes its example despite first failing
+        verify(registry).swap(argThat(snapshot -> {
+            List<Example> examples = snapshot.sources().get(0).examples();
+            return examples.size() == 1;
+        }));
     }
 
     @Test
     void loader_handles_multiple_sources_in_parallel() throws Exception {
-        var sources = List.of("owner/repo1", "owner/repo2", "owner/repo3");
-
-        when(properties.examples()).thenReturn(
-                new StarterProperties.Examples(sources, null, 50)
-        );
-        when(fetcher.fetch(anyString())).thenReturn(new FetchResult("yaml".getBytes(), "sha123"));
-        when(parser.parse(any(), anyString(), anyString())).thenReturn(
-                new ParsedManifest("operaton-starter/v1", List.of(
-                        new ParsedManifest.Example("ex1", "Ex1", "Desc", "path", List.of(), null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null)
-                ), "owner/repo1", "sha123")
-        );
-        when(registry.snapshot()).thenReturn(ExampleSnapshot.of(List.of()));
-
-        var event = mock(ApplicationReadyEvent.class);
-        loader.onApplicationReady(event);
-
-        verify(registry, times(1)).swap(any());
-    }
-
-    @Test
-    void loader_continues_on_parse_failure() throws Exception {
         var sources = List.of("owner/repo1", "owner/repo2");
 
-        when(properties.examples()).thenReturn(
-                new StarterProperties.Examples(sources, null, 50)
-        );
-        when(fetcher.fetch("owner/repo1")).thenReturn(new FetchResult("yaml".getBytes(), "sha1"));
-        when(fetcher.fetch("owner/repo2")).thenReturn(new FetchResult("yaml".getBytes(), "sha2"));
-        when(parser.parse(any(), eq("owner/repo1"), eq("sha1"))).thenThrow(new ManifestRejected("malformed-yaml"));
-        when(parser.parse(any(), eq("owner/repo2"), eq("sha2"))).thenReturn(
-                new ParsedManifest("operaton-starter/v1", List.of(), "owner/repo2", "sha2")
-        );
+        when(properties.examples()).thenReturn(new StarterProperties.Examples(sources, null, 50));
+        when(fetcher.fetch(anyString())).thenReturn(List.of(
+                new LocatedFetchResult("yaml".getBytes(), "sha1", ".operaton-starter.yml")));
+        when(parser.parse(any(), anyString(), anyString())).thenReturn(
+                new ParsedManifest("operaton-starter/v1", List.of(), "owner/repo1", "sha1"));
         when(registry.snapshot()).thenReturn(ExampleSnapshot.of(List.of()));
 
-        var event = mock(ApplicationReadyEvent.class);
-        loader.onApplicationReady(event);
+        loader.onApplicationReady(mock(ApplicationReadyEvent.class));
 
-        verify(registry, times(1)).swap(argThat(snapshot ->
-                snapshot.sources().size() == 2 &&
-                snapshot.sources().stream().anyMatch(s -> s.outcome().contains("skipped"))
-        ));
+        verify(registry).swap(any());
     }
 
     @Test
     void loader_app_starts_even_if_all_sources_fail() throws Exception {
         var sources = List.of("owner/repo1", "owner/repo2");
 
-        when(properties.examples()).thenReturn(
-                new StarterProperties.Examples(sources, null, 50)
-        );
+        when(properties.examples()).thenReturn(new StarterProperties.Examples(sources, null, 50));
         when(fetcher.fetch(anyString())).thenThrow(new SourceUnavailable("timeout"));
         when(registry.snapshot()).thenReturn(ExampleSnapshot.of(List.of()));
 
-        var event = mock(ApplicationReadyEvent.class);
-        loader.onApplicationReady(event);
+        loader.onApplicationReady(mock(ApplicationReadyEvent.class));
 
-        verify(registry, times(1)).swap(argThat(snapshot ->
+        verify(registry).swap(argThat(snapshot ->
                 snapshot.sources().size() == 2 &&
-                snapshot.sources().stream().allMatch(s -> s.outcome().contains("skipped"))
-        ));
+                snapshot.sources().stream().allMatch(s -> s.outcome().contains("skipped"))));
     }
 
     @Test
     void loader_handles_empty_source_list() throws Exception {
-        when(properties.examples()).thenReturn(
-                new StarterProperties.Examples(List.of(), null, 50)
-        );
+        when(properties.examples()).thenReturn(new StarterProperties.Examples(List.of(), null, 50));
 
-        var event = mock(ApplicationReadyEvent.class);
-        loader.onApplicationReady(event);
+        loader.onApplicationReady(mock(ApplicationReadyEvent.class));
 
-        verify(registry, times(1)).swap(argThat(snapshot -> snapshot.sources().isEmpty()));
+        verify(registry).swap(argThat(snapshot -> snapshot.sources().isEmpty()));
     }
 }
