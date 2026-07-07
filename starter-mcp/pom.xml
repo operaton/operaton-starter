@@ -15,6 +15,10 @@
   <description>MCP npm package (operaton-starter-mcp) — AI assistant integration</description>
   <packaging>pom</packaging>
 
+  <properties>
+    <deploy.skip>true</deploy.skip>
+  </properties>
+
   <build>
     <plugins>
       <plugin>
