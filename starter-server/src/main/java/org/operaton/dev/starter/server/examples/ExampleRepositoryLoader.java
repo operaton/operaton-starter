@@ -13,7 +13,9 @@ import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -161,130 +163,144 @@ public class ExampleRepositoryLoader {
     /**
      * Loads a single source and captures status. Returns LoadSourceResult with both state and status.
      * Never throws — always returns a result (success or skipped).
+     *
+     * <p>Iterates all {@link LocatedFetchResult}s returned by the fetcher (one per descriptor file
+     * found in the repository). Each descriptor is parsed independently; parse failures are logged
+     * and skipped without aborting the remaining descriptors. Duplicate example IDs across
+     * descriptors are also logged and skipped (first occurrence wins).
      */
     private LoadSourceResult loadSourceWithStatus(String sourceToken) {
         try {
-            // Step 1: Fetch manifest(s)
-            // TODO(task-3): iterate all LocatedFetchResults; currently uses first result only
-            List<LocatedFetchResult> fetchResults;
+            // Step 1: Fetch all descriptor locations
+            List<LocatedFetchResult> locatedResults;
             try {
-                fetchResults = fetcher.fetch(sourceToken);
+                locatedResults = fetcher.fetch(sourceToken);
             } catch (SourceUnavailable e) {
                 return failedResult(sourceToken, "skipped:" + e.getReason(), e.getReason());
             }
-            if (fetchResults.isEmpty()) {
-                return failedResult(sourceToken, "skipped:no-descriptor", "no-descriptor");
-            }
-            LocatedFetchResult fetchResult = fetchResults.get(0);
 
-            // Step 2: Parse manifest
-            String repo = sourceToken.contains("@") ? sourceToken.substring(0, sourceToken.indexOf('@')) : sourceToken;
-            ParsedManifest parsedManifest;
-            try {
-                parsedManifest = parser.parse(fetchResult.yamlBytes(), repo, fetchResult.resolvedSha());
-            } catch (ManifestRejected e) {
-                return failedResult(sourceToken, "skipped:" + e.getReason(), e.getReason());
+            if (locatedResults.isEmpty()) {
+                return failedResult(sourceToken, "skipped:no-descriptors", "no-descriptors");
             }
 
-            // Step 3: Convert to Example model and annotate with source info
-            List<Example> examples = new ArrayList<>();
-            for (ParsedManifest.Example parsedEx : parsedManifest.examples()) {
-                var example = new Example()
-                        .id(parsedEx.id())
-                        .title(parsedEx.title())
-                        .path(parsedEx.path())
-                        .shortDescription(parsedEx.shortDescription())
-                        .sourceRepo(parsedManifest.sourceRepo())
-                        .sourceRepoSha(parsedManifest.sourceRepoSha())
-                        .sourceRepoUrl("https://github.com/" + parsedManifest.sourceRepo() + "/tree/" + parsedManifest.sourceRepoSha() + "/" + parsedEx.path())
-                        .icon(parsedEx.icon())
-                        .longDescription(parsedEx.longDescription())
-                        .operatonVersion(parsedEx.operatonVersion())
-                        .javaVersion(parsedEx.javaVersion())
-                        .integrations(parsedEx.integrations().isEmpty() ? null : parsedEx.integrations())
-                        .bpmnConcepts(parsedEx.bpmnConcepts().isEmpty() ? null : parsedEx.bpmnConcepts())
-                        .requires(parsedEx.requires())
-                        .license(parsedEx.license())
-                        .documentationUrl(parsedEx.documentationUrl())
-                        .demoVideoUrl(parsedEx.demoVideoUrl())
-                        .screenshots(parsedEx.screenshots().isEmpty() ? null : parsedEx.screenshots());
+            String repo = sourceToken.contains("@")
+                    ? sourceToken.substring(0, sourceToken.indexOf('@')) : sourceToken;
+            String resolvedSha = locatedResults.get(0).resolvedSha();
 
-                // Map buildSystem string to enum
-                if (parsedEx.buildSystem() != null) {
-                    try {
-                        example.buildSystem(Example.BuildSystemEnum.fromValue(parsedEx.buildSystem()));
-                    } catch (IllegalArgumentException e) {
-                        log.debug("Unknown buildSystem value: {}", parsedEx.buildSystem());
+            // Step 2: Parse each descriptor, resolve paths, collect examples
+            List<Example> allExamples = new ArrayList<>();
+            Set<String> seenIds = new LinkedHashSet<>();
+
+            for (LocatedFetchResult located : locatedResults) {
+                ParsedManifest parsedManifest;
+                try {
+                    parsedManifest = parser.parse(located.yamlBytes(), repo, located.resolvedSha());
+                } catch (ManifestRejected e) {
+                    log.warn("Skipping descriptor '{}' in source {}: {}", located.descriptorPath(), sourceToken, e.getReason());
+                    continue;
+                }
+
+                String descriptorDir = descriptorDir(located.descriptorPath());
+
+                for (ParsedManifest.Example parsedEx : parsedManifest.examples()) {
+                    if (seenIds.contains(parsedEx.id())) {
+                        log.warn("Duplicate example id '{}' in descriptor '{}' of source {}; skipping",
+                                parsedEx.id(), located.descriptorPath(), sourceToken);
+                        continue;
                     }
-                }
+                    seenIds.add(parsedEx.id());
 
-                // Map runtime string to enum
-                if (parsedEx.runtime() != null) {
-                    try {
-                        example.runtime(Example.RuntimeEnum.fromValue(parsedEx.runtime()));
-                    } catch (IllegalArgumentException e) {
-                        log.debug("Unknown runtime value: {}", parsedEx.runtime());
+                    String resolvedPath = resolveExamplePath(descriptorDir, parsedEx.path());
+
+                    var example = new Example()
+                            .id(parsedEx.id())
+                            .title(parsedEx.title())
+                            .path(resolvedPath)
+                            .shortDescription(parsedEx.shortDescription())
+                            .sourceRepo(parsedManifest.sourceRepo())
+                            .sourceRepoSha(parsedManifest.sourceRepoSha())
+                            .sourceRepoUrl("https://github.com/" + parsedManifest.sourceRepo()
+                                    + "/tree/" + parsedManifest.sourceRepoSha() + "/" + resolvedPath)
+                            .icon(parsedEx.icon())
+                            .longDescription(parsedEx.longDescription())
+                            .operatonVersion(parsedEx.operatonVersion())
+                            .javaVersion(parsedEx.javaVersion())
+                            .integrations(parsedEx.integrations().isEmpty() ? null : parsedEx.integrations())
+                            .bpmnConcepts(parsedEx.bpmnConcepts().isEmpty() ? null : parsedEx.bpmnConcepts())
+                            .requires(parsedEx.requires())
+                            .license(parsedEx.license())
+                            .documentationUrl(parsedEx.documentationUrl())
+                            .demoVideoUrl(parsedEx.demoVideoUrl())
+                            .screenshots(parsedEx.screenshots().isEmpty() ? null : parsedEx.screenshots());
+
+                    if (parsedEx.buildSystem() != null) {
+                        try { example.buildSystem(Example.BuildSystemEnum.fromValue(parsedEx.buildSystem())); }
+                        catch (IllegalArgumentException e) { log.debug("Unknown buildSystem value: {}", parsedEx.buildSystem()); }
                     }
-                }
-
-                // Map complexity string to enum
-                if (parsedEx.complexity() != null) {
-                    try {
-                        example.complexity(Example.ComplexityEnum.fromValue(parsedEx.complexity()));
-                    } catch (IllegalArgumentException e) {
-                        log.debug("Unknown complexity value: {}", parsedEx.complexity());
+                    if (parsedEx.runtime() != null) {
+                        try { example.runtime(Example.RuntimeEnum.fromValue(parsedEx.runtime())); }
+                        catch (IllegalArgumentException e) { log.debug("Unknown runtime value: {}", parsedEx.runtime()); }
                     }
-                }
-
-                // Map lastUpdated string to LocalDate
-                if (parsedEx.lastUpdated() != null) {
-                    try {
-                        example.lastUpdated(java.time.LocalDate.parse(parsedEx.lastUpdated()));
-                    } catch (Exception e) {
-                        log.debug("Could not parse lastUpdated date: {}", parsedEx.lastUpdated());
+                    if (parsedEx.complexity() != null) {
+                        try { example.complexity(Example.ComplexityEnum.fromValue(parsedEx.complexity())); }
+                        catch (IllegalArgumentException e) { log.debug("Unknown complexity value: {}", parsedEx.complexity()); }
                     }
-                }
+                    if (parsedEx.lastUpdated() != null) {
+                        try { example.lastUpdated(java.time.LocalDate.parse(parsedEx.lastUpdated())); }
+                        catch (Exception e) { log.debug("Could not parse lastUpdated date: {}", parsedEx.lastUpdated()); }
+                    }
+                    if (!parsedEx.tags().isEmpty()) {
+                        List<Tag> modelTags = parsedEx.tags().stream()
+                                .map(t -> new Tag().label(t.label()).category(mapTagCategory(t.category())))
+                                .toList();
+                        example.tags(modelTags);
+                    }
+                    if (!parsedEx.authors().isEmpty()) {
+                        List<Author> modelAuthors = parsedEx.authors().stream()
+                                .map(a -> new Author().name(a.name()).url(a.url()))
+                                .toList();
+                        example.authors(modelAuthors);
+                    }
 
-                // Map parsed tags to model Tags
-                if (!parsedEx.tags().isEmpty()) {
-                    List<Tag> modelTags = parsedEx.tags().stream()
-                            .map(t -> new Tag().label(t.label()).category(mapTagCategory(t.category())))
-                            .toList();
-                    example.tags(modelTags);
+                    allExamples.add(example);
                 }
-
-                // Map authors
-                if (!parsedEx.authors().isEmpty()) {
-                    List<Author> modelAuthors = parsedEx.authors().stream()
-                            .map(a -> new Author().name(a.name()).url(a.url()))
-                            .toList();
-                    example.authors(modelAuthors);
-                }
-
-                examples.add(example);
             }
 
             var sourceState = new ExampleSnapshot.SourceState(
-                    sourceToken,
-                    "success",
-                    examples,
-                    parsedManifest.sourceRepoSha(),
-                    Instant.now().toString()
-            );
+                    sourceToken, "success", allExamples, resolvedSha, Instant.now().toString());
             var status = new ExampleSourceStatus(
-                    sourceToken,
-                    "success",
-                    examples.size(),
-                    parsedManifest.sourceRepoSha(),
-                    Instant.now().toString(),
-                    java.util.Optional.empty()
-            );
+                    sourceToken, "success", allExamples.size(), resolvedSha, Instant.now().toString(),
+                    java.util.Optional.empty());
             return new LoadSourceResult(sourceState, status);
 
         } catch (Exception e) {
             log.warn("Unexpected exception loading source {}", sourceToken, e);
             return failedResult(sourceToken, "skipped:error", "Unexpected error: " + e.getMessage());
         }
+    }
+
+    /** Returns the directory containing a descriptor, e.g., "examples/foo" for "examples/foo/.operaton-starter.yml". */
+    private static String descriptorDir(String descriptorPath) {
+        int slash = descriptorPath.lastIndexOf('/');
+        return slash < 0 ? "" : descriptorPath.substring(0, slash);
+    }
+
+    /**
+     * Resolves an example's path relative to its descriptor's directory.
+     *
+     * <p>Resolution rules:
+     * <ul>
+     *   <li>null or empty path → defaults to "." → resolves to the descriptor dir (or "." for root)</li>
+     *   <li>"." → same as above</li>
+     *   <li>non-empty path → prepend descriptor dir (empty dir leaves path unchanged for backward compat)</li>
+     * </ul>
+     */
+    static String resolveExamplePath(String descriptorDir, String examplePath) {
+        String effective = (examplePath == null || examplePath.isEmpty()) ? "." : examplePath;
+        if (effective.equals(".")) {
+            return descriptorDir.isEmpty() ? "." : descriptorDir;
+        }
+        return descriptorDir.isEmpty() ? effective : descriptorDir + "/" + effective;
     }
 
     /**
