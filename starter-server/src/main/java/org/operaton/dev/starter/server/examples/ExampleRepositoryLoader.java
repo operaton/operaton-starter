@@ -290,7 +290,7 @@ public class ExampleRepositoryLoader {
      *
      * <p>Resolution rules:
      * <ul>
-     *   <li>null or empty path → defaults to "." → resolves to the descriptor dir (or "." for root)</li>
+     *   <li>null or empty path → defaults to "." → resolves to the descriptor dir ("" for a root-level descriptor)</li>
      *   <li>"." → same as above</li>
      *   <li>non-empty path → prepend descriptor dir (empty dir leaves path unchanged for backward compat)</li>
      * </ul>
