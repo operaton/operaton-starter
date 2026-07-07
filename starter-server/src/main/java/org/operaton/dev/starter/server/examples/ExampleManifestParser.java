@@ -116,7 +116,7 @@ public class ExampleManifestParser {
         String id = getStringValue(exampleMap, "id", "");
         String title = getStringValue(exampleMap, "title", "");
         String shortDescription = getStringValue(exampleMap, "shortDescription", "");
-        String path = getStringValue(exampleMap, "path", "");
+        String path = getStringValue(exampleMap, "path", null);
 
         // Validate required fields
         if (id.isEmpty() || title.isEmpty() || shortDescription.isEmpty()) {
@@ -125,8 +125,10 @@ public class ExampleManifestParser {
             return null;
         }
 
-        // Validate path
-        validatePath(path);
+        // Validate path only when explicitly provided
+        if (path != null) {
+            validatePath(path);
+        }
 
         List<ParsedManifest.Tag> tags = parseTags(exampleMap);
 
@@ -160,21 +162,16 @@ public class ExampleManifestParser {
      * @throws ManifestRejected if path is unsafe
      */
     private void validatePath(String path) throws ManifestRejected {
-        if (path == null || path.isEmpty()) {
+        // path is guaranteed non-null here (caller checks)
+        if (path.isBlank()) {
             throw new ManifestRejected("path-unsafe");
         }
-
-        // No absolute paths
         if (path.startsWith("/")) {
             throw new ManifestRejected("path-unsafe");
         }
-
-        // No parent directory traversal
         if (path.contains("..")) {
             throw new ManifestRejected("path-unsafe");
         }
-
-        // No null bytes
         if (path.contains("\0")) {
             throw new ManifestRejected("path-unsafe");
         }

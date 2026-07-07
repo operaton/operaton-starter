@@ -268,4 +268,36 @@ class ExampleManifestParserTest {
         // Example missing id/title/shortDescription is skipped, not added
         assertEquals(0, manifest.examples().size());
     }
+
+    @Test
+    void testParseExample_pathIsOptional_defaultsToNull() throws ManifestRejected {
+        String yaml = """
+                apiVersion: operaton-starter/v1
+                examples:
+                  - id: my-example
+                    title: My Example
+                    shortDescription: A test example
+                """;
+
+        ParsedManifest manifest = parser.parse(
+                yaml.getBytes(StandardCharsets.UTF_8), "owner/repo", "abc123");
+
+        ParsedManifest.Example example = manifest.examples().getFirst();
+        assertNull(example.path());
+    }
+
+    @Test
+    void testParseExample_emptyPathIsRejected() {
+        String yaml = """
+                apiVersion: operaton-starter/v1
+                examples:
+                  - id: my-example
+                    title: My Example
+                    shortDescription: A test example
+                    path: ""
+                """;
+
+        assertThrows(ManifestRejected.class, () ->
+                parser.parse(yaml.getBytes(StandardCharsets.UTF_8), "owner/repo", "abc123"));
+    }
 }
