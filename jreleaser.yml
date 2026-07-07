@@ -9,7 +9,7 @@ project:
   authors:
     - Operaton Contributors
   license: Apache-2.0
-  inceptionYear: "2024"
+  inceptionYear: "2026"
 
 release:
   github:
@@ -47,6 +47,12 @@ signing:
   active: ALWAYS
   armored: true
 
+packagers:
+  docker:
+    active: ALWAYS
+    commitAuthor:
+      email: jreleaser@operaton.org
+
 distributions:
   operaton-starter-mcp:
     type: NPM
@@ -68,6 +74,7 @@ distributions:
       imageNames:
         - 'operaton/operaton-starter:{{projectVersion}}'
         - 'operaton/operaton-starter:latest'
+
 
 announce:
   # Announcement channels (configure as needed)
