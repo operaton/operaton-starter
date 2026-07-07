@@ -54,6 +54,7 @@ class GitHubManifestFetcherTest {
 
     private void stubTree(String treeJson) {
         stubFor(get(urlPathEqualTo("/repos/" + TEST_OWNER + "/" + TEST_REPO + "/git/trees/" + TEST_SHA))
+                .withQueryParam("recursive", equalTo("1"))
                 .willReturn(aResponse().withStatus(200).withBody(treeJson)));
     }
 

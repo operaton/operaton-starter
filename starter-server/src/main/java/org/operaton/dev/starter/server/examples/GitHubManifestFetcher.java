@@ -110,8 +110,10 @@ public class GitHubManifestFetcher {
             if (!SHA_PATTERN.matcher(sha).matches()) throw new SourceUnavailable("invalid-sha");
             log.debug("Resolved SHA for {}/{}: {}", owner, repo, sha);
             return sha;
-        } catch (IOException e) {
+        } catch (java.net.http.HttpTimeoutException e) {
             throw new SourceUnavailable("timeout", e);
+        } catch (IOException e) {
+            throw new SourceUnavailable("fetch-error", e);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new SourceUnavailable("timeout", e);
@@ -158,8 +160,10 @@ public class GitHubManifestFetcher {
             }
 
             return resolveCollisions(found, owner, repo);
-        } catch (IOException e) {
+        } catch (java.net.http.HttpTimeoutException e) {
             throw new SourceUnavailable("timeout", e);
+        } catch (IOException e) {
+            throw new SourceUnavailable("fetch-error", e);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new SourceUnavailable("timeout", e);
@@ -217,8 +221,10 @@ public class GitHubManifestFetcher {
             if (response.statusCode() != 200) throw new SourceUnavailable("http-" + response.statusCode());
             log.debug("Descriptor fetched ({} bytes): {}", response.body().length, descriptorPath);
             return response.body();
-        } catch (IOException e) {
+        } catch (java.net.http.HttpTimeoutException e) {
             throw new SourceUnavailable("timeout", e);
+        } catch (IOException e) {
+            throw new SourceUnavailable("fetch-error", e);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new SourceUnavailable("timeout", e);
