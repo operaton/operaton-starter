@@ -16,31 +16,43 @@ The manifest-based approach decouples example discovery and metadata from the st
 
 ## Repository Structure
 
-Each example source repository must have:
+Descriptor files (`.operaton-starter.yml` or `.operaton-starter.yaml`) can be placed **anywhere** in the repository tree. The starter scans the full repository and loads every descriptor it finds.
+
+### Pattern A: Central root manifest (original pattern, still supported)
 
 ```
 example-repo/
-├── .operaton-starter.yml         # Manifest (required, at repo root)
+├── .operaton-starter.yml         # lists all examples with explicit paths
 ├── examples/
 │   ├── leave-request-spring-boot/
-│   │   ├── pom.xml
-│   │   ├── src/
-│   │   └── README.md
-│   ├── order-fulfillment-quarkus/
-│   │   ├── build.gradle
-│   │   ├── src/
-│   │   └── README.md
-│   └── incident-escalation-plain-java/
-│       ├── pom.xml
-│       ├── src/
-│       └── README.md
+│   └── order-fulfillment-quarkus/
 └── README.md
 ```
 
+### Pattern B: Per-directory descriptors (new)
+
+```
+example-repo/
+├── examples/
+│   ├── leave-request-spring-boot/
+│   │   ├── .operaton-starter.yml  # describes this example; path defaults to "."
+│   │   ├── pom.xml
+│   │   └── src/
+│   └── order-fulfillment-quarkus/
+│       ├── .operaton-starter.yml  # describes this example; path defaults to "."
+│       ├── build.gradle
+│       └── src/
+└── README.md
+```
+
+Both patterns can coexist in the same repository.
+
 **Key rules:**
 
-- Manifest is **mandatory** at the repository root
-- Each `examples[].path:` is relative to the repo root and must exist
+- At least one descriptor file must exist in the repository (at root or in any subdirectory)
+- Descriptor filename must be `.operaton-starter.yml` **or** `.operaton-starter.yaml`; if both exist in the same directory, `.yml` is used and `.yaml` is ignored (a warning is logged)
+- Multiple descriptor files per repository are supported; example `id` values must be unique across all descriptors in a repository
+- Each `examples[].path:` is relative to the descriptor's directory and must exist
 - No `..` path traversal; no leading `/`; no null bytes
 - Unknown manifest fields (at any nesting level) are silently ignored
 - `apiVersion` is major-version gated: only `operaton-starter/v1*` manifests are accepted
@@ -67,7 +79,7 @@ examples: [...]                    # required, list
 | `id` | yes | slug | Unique within the repo, `[a-z0-9-]+`, e.g., `leave-request-spring-boot` |
 | `title` | yes | string | Display name, e.g., `"Leave Request (Spring Boot)"` |
 | `icon` | no | emoji or path | Single emoji char (e.g., `📝`), or repo-relative path to SVG/PNG ≤ 64×64 |
-| `path` | yes | path | Relative to repo root; no `..`, no leading `/`, e.g., `examples/leave-request-spring-boot` |
+| `path` | no | path | Relative to the directory containing this descriptor. Omit (or use `.`) to mean "the same directory as this descriptor". No `..`, no leading `/`. |
 | `shortDescription` | yes | string ≤ 200 | One-line teaser for cards and list views |
 | `longDescription` | no | markdown | Multi-paragraph description with bullet points, code blocks, etc. |
 | `buildSystem` | no | enum | `maven` or `gradle` |
@@ -85,6 +97,8 @@ examples: [...]                    # required, list
 | `demoVideoUrl` | no | URL | Link to demo/tutorial video |
 | `screenshots` | no | list of paths | Repo-relative image paths for detail view |
 | `lastUpdated` | no | ISO date | e.g., `"2026-06-10"`; falls back to GitHub commit date if omitted |
+
+> **Path resolution**: The `path` field is resolved relative to the directory where the descriptor lives. A root-level manifest (`/.operaton-starter.yml`) with `path: examples/foo` behaves identically to before. A descriptor at `examples/foo/.operaton-starter.yml` with no `path` (or `path: .`) means the example occupies `examples/foo/`.
 
 ### Tags: Faceted Search
 
@@ -281,9 +295,9 @@ Contribute your repository to the default configuration by opening a PR to the o
 
 Before registering your repository, verify:
 
-- [ ] `.operaton-starter.yml` exists at the repo root
+- [ ] At least one `.operaton-starter.yml` or `.operaton-starter.yaml` exists in the repository (at root or in any subdirectory)
 - [ ] `apiVersion: operaton-starter/v1` is present
-- [ ] All `examples[].path` entries reference existing directories
+- [ ] All `path` values (when provided) reference existing directories relative to their descriptor's location
 - [ ] At least 3 examples cover the runtime matrix (Spring Boot, Quarkus, plain Java)
 - [ ] Each example has a long description, emoji icon, and tags spanning multiple categories
 - [ ] All URLs in `authors[].url`, `documentationUrl`, `demoVideoUrl` are live
