@@ -83,12 +83,21 @@ public class GitHubManifestFetcher {
         String sha = resolveSha(owner, repoName, ref);
         List<String> descriptorPaths = findDescriptorPaths(owner, repoName, sha);
 
-        List<LocatedFetchResult> results = new ArrayList<>();
-        for (String descriptorPath : descriptorPaths) {
-            byte[] yamlBytes = fetchDescriptor(owner, repoName, sha, descriptorPath);
-            results.add(new LocatedFetchResult(yamlBytes, sha, descriptorPath));
-        }
-        return results;
+List<LocatedFetchResult> results = new ArrayList<>();
+SourceUnavailable lastError = null;
+for (String descriptorPath : descriptorPaths) {
+    try {
+        byte[] yamlBytes = fetchDescriptor(owner, repoName, sha, descriptorPath);
+        results.add(new LocatedFetchResult(yamlBytes, sha, descriptorPath));
+    } catch (SourceUnavailable e) {
+        lastError = e;
+        log.warn("Skipping descriptor '{}' in {}/{} at {}: {}", descriptorPath, owner, repoName, sha, e.getReason());
+    }
+}
+if (results.isEmpty() && lastError != null) {
+    throw lastError;
+}
+return results;
     }
 
     /**
