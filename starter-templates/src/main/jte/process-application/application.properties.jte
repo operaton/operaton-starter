@@ -11,3 +11,9 @@ spring.datasource.password=
 
 # Operaton configuration
 operaton.bpm.auto-deployment-enabled=true
+
+operaton.bpm.admin-user.id=admin
+operaton.bpm.admin-user.password=admin
+operaton.bpm.admin-user.firstName=Admin
+
+operaton.bpm.filter.create=All Tasks

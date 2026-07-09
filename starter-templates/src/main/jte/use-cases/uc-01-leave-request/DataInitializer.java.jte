@@ -2,6 +2,9 @@
 @param ProjectConfig config
 package ${config.javaPackage()};
 
+import java.util.logging.Logger;
+
+import org.operaton.bpm.engine.authorization.Groups;
 import org.operaton.bpm.engine.IdentityService;
 import org.operaton.bpm.engine.identity.Group;
 import org.operaton.bpm.engine.identity.User;
@@ -11,6 +14,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class DataInitializer implements ApplicationRunner {
+    private static final Logger LOGGER = Logger.getLogger(DataInitializer.class.getName());
 
     private final IdentityService identityService;
     private final VacationBalanceService vacationBalanceService;
@@ -22,20 +26,38 @@ public class DataInitializer implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) {
+        if(identityService.isReadOnly()) {
+            LOGGER.info("Identity service provider is read-only, not creating any demo users.");
+            return;
+        }
+
+        createGroupIfAbsent(Groups.OPERATON_ADMIN, "Operaton Administrators", Groups.GROUP_TYPE_SYSTEM);
         createGroupIfAbsent("employees", "Employees", "WORKFLOW");
         createGroupIfAbsent("managers", "Managers", "WORKFLOW");
         createGroupIfAbsent("hr", "HR Department", "WORKFLOW");
-        createGroupIfAbsent("operaton-admin", "Operaton Administrators", "SYSTEM");
 
+        createUserIfAbsent("admin", "Admin", "User", "admin@example.com", "admin");
         createUserIfAbsent("alice", "Alice", "Employee", "alice@example.com", "alice");
         createUserIfAbsent("bob", "Bob", "Manager", "bob@example.com", "bob");
         createUserIfAbsent("carol", "Carol", "HR", "carol@example.com", "carol");
-        createUserIfAbsent("admin", "Admin", "User", "admin@example.com", "admin");
 
+        createMembershipIfAbsent("admin", "operaton-admin");
         createMembershipIfAbsent("alice", "employees");
         createMembershipIfAbsent("bob", "managers");
         createMembershipIfAbsent("carol", "hr");
-        createMembershipIfAbsent("admin", "operaton-admin");
+
+        // create ADMIN authorizations on all built-in resources
+        for (Resource resource : Resources.values()) {
+            if(authorizationService.createAuthorizationQuery().groupIdIn(Groups.OPERATON_ADMIN).resourceType(resource).resourceId(ANY).count() == 0) {
+                AuthorizationEntity userAdminAuth = new AuthorizationEntity(AUTH_TYPE_GRANT);
+                userAdminAuth.setGroupId(Groups.OPERATON_ADMIN);
+                userAdminAuth.setResource(resource);
+                userAdminAuth.setResourceId(ANY);
+                userAdminAuth.addPermission(ALL);
+                authorizationService.saveAuthorization(userAdminAuth);
+            }
+        }
+
 
         vacationBalanceService.seedBalanceIfAbsent("alice", 30);
     }
