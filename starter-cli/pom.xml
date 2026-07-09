@@ -7,13 +7,17 @@
   <parent>
     <groupId>org.operaton.dev</groupId>
     <artifactId>operaton-starter</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
+    <version>0.1.1-SNAPSHOT</version>
   </parent>
 
   <artifactId>starter-cli</artifactId>
   <name>starter-cli</name>
   <description>CLI npm package (operaton-starter) — terminal and scripting access</description>
   <packaging>pom</packaging>
+
+  <properties>
+    <deploy.skip>true</deploy.skip>
+  </properties>
 
   <build>
     <plugins>

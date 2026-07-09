@@ -7,13 +7,17 @@
   <parent>
     <groupId>org.operaton.dev</groupId>
     <artifactId>operaton-starter</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
+    <version>0.1.1-SNAPSHOT</version>
   </parent>
 
   <artifactId>starter-web</artifactId>
   <name>starter-web</name>
   <description>Vue 3 SPA for Operaton Starter web UI</description>
   <packaging>pom</packaging>
+
+  <properties>
+    <deploy.skip>true</deploy.skip>
+  </properties>
 
   <build>
     <plugins>

@@ -41,7 +41,7 @@ yarn-error.log
 
 # Maven
 .mvn/wrapper/maven-wrapper.jar
-.mvn/wrapper/maven-wrapper.properties
+pom.xml.versionsBackup
 
 # Gradle
 .gradle/
@@ -49,3 +49,9 @@ gradle/wrapper/gradle-wrapper.jar
 
 # OS
 Thumbs.db
+
+# Local secrets — never commit
+.env
+
+# JReleader
+out/jreleaser
