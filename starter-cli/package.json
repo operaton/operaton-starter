@@ -11,7 +11,12 @@
     "dev": "tsc --watch",
     "start": "node dist/index.js"
   },
-  "keywords": ["operaton", "bpm", "cli", "project-generator"],
+  "keywords": [
+    "operaton",
+    "bpm",
+    "cli",
+    "project-generator"
+  ],
   "license": "Apache-2.0",
   "dependencies": {
     "commander": "^12.1.0",
