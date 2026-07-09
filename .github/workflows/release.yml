@@ -30,7 +30,7 @@ jobs:
     permissions:
       contents: read
     outputs:
-      next_version: ${{steps.compute-next-version.outputs.next_version}}
+      next_version: ${{steps.version.outputs.next_version}}
       version: ${{steps.version.outputs.version}}
       base_version: ${{steps.version.outputs.base_version}}
       is_prerelease: ${{steps.version.outputs.is_prerelease}}
@@ -45,7 +45,7 @@ jobs:
           distribution: 'temurin'
 
       - name: Compute next development version
-        id: compute-next-version
+        id: version
         run: |
           INPUT_VERSION="${{github.event.inputs.next_version}}"
           BRANCH_NAME="${{github.ref_name}}"
@@ -91,10 +91,6 @@ jobs:
               exit 1
             fi
           fi
-      - name: Set version
-        id: version
-        shell: bash
-        run: |
           BASE_RELEASE_VERSION=$(./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout | tail -n 1 | sed -e 's/-SNAPSHOT//')
           QUALIFIER="${{github.event.inputs.preliminary_release_qualifier}}"
           if [ -n "$QUALIFIER" ]; then
@@ -116,7 +112,6 @@ jobs:
           fi
           echo "version=$RELEASE_VERSION" >> $GITHUB_OUTPUT
           echo "base_version=$BASE_RELEASE_VERSION" >> $GITHUB_OUTPUT
-          .github/scripts/set-project-version.sh $RELEASE_VERSION
 
 
   release:
@@ -132,6 +127,11 @@ jobs:
         with:
           java-version: '21'
           distribution: 'temurin'
+
+      - name: Set version
+        id: set-version
+        shell: bash
+        run: .github/scripts/set-project-version.sh ${{needs.prepare.outputs.version}}
 
       - name: Maven Build
         run: |
