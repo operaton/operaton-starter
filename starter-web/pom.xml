@@ -7,7 +7,7 @@
   <parent>
     <groupId>org.operaton.dev</groupId>
     <artifactId>operaton-starter</artifactId>
-    <version>0.1.0</version>
+    <version>0.1.1-SNAPSHOT</version>
   </parent>
 
   <artifactId>starter-web</artifactId>
