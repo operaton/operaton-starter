@@ -66,7 +66,7 @@ Quality
 |----|------------|-------|
 | NFR13 | Generated project Java floor | Java 17 (default); picker: 17, 21, 25 |
 | NFR14 | Gradle version | 8.x (pinned wrapper in generated projects) |
-| NFR15 | Node.js (CLI, MCP) | Active LTS at build time |
+| NFR15 | Node.js (CLI) | Active LTS at build time |
 | NFR16 | Browser support | Latest 2 versions of major browsers |
 | NFR17 | Server runtime Java | Java 25 (eclipse-temurin:25-jre-alpine) |
 

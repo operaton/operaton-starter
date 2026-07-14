@@ -147,10 +147,9 @@ All technology choices have been validated as mutually compatible:
 | Gap | Resolution |
 |-----|-----------|
 | FR16 — Shareable config link encoding | Individual URL query params (`?type=...&build=...`). `useShareableLink.ts` with round-trip unit test. |
-| FR32 — MCP configurable base URL | `OPERATON_STARTER_URL` env var; default `https://start.operaton.org` |
 | FR20 — Inline contextual help on form | Story 4.3 AC explicitly includes ? help icons on all configuration options |
 | openapi-generator Spring Boot 4 | `<useSpringBoot3>true</useSpringBoot3>` in `starter-server` POM |
 | Dev environment for frontend devs | `docker-compose.dev.yml` includes backend service (Story 3.1) |
 | IDE deep-link ZIP mechanism | Deep-links pass the API generate URL to the IDE; IDE fetches ZIP directly |
 | IP rate limiting behind reverse proxy | `X-Forwarded-For` extraction with direct IP fallback |
-| `starter-cli` module placement | 6th Maven module with `frontend-maven-plugin` (consistent with "6 modules" count) |
+| `starter-cli` module placement | 5th Maven module with `frontend-maven-plugin` (consistent with "5 modules" count) |

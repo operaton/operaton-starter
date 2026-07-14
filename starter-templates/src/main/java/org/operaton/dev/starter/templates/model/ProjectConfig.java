@@ -6,7 +6,7 @@ import java.util.Optional;
  * Immutable value object holding all project generation parameters.
  *
  * <p>This is the single shared domain type used by the generation engine,
- * REST API, CLI, MCP, and all other channels. No channel defines its own
+ * REST API, CLI, and all other channels. No channel defines its own
  * parallel representation.
  *
  * <p>Constructed via {@link ProjectConfig.Builder}.

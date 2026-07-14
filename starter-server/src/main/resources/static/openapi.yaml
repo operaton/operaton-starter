@@ -284,7 +284,7 @@ components:
       properties:
         id:
           type: string
-          description: Identifier used as flag value for CLI and MCP tool parameter
+          description: Identifier used as flag value for CLI tool parameter
           example: PROCESS_APPLICATION
         displayName:
           type: string

@@ -7,7 +7,6 @@ flowchart TD
     subgraph internet["Internet"]
         BROWSER["Browser"]
         CLI["CLI / curl"]
-        MCP_CLIENT["AI Assistant\n(MCP client)"]
     end
 
     subgraph operaton_infra["operaton.org infrastructure"]
@@ -19,12 +18,11 @@ flowchart TD
 
     subgraph registries["External Registries (CI only)"]
         DOCKERHUB["docker.io/operaton/operaton-starter"]
-        NPM["npm Registry\noperaton-starter-mcp\noperaton-starter"]
+        NPM["npm Registry\noperaton-starter"]
     end
 
     BROWSER -->|HTTPS 443| LB
     CLI -->|HTTPS 443| LB
-    MCP_CLIENT -->|HTTPS 443| LB
     LB -->|HTTP 8080| APP
     DOCKERHUB -->|docker pull| docker
 ```
@@ -100,7 +98,7 @@ flowchart LR
 - ESLint + Prettier check
 - Vitest unit tests
 - axe-core accessibility audit (WCAG 2.1 AA, hard block)
-- Covers `starter-web`, `starter-mcp`, `starter-cli`
+- Covers `starter-web`, `starter-cli`
 
 **`release.yml`** (on tag `v*.*.*`)
 - JReleaser `full-release`: creates GitHub Release with conventional-commits changelog, pushes Docker image to Docker Hub, publishes to Maven Central (with GPG-signed artifacts), publishes npm packages
@@ -150,8 +148,4 @@ Allows `starter-web` frontend developers to run the backend locally:
 cd starter-web && npm run dev  # Vite dev server proxies /api/** to localhost:8080
 ```
 
-**MCP self-hosting:** To connect `operaton-starter-mcp` to a local instance, set `OPERATON_STARTER_URL` in the AI assistant MCP config:
-```json
-{ "env": { "OPERATON_STARTER_URL": "http://localhost:8080" } }
-```
-See [`docs/release.md`](../release.md) for full release procedure. See root [`README.md`](../../README.md#self-hosting-with-mcp) for AI assistant MCP config examples.
+See [`docs/release.md`](../release.md) for full release procedure.

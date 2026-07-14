@@ -8,12 +8,12 @@ Thank you for your interest in contributing. This document covers setup, project
 |------|---------|-------|
 | Java | 21+ | Required to build the server and templates modules |
 | Maven | 3.9+ | Or use the `./mvnw` wrapper |
-| Node.js | Active LTS | Only needed if working on `starter-web`, `starter-mcp`, or `starter-cli` directly; Maven hermetically downloads Node via `frontend-maven-plugin` |
+| Node.js | Active LTS | Only needed if working on `starter-web` or `starter-cli` directly; Maven hermetically downloads Node via `frontend-maven-plugin` |
 | Docker | Any recent | For running the full stack locally |
 
 ## Building
 
-**Full build (all 6 modules):**
+**Full build (all 5 modules):**
 ```bash
 ./mvnw verify
 ```
@@ -52,7 +52,6 @@ operaton-starter/
 ├── starter-server/          Spring Boot REST API
 ├── starter-archetypes/      mvn archetype:generate integration
 ├── starter-web/             Vue 3 SPA
-├── starter-mcp/             MCP npm package
 ├── starter-cli/             CLI npm package
 └── docs/
     ├── arc42/               Architecture documentation (12 sections)
@@ -135,7 +134,6 @@ Examples:
 ```
 feat(templates): add Gradle Kotlin DSL support for process archive
 fix(server): return 400 on unknown buildSystem value
-docs(arc42): update runtime view with MCP tool call scenario
 test(templates): extend parameterized test to cover all 6 combinations
 ```
 
@@ -150,6 +148,6 @@ See the full architecture documentation in [`docs/arc42/`](docs/arc42/). Key sec
 ## Reporting Issues
 
 Please open an issue on GitHub with:
-- The channel used (web UI / CLI / curl / MCP)
+- The channel used (web UI / CLI / curl)
 - For generated project issues: the project type and build system
 - For server issues: the request body and response (redact any sensitive data)

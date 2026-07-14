@@ -3,7 +3,7 @@ project:
   description: Operaton project starter — generates ready-to-run Operaton process projects
   longDescription: |
     operaton-starter generates ready-to-run Operaton BPM process projects via a web UI, REST API,
-    CLI, and MCP tool. Supports Maven, Gradle (Groovy DSL), and Gradle (Kotlin DSL) build systems.
+    and CLI. Supports Maven, Gradle (Groovy DSL), and Gradle (Kotlin DSL) build systems.
   links:
     homepage: https://github.com/operaton/operaton-starter
   authors:

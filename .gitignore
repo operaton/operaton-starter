@@ -20,7 +20,6 @@ build/
 
 # Frontend Maven Plugin (downloaded Node.js binaries)
 starter-web/node/
-starter-mcp/node/
 starter-cli/node/
 
 # Compiled classes

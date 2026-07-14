@@ -54,7 +54,6 @@ Client → POST /api/v1/generate
 openapi.yaml (project root)
   → starter-server: openapi-generator-maven-plugin → target/generated-sources/openapi/dto/
   → starter-web:    openapi-generator (npm) → src/generated/
-  → starter-mcp:    openapi-generator (npm) → src/generated/
   → starter-cli:    openapi-generator (npm) → src/generated/
 ```
 
@@ -74,20 +73,7 @@ User → npx operaton-starter generate --type process-application --build maven 
 - `OPERATON_STARTER_URL` env var overrides the base URL (for self-hosted or local development)
 - Pipe mode: raw bytes to stdout; no progress indicators; exit code 0 on success, non-zero on error
 
-## Scenario 6: MCP Tool Call
-
-```
-AI Assistant → MCP tool call: generate_project({ type, build, groupId, artifactId, ... })
-  → starter-mcp generateProject.ts
-  → generated API client → POST /api/v1/generate
-  → ZIP bytes returned to AI assistant
-```
-
-**Key runtime properties:**
-- `OPERATON_STARTER_URL` env var overrides base URL
-- Tool schema mirrors OpenAPI spec request body — kept in sync by generator
-
-## Scenario 7: Docker Health Check
+## Scenario 6: Docker Health Check
 
 ```
 Load Balancer → GET /actuator/health

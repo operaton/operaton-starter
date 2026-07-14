@@ -2,8 +2,8 @@
 stepsCompleted: ['step-01-init', 'step-02-discovery', 'step-02b-vision', 'step-02c-executive-summary', 'step-03-success', 'step-04-journeys', 'step-05-domain', 'step-06-innovation', 'step-07-project-type', 'step-08-scoping', 'step-09-functional', 'step-10-nonfunctional', 'step-11-polish', 'step-12-complete']
 workflowStatus: complete
 completedAt: '2026-03-27'
-updatedAt: '2026-06-05'
-updateNotes: 'Postgres as default datasource for all use cases; H2 fallback profile; admin user auto-creation; chmod+x instructions; BPMN images in README; bootstrap data docs; one-dependency constraint lifted'
+updatedAt: '2026-07-14'
+updateNotes: 'MCP module and operaton-starter-mcp npm package removed from scope; FR31, FR32, FR48, FR52, NFR15 struck; Postgres as default datasource for all use cases; H2 fallback profile; admin user auto-creation; chmod+x instructions; BPMN images in README; bootstrap data docs; one-dependency constraint lifted'
 inputDocuments: ['_bmad-output/brainstorming/brainstorming-session-2026-03-25-1.md']
 workflowType: 'prd'
 classification:
@@ -24,7 +24,7 @@ classification:
 
 Operaton Starter is a stateless, open-source project generator hosted at `start.operaton.org` that bootstraps Operaton-based projects — process applications, process archives, engine plugins, connectors, and Camunda 7 migrations — as downloadable, ready-to-build, immediately runnable project archives. It is the first and only dedicated project initializer for the Operaton ecosystem, filling the gap that Spring Initializr fills for Spring Boot and code.quarkus.io fills for Quarkus.
 
-The tool targets two developer personas: **Practitioners** (Operaton-familiar developers who know what they want to build and demand zero friction) and **Explorers** (BPMN-literate developers new to Operaton, including Camunda 7 migrators, who benefit from guided discovery). Today's Explorer is tomorrow's Practitioner — the quality of the first session directly determines ecosystem retention. Access is available through three first-class channels: a web UI at `start.operaton.org`, the `npx operaton-starter` CLI, and a single `curl` command — all backed by the same REST API (`POST /api/v1/generate`). The web UI serves both personas through a split landing page — a direct configuration form for Practitioners and a visual project gallery for Explorers. An MCP module exposes the same generation API to AI-assisted development workflows. The tool is deployed as a Spring Boot application on the `operaton.org` domain and distributed as a self-hostable Docker image, allowing enterprise teams to run a private instance behind their firewall with org-specific defaults.
+The tool targets two developer personas: **Practitioners** (Operaton-familiar developers who know what they want to build and demand zero friction) and **Explorers** (BPMN-literate developers new to Operaton, including Camunda 7 migrators, who benefit from guided discovery). Today's Explorer is tomorrow's Practitioner — the quality of the first session directly determines ecosystem retention. Access is available through three first-class channels: a web UI at `start.operaton.org`, the `npx operaton-starter` CLI, and a single `curl` command — all backed by the same REST API (`POST /api/v1/generate`). The web UI serves both personas through a split landing page — a direct configuration form for Practitioners and a visual project gallery for Explorers. The tool is deployed as a Spring Boot application on the `operaton.org` domain and distributed as a self-hostable Docker image, allowing enterprise teams to run a private instance behind their firewall with org-specific defaults.
 
 Generated projects support Maven or Gradle (Groovy/Kotlin DSL), always target the current stable Operaton release (no version picker), and include a personalized README with next-step instructions. Optional Extras — Dependency Updates (Dependabot or Renovate), Docker Compose, GitHub Actions CI/CD skeleton — are all off by default and must be explicitly enabled. Projects are identity-aware — Group ID, Artifact ID, and project name propagate into BPMN process IDs, Java packages, and Spring `application.name`. Generation templates are open-source and community-forkable. No authentication, no user profiles — stateless by design.
 
@@ -34,7 +34,7 @@ No Operaton project initializer exists. For a growing ecosystem onboarding both 
 
 The killer feature for adoption is **first-class Camunda 7 migration support**: a dedicated project type that integrates with the existing `operaton/migrate-from-camunda-recipe` OpenRewrite tooling, generating a migration scaffold with dependency substitutions and a structured checklist of manual migration steps. This makes migration a first-class path, not an afterthought.
 
-The forward-looking differentiator is the **MCP module** — it exposes the generation REST API as an MCP tool, making Operaton Starter natively callable from AI assistants (Claude, GitHub Copilot, Cursor) during development conversations. No comparable BPM project initializer offers this. The baseline experience closes with a single `curl` command that generates a valid project.
+The baseline experience closes with a single `curl` command that generates a valid project.
 
 ## Project Classification
 
@@ -101,7 +101,7 @@ Web UI at `start.operaton.org`: split landing (form + gallery), live file tree p
 
 Generated project extras (all off by default): purposeful README with next-steps (always included), optional Docker Compose, optional GitHub Actions CI/CD skeleton (green on first push), optional Dependency Updates (Dependabot or Renovate — flavour selected as a sub-option).
 
-API & ecosystem: REST API (`POST /api/v1/generate`), MCP module, `curl`/`npx operaton-starter` support, open-source generation templates, archetype-as-source-of-truth (web UI and `mvn archetype:generate` share the same engine).
+API & ecosystem: REST API (`POST /api/v1/generate`), `curl`/`npx operaton-starter` support, open-source generation templates, archetype-as-source-of-truth (web UI and `mvn archetype:generate` share the same engine).
 
 Infrastructure: deployed at `start.operaton.org`, self-hostable Docker image configurable via environment variables.
 
@@ -124,7 +124,7 @@ Infrastructure: deployed at `start.operaton.org`, self-hostable Docker image con
 
 ### Vision (Future)
 
-Operaton Starter becomes the **inevitable front door** of the Operaton developer journey — the single URL referenced in every getting-started guide, conference talk, and migration tutorial. The community archetype registry enables third-party templates (consulting firm blueprints, ISV integrations, platform-specific presets) to appear in the gallery without Operaton core team involvement. The MCP module becomes the standard way AI coding assistants scaffold Operaton projects mid-conversation.
+Operaton Starter becomes the **inevitable front door** of the Operaton developer journey — the single URL referenced in every getting-started guide, conference talk, and migration tutorial. The community archetype registry enables third-party templates (consulting firm blueprints, ISV integrations, platform-specific presets) to appear in the gallery without Operaton core team involvement.
 
 ---
 
@@ -190,13 +190,13 @@ Operaton Starter becomes the **inevitable front door** of the Operaton developer
 
 **Opening Scene:** Priya doesn't use browser-based generators — she integrates their APIs into internal tooling. She finds the Operaton Starter REST API documentation.
 
-**Rising Action:** She tests `POST /api/v1/generate` with the documented `curl` command, customising for their standard: group ID `com.enterprise`, Gradle Kotlin DSL, Renovate, Docker Compose. The ZIP returns in under a second. She wraps the API call in a Backstage Software Template with enterprise defaults pre-filled — internal Maven registry, standard group ID prefix, mandatory Renovate config. She also integrates the MCP module so developers can describe their process in natural language and the AI assistant generates the configuration and calls the API automatically.
+**Rising Action:** She tests `POST /api/v1/generate` with the documented `curl` command, customising for their standard: group ID `com.enterprise`, Gradle Kotlin DSL, Renovate, Docker Compose. The ZIP returns in under a second. She wraps the API call in a Backstage Software Template with enterprise defaults pre-filled — internal Maven registry, standard group ID prefix, mandatory Renovate config.
 
 **Climax:** The Operaton template appears in the internal developer portal alongside Spring Boot and Quarkus templates. Developers generate Operaton projects the same way they generate any other project — through the portal, with enterprise defaults applied, without visiting any external website.
 
 **Resolution:** Priya self-hosts the Docker image behind the firewall. All generation stays internal. The self-hosted instance is configured with `DEFAULT_GROUP_ID=com.enterprise` and their internal Nexus registry URL. Operaton project scaffolding is now a governed, standardised, enterprise-grade offering. Priya schedules quarterly image updates aligned with Operaton release cadence.
 
-**Capabilities revealed:** REST API with curl examples, MCP module, self-hostable Docker image, environment variable configuration, API documentation quality, stateless design enabling enterprise integration.
+**Capabilities revealed:** REST API with curl examples, self-hostable Docker image, environment variable configuration, API documentation quality, stateless design enabling enterprise integration.
 
 ---
 
@@ -223,7 +223,7 @@ Operaton Starter becomes the **inevitable front door** of the Operaton developer
 | Marcus (Practitioner) | Form view, live preview, Extras options (Dependency Updates, Docker Compose), build system choice, shareable links, skeleton BPMN, troubleshooting README |
 | Elena (Migrator) | Migration gallery card, `MIGRATION.md`, OpenRewrite integration, inline help, migration README |
 | Thomas (Newcomer) | Gallery, inline help, deployment-target selector, learning README with doc links, `processes.xml` generation |
-| Priya (API Consumer) | REST API, `operaton-starter-mcp` npm package, curl examples, self-hosted Docker, enterprise env-var config |
+| Priya (API Consumer) | REST API, curl examples, self-hosted Docker, enterprise env-var config |
 | Klaus (Admin) | Self-hosted Docker, env-var defaults, zero external deps, version pinning, simple ops model |
 
 ---
@@ -235,9 +235,6 @@ Operaton Starter becomes the **inevitable front door** of the Operaton developer
 **Ecosystem First-Mover**
 No project initializer for Operaton exists. Operaton Starter is not incrementally improving an existing tool — it is creating the category for Operaton. The innovation is occupancy: claiming the "project generator" position in the Operaton ecosystem before anyone else.
 
-**`operaton-starter-mcp` npm Package — AI-Native Project Generation**
-The `operaton-starter-mcp` npm package exposes `POST /api/v1/generate` as a callable MCP tool for AI coding assistants (Claude, GitHub Copilot, Cursor). It is independently published on npm with its own versioning lifecycle — discoverable by anyone searching for "operaton MCP" or "operaton AI", creating a second acquisition channel independent of `start.operaton.org`. No comparable BPM initializer offers AI-native project generation. A developer describing "I want to build a loan approval process" in an AI assistant can receive a generated project scaffold directly in the conversation, without opening a browser. Every `operaton-starter-mcp` user is one README link away from becoming a `start.operaton.org` user.
-
 **Unified Generation Engine Across All Channels**
 The web UI, REST API, `npx operaton-starter` CLI, and `mvn archetype:generate` all invoke the same archetype engine. No BPM initializer currently maintains this channel consistency — start.camunda.com has no API, code.quarkus.io has API but no Maven archetype parity. The unified engine is both an architectural decision and a developer trust signal.
 
@@ -246,13 +243,12 @@ Treating Camunda 7 migration as a first-class project type — not a FAQ page or
 
 ### Market Context & Competitive Landscape
 
-No BPM project initializer currently offers: REST API + CLI + Maven archetype parity + `operaton-starter-mcp` npm package + first-class migration. start.spring.io is the reference for UX quality. code.quarkus.io is the reference for extension discovery UX. Neither operates in the BPM space. The BPM-specific competitor (start.camunda.com) has no API, no CLI, no migration mode, and stale defaults.
+No BPM project initializer currently offers: REST API + CLI + Maven archetype parity + first-class migration. start.spring.io is the reference for UX quality. code.quarkus.io is the reference for extension discovery UX. Neither operates in the BPM space. The BPM-specific competitor (start.camunda.com) has no API, no CLI, no migration mode, and stale defaults.
 
-The repository spans Java (server, templates, archetypes) and JavaScript (Node.js `operaton-starter-mcp` npm package, potentially the web UI). This is intentional — the MCP module's npm distribution requires a Node.js package.
+The repository spans Java (server, templates, archetypes) and JavaScript (the web UI).
 
 ### Validation Approach
 
-- **`operaton-starter-mcp`:** Validate by registering the npm package with Claude Code and generating a project mid-conversation. Success = valid ZIP returned in under 1 second, project compiles.
 - **Channel consistency:** Validate by running the CI test matrix (15 combinations) against all three channels simultaneously — web API, `npx operaton-starter`, and `mvn archetype:generate`. Output must be **functionally identical** (same files, same content, same project structure — generation timestamps excepted).
 - **Migration project type:** Validate by running the generated migration scaffold against a known Camunda 7 sample project. Success = 80%+ of dependency substitutions applied automatically, `MIGRATION.md` checklist is accurate and complete.
 
@@ -260,7 +256,6 @@ The repository spans Java (server, templates, archetypes) and JavaScript (Node.j
 
 | Risk | Mitigation |
 |------|-----------|
-| MCP spec evolves, breaking `operaton-starter-mcp` | Pin to MCP spec version; monitor spec releases as part of Operaton release cycle; semantic versioning on npm package |
 | `migrate-from-camunda-recipe` goes unmaintained | Fork under the Operaton org if upstream maintenance lapses; track as an explicit dependency |
 | Archetype engine adds latency that breaks ≤1s target | Benchmark in CI; if archetype invocation is slow, pre-compile archetypes at deploy time |
 | Community templates diverge from core quality standards | Define a template contribution checklist; CI matrix validates all community templates on PR |
@@ -295,7 +290,7 @@ The repository spans Java (server, templates, archetypes) and JavaScript (Node.j
 
 **API Design Principles:**
 - Rate limiting: 10 requests/minute per IP; HTTP 429 + `Retry-After` header on breach
-- **Spec-first:** The API contract is defined in `openapi.yaml` first; server stubs and client code (including the `operaton-starter-mcp` client) are generated via the OpenAPI Generator tool — channel consistency enforced by construction
+- **Spec-first:** The API contract is defined in `openapi.yaml` first; server stubs and client code are generated via the OpenAPI Generator tool — channel consistency enforced by construction
 - Base path: `/api/v1/` — versioned from day one
 
 ### CLI — `npx operaton-starter`
@@ -307,13 +302,6 @@ The repository spans Java (server, templates, archetypes) and JavaScript (Node.j
 - `--extract` flag: automatically extract ZIP in place
 - **Thin wrapper:** CLI invokes the REST API; no independent generation logic
 
-### `operaton-starter-mcp` npm Package
-
-- Thin Node.js wrapper around `/api/v1/generate`; **client generated from the OpenAPI spec**
-- Independently published on npm (`operaton-starter-mcp`) with own versioning lifecycle
-- Defaults to `https://start.operaton.org` as base URL; overridable via env var for self-hosted instances
-- Exposes `generate_project` as an MCP tool
-
 ### Monorepo Structure
 
 ```
@@ -321,14 +309,13 @@ operaton-starter/
 ├── starter-server/        # Spring Boot application (Java)
 ├── starter-templates/     # Generation templates (Java)
 ├── starter-archetypes/    # Maven archetypes (Java)
-├── starter-mcp/           # operaton-starter-mcp npm package (TypeScript)
 └── starter-web/           # Web UI (TypeScript)
 ```
 
 ### Metadata as Source of Truth
 
 - `/api/v1/metadata` is the single source of all configuration options and template manifests
-- Web UI, CLI, and `operaton-starter-mcp` all fetch from `/api/v1/metadata` to populate their option sets and render client-side previews
+- Web UI and CLI both fetch from `/api/v1/metadata` to populate their option sets and render client-side previews
 - No hardcoded option lists in any channel — all driven from the metadata endpoint
 - OpenAPI spec is the contract source of truth for the API layer; generated code must not diverge from it
 
@@ -340,7 +327,7 @@ operaton-starter/
 
 **MVP Approach:** Platform/Ecosystem MVP — claim the full Operaton project-generation category on day one with all channels active. Partial launch (e.g., web-only) would undermine the "ecosystem front door" positioning.
 
-**Resource Profile:** Solo developer. CLI and `operaton-starter-mcp` are generated thin wrappers (~1 day each once the API is solid); real build complexity concentrates in the REST API + template engine + web UI.
+**Resource Profile:** Solo developer. CLI is a generated thin wrapper (~1 day once the API is solid); real build complexity concentrates in the REST API + template engine + web UI.
 
 ### Phase 1 — MVP
 
@@ -350,7 +337,7 @@ operaton-starter/
 
 **Build systems:** Maven; Gradle with Groovy DSL; Gradle with Kotlin DSL — selected as a two-level choice (build system, then DSL if Gradle); 6 combinations total
 
-**All channels ship in MVP:** Web UI, REST API (`POST /api/v1/generate`), CLI (`npx operaton-starter`), `operaton-starter-mcp` npm package
+**All channels ship in MVP:** Web UI, REST API (`POST /api/v1/generate`), CLI (`npx operaton-starter`)
 
 ### Phase 2 — Growth
 
@@ -384,7 +371,7 @@ Project types are phased by adoption value, not technical complexity. Process Ap
 |------|-----------|
 | **Technical: spec drift** | Spec-first discipline: API spec must be frozen before client generation begins; any post-freeze change requires regenerating all clients |
 | **Technical: template combinatorics** | Start with 2 project types × 3 build systems = 6 combinations; validate generation pipeline end-to-end before adding types |
-| **Resource: solo developer** | CLI and MCP are thin generated wrappers; complexity budget concentrated on API + template engine + web UI |
+| **Resource: solo developer** | CLI is a thin generated wrapper; complexity budget concentrated on API + template engine + web UI |
 | **Market: low initial adoption** | All channels live on day one maximises discovery surface; `start.operaton.org` URL provides first-party authority |
 
 ---
@@ -400,8 +387,8 @@ Project types are phased by adoption value, not technical complexity. Process Ap
 - **FR5:** The system generates a BPMN process file for applicable project types; the BPMN file contains a complete, graphically valid diagram — all flow elements include `BPMNShape` and `BPMNEdge` layout data so the process renders correctly in any BPMN-aware tool without manual repositioning
 - **FR6:** The system generates a `processes.xml` deployment descriptor for Process Archive projects, pre-configured with the selected deployment target
 - **FR7:** The system generates target-platform-appropriate artifact configuration (WAR/JAR) for Process Archive projects, matching the platform selected via FR12
-- **FR8:** The generation engine is a single shared implementation invoked by all channels — web UI, REST API, CLI, and MCP module; no per-channel generation logic
-- **FR42:** The CLI and `operaton-starter-mcp` client code are generated from the OpenAPI specification; no hand-written client code exists independently of the API contract
+- **FR8:** The generation engine is a single shared implementation invoked by all channels — web UI, REST API, and CLI; no per-channel generation logic
+- **FR42:** The CLI client code is generated from the OpenAPI specification; no hand-written client code exists independently of the API contract
 
 ### Project Configuration
 
@@ -439,7 +426,7 @@ Project types are phased by adoption value, not technical complexity. Process Ap
 
 ### Use Case Examples
 
-Use case examples are pre-configured Process Application projects available through all generation channels (web UI gallery, REST API, CLI, MCP). Each example is identified by a stable `useCaseId` (e.g., `leave-request`, `loan-application`) that is discoverable via `GET /api/v1/metadata` and passable to `POST /api/v1/generate`; the server resolves the `useCaseId` to a fixed parameter bundle and generates the project using the same engine as any other request — no separate generation path exists. Each is **self-contained and out-of-the-box runnable**: `docker compose up -d` followed by `./mvnw spring-boot:run` produces a working, explorable application with no manual configuration. All examples use PostgreSQL started via Docker Compose as the default datasource; examples that also stub external APIs include WireMock as a second service in the same compose stack — a single `docker compose up -d` starts everything. Operaton's built-in Tasklist is the human task UI for all examples; no custom frontend is generated.
+Use case examples are pre-configured Process Application projects available through all generation channels (web UI gallery, REST API, CLI). Each example is identified by a stable `useCaseId` (e.g., `leave-request`, `loan-application`) that is discoverable via `GET /api/v1/metadata` and passable to `POST /api/v1/generate`; the server resolves the `useCaseId` to a fixed parameter bundle and generates the project using the same engine as any other request — no separate generation path exists. Each is **self-contained and out-of-the-box runnable**: `docker compose up -d` followed by `./mvnw spring-boot:run` produces a working, explorable application with no manual configuration. All examples use PostgreSQL started via Docker Compose as the default datasource; examples that also stub external APIs include WireMock as a second service in the same compose stack — a single `docker compose up -d` starts everything. Operaton's built-in Tasklist is the human task UI for all examples; no custom frontend is generated.
 
 **Design principles shared across all examples:**
 - User roles and groups are seeded via `data.sql` at startup — not application startup code — making the user set declarative and visible
@@ -513,10 +500,7 @@ Use case examples are pre-configured Process Application projects available thro
 - **FR29:** The CLI outputs the project archive as raw bytes to stdout when stdout is a pipe, enabling shell scripting
 - **FR30:** A developer can instruct the CLI to extract the generated archive into a specified directory
 
-### MCP Integration
-
-- **FR31:** An AI assistant can generate an Operaton project archive by invoking the `generate_project` MCP tool from the `operaton-starter-mcp` npm package
-- **FR32:** The `operaton-starter-mcp` package can be configured with a custom base URL to point at a self-hosted instance
+~~### MCP Integration — removed; the MCP module (`operaton-starter-mcp` npm package) is out of scope. FR31 and FR32 retired.~~
 
 ### Generated Project Quality
 
@@ -534,7 +518,7 @@ Use case examples are pre-configured Process Application projects available thro
 
 - **FR37:** An operator can deploy Operaton Starter as a self-hosted instance using a single Docker image that bundles the web UI (served as static assets), the REST API, and the generation engine — starting the image produces a fully functional project generator accessible on a single port with no external service dependencies at startup
 - **FR47:** The repository contains a `Dockerfile` for building the Operaton Starter application image
-- **FR48:** The self-hosted Docker image documents how to connect the `operaton-starter-mcp` npm package to the running instance via the `BASE_URL` environment variable, so AI assistants can use a self-hosted deployment as their generation backend; whether the MCP server process is bundled inside the image alongside the JVM application requires an explicit design decision *(bundling adds a Node.js runtime to the image — trade-off: operational simplicity vs. image size and multi-process complexity)*; the build sequence is: (1) run the Maven build to produce the application JAR (mandatory prerequisite), then (2) build the Docker image from the pre-built JAR — the Docker build itself requires no Maven or internet access and is fully self-contained once the JAR is present
+- ~~FR48 — MCP self-hosting bridge: removed. Documented connection between the `operaton-starter-mcp` npm package and a self-hosted instance via `BASE_URL` no longer applies now that the MCP module is out of scope.~~
 - **FR38:** An operator can configure self-hosted instance defaults (default Group ID, Maven registry URL, Operaton version) via environment variables
 - **FR39:** The running instance exposes a health check endpoint for operational monitoring
 
@@ -543,7 +527,7 @@ Use case examples are pre-configured Process Application projects available thro
 - **FR49:** Releases are created via a GitHub Actions workflow using **JReleaser**, following the release workflow pattern established in the `operaton/operaton` repository; JReleaser creates the GitHub Release, generates the changelog from conventional commits, and coordinates publishing to all distribution targets in a single automated run
 - **FR50:** The Docker image is published to Docker Hub as `operaton/operaton-starter` on every release; image tags follow semantic versioning (`x.y.z`) with a `latest` tag updated on each stable release
 - **FR51:** Maven artifacts (generation engine, archetypes, server) are published to Maven Central on every release via the standard Sonatype OSSRH publication flow coordinated by JReleaser
-- **FR52:** The `operaton-starter-mcp` npm package is published to the public npm registry (`npmjs.com`) on every release, version-aligned with the overall project release tag
+- ~~FR52 — MCP npm publish: removed. The `operaton-starter-mcp` npm package is no longer published; there is nothing to publish now that the MCP module is out of scope.~~
 - **FR53:** The repository documentation specifies all credentials that must be configured as GitHub Actions secrets for the release workflow to succeed, including: Docker Hub credentials (`DOCKER_USERNAME`, `DOCKER_PASSWORD`), Maven Central / Sonatype credentials (`MAVEN_CENTRAL_USERNAME`, `MAVEN_CENTRAL_TOKEN`), npm publish token (`NPM_TOKEN`), and the GitHub token required by JReleaser for GitHub Release creation; no release should be possible without this credential inventory being current and complete
 
 ---
@@ -581,7 +565,7 @@ Use case examples are pre-configured Process Application projects available thro
 
 - **NFR13:** Generated Process Application projects target Java 21+ and use the Spring Boot version specified in the current Operaton BOM
 - **NFR14:** Generated projects using Gradle target Gradle 8+; the bundled Gradle wrapper targets the current pinned Gradle version (currently 8.14)
-- **NFR15:** The `operaton-starter-mcp` npm package supports all Node.js Active LTS versions
+- ~~NFR15 — MCP Node.js LTS support: removed along with the `operaton-starter-mcp` npm package.~~
 - **NFR16:** Browser support for the web UI covers the latest 2 major versions of Chrome, Firefox, Safari, and Edge
 - **NFR20:** The web UI visual design is consistent with the `operaton.org` and `docs.operaton.org` design system — colors, typography, and component patterns signal the same product family
 
@@ -594,5 +578,5 @@ Use case examples are pre-configured Process Application projects available thro
 
 - **NFR18:** The service emits structured JSON logs compatible with standard log aggregation tools
 - **NFR19:** The Docker image is configurable entirely via environment variables; no file-based configuration is required at runtime
-- **NFR22:** Each submodule in the monorepo (`starter-server`, `starter-templates`, `starter-archetypes`, `starter-mcp`, `starter-web`) has its own `README.md` covering: the submodule's role within the overall system, prerequisites, how to build it in isolation, how to run or use it locally, and at least one concrete usage example; a contributor must be able to build and exercise any submodule using only its README without consulting other sources
+- **NFR22:** Each submodule in the monorepo (`starter-server`, `starter-templates`, `starter-archetypes`, `starter-web`) has its own `README.md` covering: the submodule's role within the overall system, prerequisites, how to build it in isolation, how to run or use it locally, and at least one concrete usage example; a contributor must be able to build and exercise any submodule using only its README without consulting other sources
 

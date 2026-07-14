@@ -40,8 +40,8 @@ FR4: Developer identity (Group ID, Artifact ID, project name) propagates consist
 FR5: Generated BPMN files contain complete, graphically valid diagrams — all flow elements include BPMNShape and BPMNEdge layout data
 FR6: Process Archive projects include a processes.xml deployment descriptor pre-configured with the selected deployment target
 FR7: Process Archive projects generate target-platform-appropriate artifact configuration (WAR/JAR) matching the selected platform
-FR8: The generation engine is a single shared implementation invoked by all channels — web UI, REST API, CLI, and MCP; no per-channel generation logic
-FR42: CLI and operaton-starter-mcp client code are generated from the OpenAPI specification; no hand-written client code exists independently of the API contract
+FR8: The generation engine is a single shared implementation invoked by all channels — web UI, REST API, and CLI; no per-channel generation logic
+FR42: CLI client code is generated from the OpenAPI specification; no hand-written client code exists independently of the API contract
 
 **Project Configuration**
 
@@ -88,10 +88,7 @@ FR28: Developers can generate and download a project archive using `npx operaton
 FR29: CLI outputs raw bytes to stdout when stdout is a pipe, enabling shell scripting
 FR30: CLI supports `--output <dir>` flag to extract the generated archive into a specified directory
 
-**MCP Integration**
-
-FR31: An AI assistant can generate an Operaton project archive by invoking the generate_project MCP tool from the operaton-starter-mcp npm package
-FR32: The operaton-starter-mcp package can be configured with a custom base URL for self-hosted instances
+~~### MCP Integration — removed; the MCP module (`operaton-starter-mcp` npm package) is out of scope. FR31 and FR32 retired.~~
 
 **Generated Project Quality**
 
@@ -122,14 +119,14 @@ FR37: Operaton Starter is deployable as a self-hosted instance using a single Do
 FR38: Self-hosted instance defaults (Group ID, Maven registry URL, Operaton version) are configurable via environment variables
 FR39: Running instance exposes a health check endpoint at /actuator/health
 FR47: Repository contains a Dockerfile for building the Operaton Starter application image
-FR48: Self-hosted Docker image documentation covers connecting operaton-starter-mcp to the running instance via BASE_URL environment variable
+~~FR48 — MCP self-hosting bridge: removed. Documented connection between the `operaton-starter-mcp` npm package and a self-hosted instance via `BASE_URL` no longer applies now that the MCP module is out of scope.~~
 
 **Release & Distribution**
 
 FR49: Releases are created via GitHub Actions using JReleaser; JReleaser creates the GitHub Release, generates changelog from conventional commits, and coordinates all distribution targets
 FR50: Docker image published to Docker Hub as operaton/operaton-starter on every release; tags follow semver with a latest tag updated on each stable release
 FR51: Maven artifacts published to Maven Central on every release via Sonatype OSSRH coordinated by JReleaser
-FR52: operaton-starter-mcp npm package published to npm registry on every release, version-aligned with the project release tag
+~~FR52 — MCP npm publish: removed. The `operaton-starter-mcp` npm package is no longer published; there is nothing to publish now that the MCP module is out of scope.~~
 FR53: Repository documentation specifies all required GitHub Actions secrets for the release workflow (Docker Hub, Maven Central, npm, GitHub token)
 
 ---
@@ -150,22 +147,22 @@ NFR11: Web UI conforms to WCAG 2.1 Level AA; validated using automated accessibi
 NFR12: All web UI functionality is operable via keyboard navigation with visible focus indicators throughout
 NFR13: Generated Process Application projects target Java 21+; use Spring Boot version from current Operaton BOM
 NFR14: Generated projects using Gradle target Gradle 8+; bundled Gradle wrapper targets current pinned Gradle version
-NFR15: operaton-starter-mcp npm package supports all Node.js Active LTS versions
+~~NFR15 — MCP Node.js LTS support: removed along with the `operaton-starter-mcp` npm package.~~
 NFR16: Browser support covers latest 2 major versions of Chrome, Firefox, Safari, and Edge
 NFR17: All supported project type × build system combinations (MVP: 6) validated in CI on every template change; zero test failures acceptable; any failure blocks merge
 NFR18: Service emits structured JSON logs compatible with standard log aggregation tools
 NFR19: Docker image is configurable entirely via environment variables; no file-based configuration required at runtime
 NFR20: Web UI visual design is consistent with the operaton.org and docs.operaton.org design system — colors, typography, and component patterns
 NFR21: On any PR that modifies generation templates, a dedicated CI workflow generates projects for affected combinations, builds them, and starts the application; all steps must pass; unaffected combinations are excluded
-NFR22: Each submodule (starter-server, starter-templates, starter-archetypes, starter-mcp, starter-web) has its own README covering role, prerequisites, build-in-isolation, run-locally, and at least one usage example
+NFR22: Each submodule (starter-server, starter-templates, starter-archetypes, starter-web) has its own README covering role, prerequisites, build-in-isolation, run-locally, and at least one usage example
 
 ---
 
 ### Additional Requirements (Architecture)
 
 - Generation engine is a pure-Java in-process library (`starter-templates`); Maven subprocess MUST NOT be used at runtime (violates NFR1 ≤1s); Maven Archetype format is the template authoring standard only
-- OpenAPI spec is the single source of truth for the API layer; spec must be frozen before CLI/MCP client generation begins; any post-freeze change requires regenerating all clients
-- `GET /api/v1/metadata` is the projection contract between the engine and all consumers (web UI, CLI, MCP); schema defined before any channel implementation begins; includes projectTypes[], buildSystems[], globalOptions, and templateManifest per project type / use case
+- OpenAPI spec is the single source of truth for the API layer; spec must be frozen before CLI client generation begins; any post-freeze change requires regenerating all clients
+- `GET /api/v1/metadata` is the projection contract between the engine and all consumers (web UI, CLI); schema defined before any channel implementation begins; includes projectTypes[], buildSystems[], globalOptions, and templateManifest per project type / use case
 - No `globalOptions.javaVersions` — generated projects target Java 21 with no picker
 - `GenerationClient` interface in `starter-archetypes`: MVP uses `RestGenerationClient` (HTTP); Phase 2+ adds `EmbeddedGenerationClient` (direct library call, no network) for offline archetype use
 - Vue 3 + Vite for `starter-web`; Tailwind CSS v3 with custom theme extending operaton.org design tokens
@@ -206,7 +203,7 @@ UX-DR10: Content pane renders template placeholder strings (e.g. {{groupId}}, {{
 | FR17, FR20, FR22, FR45, FR46, FR57, FR60, FR76–77 | Epic 3 | Web UI configuration view & accessibility |
 | FR68–74, FR67uc | Epic 4 | Use case examples — base setup |
 | FR28–30 | Epic 5 | CLI tool |
-| FR31–32 | Epic 5 | MCP integration |
+| ~~FR31–32 | Epic 5 | MCP integration — removed, MCP module out of scope~~ |
 | NFR11–12, UX-DR1–10 | Epic 3 | Web UI UX/design system implementation |
 | UC-FR-1, UC-FR-2, UC-FR-7 | Epic 6 | Process start auth, task auth audit, status variables |
 | UC-FR-3, UC-FR-3b, UC-FR-4, UC-FR-5 | Epic 6 | Email send events + Mailpit (UC-01 + UC-02) |
@@ -238,9 +235,9 @@ The Vue 3 SPA at start.operaton.org is live with gallery view, configuration for
 All four MVP use case examples (Leave Request, Loan Application, Incident Management, Order Fulfillment) are self-contained, out-of-the-box runnable, fully documented with character-narrated READMEs, and generatable via all channels.
 **FRs covered:** FR67uc, FR68–74, FR78
 
-### Epic 5: CLI & MCP Integration
-`npx operaton-starter` and `operaton-starter-mcp` are live, generated from the OpenAPI spec, and published to their respective registries. Both channels exercise the same generation engine as the web UI.
-**FRs covered:** FR28–32, FR42
+### Epic 5: CLI Integration
+`npx operaton-starter` is live, generated from the OpenAPI spec, and published to its registry. The channel exercises the same generation engine as the web UI.
+**FRs covered:** FR28–30, FR42
 
 ### Epic 6: Use Case Enhancements — Authorization, Email, Advanced Patterns & Visual Clarity
 The four use case examples are elevated from functional scaffolding to professional-grade teaching tools: role-based access enforced by the engine, email notifications via BPMN send events, swimlane layout communicating actor responsibilities, and advanced Operaton API patterns (timer escalation, signal escalation, payment failure/retry, business keys, task-local variables, History API). This epic depends on Epic 4 (base use cases must exist). Stories are sequenced: structural BPMN changes first (swimlanes), then authorization, then per-use-case feature enhancements.
@@ -256,7 +253,7 @@ The generation server and pure-Java template engine are live; the OpenAPI spec i
 
 As a developer building operaton-starter,
 I want the metadata schema and OpenAPI specification defined and frozen before any channel implementation begins,
-So that the CLI, MCP, and web UI all consume a stable, authoritative contract with no per-channel divergence.
+So that the CLI and web UI all consume a stable, authoritative contract with no per-channel divergence.
 
 **Acceptance Criteria:**
 
@@ -270,7 +267,7 @@ So that the CLI, MCP, and web UI all consume a stable, authoritative contract wi
 
 **Given** `openapi.yaml` is defined in the repository
 **When** it is the source of truth for the API layer
-**Then** no client code (CLI, MCP) is hand-written independently of the spec; a GitHub Actions check posts a warning to PR status if the spec has been modified without regenerating clients
+**Then** no client code (CLI) is hand-written independently of the spec; a GitHub Actions check posts a warning to PR status if the spec has been modified without regenerating clients
 
 **Given** the metadata schema is defined
 **When** a developer calls `GET /api/v1/metadata`
@@ -308,7 +305,7 @@ So that it can be exercised in CI without a running application, responds within
 
 As an API consumer,
 I want to generate and download a project archive via POST /api/v1/generate,
-So that any channel (web UI, CLI, MCP, curl) can use the same endpoint to produce identical output.
+So that any channel (web UI, CLI, curl) can use the same endpoint to produce identical output.
 
 **Acceptance Criteria:**
 
@@ -321,7 +318,7 @@ So that any channel (web UI, CLI, MCP, curl) can use the same endpoint to produc
 **Then** it resolves the `useCaseId` to a fixed parameter bundle and generates using the standard engine — no separate generation path for use case examples
 
 **Given** a single shared generation engine implementation (`starter-templates`)
-**When** any channel (web, CLI, MCP, archetype) calls the API
+**When** any channel (web, CLI, archetype) calls the API
 **Then** the output is functionally identical across all channels — same files, same structure, same content (generation timestamps excepted)
 
 **Given** the generated project is downloaded
@@ -472,7 +469,7 @@ So that all distribution targets are always version-aligned and no manual steps 
 
 **Given** a version tag is pushed to the repository
 **When** the GitHub Actions release workflow runs
-**Then** JReleaser creates the GitHub Release with a changelog generated from conventional commits; the Docker image is published to `docker.io/operaton/operaton-starter` with the semver tag and updated `latest`; Maven artifacts are published to Maven Central via Sonatype OSSRH; the `operaton-starter-mcp` npm package is published to npmjs.com at the same version
+**Then** JReleaser creates the GitHub Release with a changelog generated from conventional commits; the Docker image is published to `docker.io/operaton/operaton-starter` with the semver tag and updated `latest`; Maven artifacts are published to Maven Central via Sonatype OSSRH; the `operaton-starter` CLI npm package is published to npmjs.com at the same version
 
 **Given** the repository documentation
 **When** a maintainer prepares for a first release
@@ -490,7 +487,7 @@ So that I can build and exercise any part of the monorepo using only its README 
 
 **Acceptance Criteria:**
 
-**Given** any submodule README (`starter-server`, `starter-templates`, `starter-archetypes`, `starter-mcp`, `starter-web`)
+**Given** any submodule README (`starter-server`, `starter-templates`, `starter-archetypes`, `starter-cli`, `starter-web`)
 **When** a contributor follows only that README
 **Then** they can: understand the submodule's role in the overall system, install prerequisites, build the submodule in isolation, run or use it locally, and complete at least one concrete usage example without consulting sibling READMEs
 
@@ -741,7 +738,7 @@ So that I can explore mixed service/human task processes and conditional routing
 ### Story 4.5: Use Case Example Gallery Integration and Multi-Channel Discoverability
 
 As a developer,
-I want all four use case examples to be discoverable via the gallery and generatable via any channel (web, REST, CLI, MCP),
+I want all four use case examples to be discoverable via the gallery and generatable via any channel (web, REST, CLI),
 So that the examples are first-class citizens of the generation platform, not just local templates.
 
 **Acceptance Criteria:**
@@ -760,9 +757,9 @@ So that the examples are first-class citizens of the generation platform, not ju
 
 ---
 
-## Epic 5: CLI & MCP Integration
+## Epic 5: CLI Integration
 
-`npx operaton-starter` and `operaton-starter-mcp` are live, generated from the OpenAPI spec, and published to their registries.
+`npx operaton-starter` is live, generated from the OpenAPI spec, and published to its registry.
 
 ### Story 5.1: Implement CLI (npx operaton-starter)
 
@@ -787,26 +784,6 @@ So that I can script project generation in CI, shell scripts, or automated workf
 **Given** the CLI package is published to npm
 **When** `npm install -g operaton-starter` is run on any Node.js Active LTS version
 **Then** the CLI installs and `operaton-starter --help` shows all available flags
-
-### Story 5.2: Implement operaton-starter-mcp npm Package
-
-As an AI assistant user,
-I want to generate an Operaton project by describing my needs in natural language to an AI assistant,
-So that I can receive a generated project scaffold directly in my coding conversation without opening a browser.
-
-**Acceptance Criteria:**
-
-**Given** the `operaton-starter-mcp` package is registered with an AI assistant (Claude Code, GitHub Copilot, Cursor)
-**When** the assistant calls the `generate_project` MCP tool
-**Then** a valid ZIP archive is returned within 1 second; the generated project compiles
-
-**Given** the `operaton-starter-mcp` package is configured with `BASE_URL=https://my-company.internal`
-**When** the `generate_project` tool is invoked
-**Then** all requests are routed to the self-hosted instance instead of `start.operaton.org`
-
-**Given** the `operaton-starter-mcp` source code
-**When** it is reviewed
-**Then** the MCP client code is generated from `openapi.yaml`; no hand-written HTTP client diverges from the API contract; the package is published to npm as `operaton-starter-mcp` with its own versioning lifecycle, version-aligned with the overall project release
 
 ---
 
@@ -1220,7 +1197,7 @@ Story sequencing follows architecture §A12: spec freeze first, then loader, the
 
 As a developer building operaton-starter,
 I want the `Example` model and the expanded `TagCategory` enum frozen in `openapi.yaml` before any implementation work,
-So that backend, frontend, and CLI/MCP clients consume a stable contract with no per-channel divergence.
+So that backend, frontend, and CLI clients consume a stable contract with no per-channel divergence.
 
 **Acceptance Criteria:**
 

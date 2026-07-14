@@ -25,7 +25,7 @@
 | **TemplateManifest** | A flat list of `{ path, condition, templateId, previewContent }` entries per project type. Enables client-side file tree preview and file content preview without server round-trips. Part of the `GET /api/v1/metadata` response. `previewContent` is static representative template source — not dynamically rendered from form state. |
 | **GenerationClient** | Strategy interface in `starter-archetypes`. MVP: `RestGenerationClient` (HTTP). Phase 2: `EmbeddedGenerationClient` (direct in-process call). |
 | **Spec freeze** | The point at which `openapi.yaml` is committed and client generation begins. Post-freeze changes require regenerating all clients. Enforced by CI `contract-check` job. |
-| **Channel** | Any consumer of the generation engine: web UI (`starter-web`), CLI (`starter-cli`), MCP (`starter-mcp`), REST API (direct curl/HTTP), `mvn archetype:generate` (`starter-archetypes`). All channels use the same engine. |
+| **Channel** | Any consumer of the generation engine: web UI (`starter-web`), CLI (`starter-cli`), REST API (direct curl/HTTP), `mvn archetype:generate` (`starter-archetypes`). All channels use the same engine. |
 | **Metadata contract** | `GET /api/v1/metadata` is the projection between the engine and all channels. No channel hardcodes option lists — all option data comes from this endpoint. |
 
 ## Technology Terms
@@ -39,10 +39,9 @@
 | **Bucket4j** | Java rate limiting library. Used in `starter-server` for in-memory, per-IP rate limiting. No Redis dependency. |
 | **RFC 7807** | "Problem Details for HTTP APIs". Standard format for HTTP error responses (`application/problem+json`). Used for all error responses from `starter-server`. |
 | **ArchUnit** | Java testing library for architecture constraints. Used in `ZeroSpringDependencyTest` to enforce zero Spring imports in `starter-templates`. |
-| **frontend-maven-plugin** | Maven plugin (`com.github.eirslett:frontend-maven-plugin`) that downloads a pinned Node.js/npm version and runs npm scripts. Used in `starter-web`, `starter-mcp`, and `starter-cli` Maven modules for hermetic builds. |
+| **frontend-maven-plugin** | Maven plugin (`com.github.eirslett:frontend-maven-plugin`) that downloads a pinned Node.js/npm version and runs npm scripts. Used in `starter-web` and `starter-cli` Maven modules for hermetic builds. |
 | **Vite** | Build tool for `starter-web`. Produces optimized static assets copied to `starter-server/src/main/resources/static/`. |
 | **Tailwind CSS** | Utility-first CSS framework used in `starter-web`. Configured with operaton.org design tokens extracted from the Jekyll source. |
-| **MCP** | Model Context Protocol. Enables AI assistants (Claude, GitHub Copilot, Cursor) to call tools programmatically. `starter-mcp` exposes a `generate_project` MCP tool. |
 | **Logstash Logback Encoder** | Logback encoder that formats log output as structured JSON. Used in `starter-server` for machine-readable logs. |
 | **eclipse-temurin** | Community-maintained OpenJDK distribution. Used as the Docker base image (`eclipse-temurin:25-jre-alpine`). |
 | **OpenRewrite** | Automated code refactoring tool. `operaton/migrate-from-camunda-recipe` provides OpenRewrite recipes for Camunda 7 → Operaton migration. Phase 2 dependency. |
@@ -59,7 +58,7 @@
 | **Marcus (Practitioner)** | Senior Operaton developer who knows what he wants. Uses the form view. Completes in under 30 seconds. |
 | **Elena (Migrator)** | Camunda 7 architect evaluating migration to Operaton. Uses the gallery migration card and `MIGRATION.md` output. Phase 2 persona. |
 | **Thomas (Newcomer / Explorer)** | Spring Boot developer new to BPM. Uses the gallery, inline contextual help, and live preview to discover the right project type. |
-| **Priya (API Consumer)** | Platform engineer integrating operaton-starter into a Backstage developer portal. Uses REST API, MCP module, and self-hosted Docker. |
+| **Priya (API Consumer)** | Platform engineer integrating operaton-starter into a Backstage developer portal. Uses REST API and self-hosted Docker. |
 | **Klaus (Admin)** | Operator running a self-hosted instance on-premises. Uses Docker image with env-var configuration. Zero external dependencies. |
 
 ## Build System Abbreviations
@@ -78,6 +77,6 @@
 | `STARTER_DEFAULTS_MAVEN_REGISTRY` | Maven repository URL injected into generated `pom.xml` / `build.gradle` |
 | `STARTER_DEFAULTS_OPERATON_VERSION` | Pins Operaton version; public instance uses version baked at build time |
 | `STARTER_CORS_ALLOWED_ORIGINS` | Comma-separated CORS origins beyond the default allowlist |
-| `OPERATON_STARTER_URL` | Override base URL for CLI and MCP clients (default: `https://start.operaton.org`) |
+| `OPERATON_STARTER_URL` | Override base URL for CLI clients (default: `https://start.operaton.org`) |
 
 Old-form names (`DEFAULT_GROUP_ID`, `MAVEN_REGISTRY`, `CORS_ALLOWED_ORIGINS`) are supported as fallbacks via Spring property binding.
