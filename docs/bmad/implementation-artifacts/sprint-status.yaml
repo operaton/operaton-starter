@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-03-28
-last_updated: 2026-06-15  # all Examples Gallery v1 stories confirmed done
+last_updated: 2026-07-14  # added epic-16 (Maven Archetype Integration) via sprint change proposal
 project: operaton-starter
 project_key: NOKEY
 tracking_system: file-system
@@ -253,3 +253,12 @@ development_status:
 
   epic-15: done
   epic-15-retrospective: optional
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Epic 16: Maven Archetype Integration
+  # ─────────────────────────────────────────────────────────────────────────
+  epic-16: backlog
+
+  16-1-implement-generationclient-embeddedgenerationclient: backlog
+
+  epic-16-retrospective: optional

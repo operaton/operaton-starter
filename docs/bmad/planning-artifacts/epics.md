@@ -164,7 +164,7 @@ NFR22: Each submodule (starter-server, starter-templates, starter-archetypes, st
 - OpenAPI spec is the single source of truth for the API layer; spec must be frozen before CLI client generation begins; any post-freeze change requires regenerating all clients
 - `GET /api/v1/metadata` is the projection contract between the engine and all consumers (web UI, CLI); schema defined before any channel implementation begins; includes projectTypes[], buildSystems[], globalOptions, and templateManifest per project type / use case
 - No `globalOptions.javaVersions` — generated projects target Java 21 with no picker
-- `GenerationClient` interface in `starter-archetypes`: MVP uses `RestGenerationClient` (HTTP); Phase 2+ adds `EmbeddedGenerationClient` (direct library call, no network) for offline archetype use
+- `GenerationClient` interface in `starter-archetypes`: calls `starter-templates` directly, in-process — no REST client, no network dependency (see Epic 9)
 - Vue 3 + Vite for `starter-web`; Tailwind CSS v3 with custom theme extending operaton.org design tokens
 - Design tokens extracted from `github.com/operaton/operaton.org` Jekyll source before starter-web implementation begins
 - Rate limiting via Bucket4j in-memory per IP; no Redis; stateless constraint preserved
@@ -243,6 +243,10 @@ All four MVP use case examples (Leave Request, Loan Application, Incident Manage
 The four use case examples are elevated from functional scaffolding to professional-grade teaching tools: role-based access enforced by the engine, email notifications via BPMN send events, swimlane layout communicating actor responsibilities, and advanced Operaton API patterns (timer escalation, signal escalation, payment failure/retry, business keys, task-local variables, History API). This epic depends on Epic 4 (base use cases must exist). Stories are sequenced: structural BPMN changes first (swimlanes), then authorization, then per-use-case feature enhancements.
 **FRs covered (UC Enhancements PRD):** FR-1, FR-2, FR-3, FR-3b, FR-4, FR-5, FR-6, FR-7, FR-8, FR-9, FR-10, FR-11, FR-12, FR-13, FR-14, FR-16; DR-15
 
+### Epic 9: Maven Archetype Integration
+The `starter-archetypes` module provides `mvn archetype:generate` as a first-class generation channel, calling the shared generation engine (`starter-templates`) directly and in-process — no network dependency, no running server required. Added 2026-07-14 via sprint change proposal (see `sprint-change-proposal-2026-07-14.md`); no prior epic covered this module.
+**FRs covered:** FR42
+
 ---
 
 ## Epic 1: Core Generation Engine & REST API
@@ -318,7 +322,7 @@ So that any channel (web UI, CLI, curl) can use the same endpoint to produce ide
 **Then** it resolves the `useCaseId` to a fixed parameter bundle and generates using the standard engine — no separate generation path for use case examples
 
 **Given** a single shared generation engine implementation (`starter-templates`)
-**When** any channel (web, CLI, archetype) calls the API
+**When** any channel calls the shared engine — web/CLI/curl via the API, archetype via a direct in-process call to the same engine (Epic 9)
 **Then** the output is functionally identical across all channels — same files, same structure, same content (generation timestamps excepted)
 
 **Given** the generated project is downloaded
@@ -1456,3 +1460,35 @@ So that I can publish a new example without trial-and-error and without reading 
 **Given** the v1 release ships
 **When** an operator boots the starter with default configuration
 **Then** the gallery displays the seed sample's examples without any environment override required
+
+---
+
+## Epic 9: Maven Archetype Integration
+
+The `starter-archetypes` module provides `mvn archetype:generate` as a first-class generation channel, calling the shared generation engine (`starter-templates`) directly and in-process — no network dependency, no running server required. Added 2026-07-14 via sprint change proposal (`sprint-change-proposal-2026-07-14.md`), correcting the original architecture's MVP/Phase-2 split which had designated a REST-calling client as MVP.
+
+### Story 9.1: Implement GenerationClient + EmbeddedGenerationClient
+
+As a developer using `mvn archetype:generate`,
+I want the archetype to call the generation engine directly, in-process,
+So that generating a project requires no running server, no network access, and produces output identical to every other channel.
+
+**Acceptance Criteria:**
+
+**Given** the `GenerationClient` interface defined in `starter-archetypes`
+**When** `EmbeddedGenerationClient` is invoked with a `ProjectConfig`
+**Then** it calls `GenerationEngine.generate(ProjectConfig)` in `starter-templates` directly — no HTTP client, no network call, no dependency on `starter-server` being built or running
+
+**Given** `starter-archetypes/pom.xml`
+**When** dependencies are reviewed
+**Then** it depends only on `starter-templates` (already the case) — no dependency on `starter-server` is introduced
+
+**Given** the same `ProjectConfig` generated via `EmbeddedGenerationClient` and via `POST /api/v1/generate`
+**When** the two outputs are compared
+**Then** they are byte-for-byte identical (generation timestamps excepted)
+
+**Given** `EmbeddedGenerationClientTest`
+**When** this story is implemented
+**Then** it replaces the originally-planned `RestGenerationClientTest` — no REST-calling test class exists in this module
+
+[NOTE FOR PM/ARCHITECT]: standard Maven archetypes fill a static `archetype-resources/` tree via Velocity substitution — they don't normally invoke arbitrary Java calling `GenerationEngine.generate()`. How `mvn archetype:generate` actually triggers `EmbeddedGenerationClient` (custom Mojo? post-generate hook? something else) is NOT resolved by this story and should be pinned down before implementation starts, not during it.

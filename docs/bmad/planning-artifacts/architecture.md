@@ -67,7 +67,7 @@ _This document builds collaboratively through step-by-step discovery. Sections a
 - **Operaton BOM:** Generated projects always target current stable Operaton release; starter updates within 24h via automated Dependabot/Renovate PR + CI matrix pass. SLA is conditional on CI matrix passing cleanly — a breaking Operaton release pauses the SLA clock until templates are fixed.
 - **Generation engine performance:** `mvn archetype:generate` (Maven subprocess) MUST NOT be used at runtime — Maven startup overhead violates NFR1 ≤1s. Maven Archetype format is the template authoring standard only; runtime engine is a pure-Java in-process library.
 - **OpenAPI Generator:** CLI client code generated from the spec; spec must be frozen before client generation begins; any post-freeze change requires regenerating all clients.
-- **GenerationClient strategy interface:** `starter-archetypes` defines a `GenerationClient` interface. MVP: `RestGenerationClient` (HTTP call to `/api/v1/generate`). Phase 2+: `EmbeddedGenerationClient` (calls `starter-templates` directly, no network). Enables offline `mvn archetype:generate` without engine duplication.
+- **GenerationClient strategy interface:** `starter-archetypes` defines a `GenerationClient` interface. `starter-archetypes` calls `GenerationEngine.generate()` in `starter-templates` directly, in-process. No REST-based client — no network dependency, no running server required. See Amendment 2026-07-14.
 - **`starter-templates` zero Spring dependency:** Pure-Java library; no Spring context in generation path; enables fast CI matrix and direct embedding.
 - **Rate limiting:** Bucket4j in-memory, best-effort per IP; no Redis; stateless constraint preserved.
 - **Design system:** operaton.org is Jekyll-based (`github.com/operaton/operaton.org`); CSS design tokens (colors, typography, spacing) extracted before `starter-web` implementation begins.
@@ -129,12 +129,11 @@ flowchart TD
 
     DEV_BROWSER -->|HTTPS| WEB
     DEV_CLI -->|HTTPS POST /api/v1/generate| SERVER
-    DEV_MVN -->|HTTP via RestGenerationClient| ARCHETYPES
+    DEV_MVN -->|mvn archetype:generate| ARCHETYPES
     OPS -->|docker run| SERVER
 
     WEB -->|REST /api/v1/*| SERVER
-    ARCHETYPES -->|MVP: REST /api/v1/generate| SERVER
-    ARCHETYPES -.->|Phase 2: EmbeddedGenerationClient| TEMPLATES
+    ARCHETYPES -->|Embedded, in-process| TEMPLATES
 
     SERVER --> TEMPLATES
 
@@ -206,14 +205,13 @@ curl https://start.spring.io/starter.zip \
 - **JTE** (Java Template Engine) as template engine — precompiled at build time via `jte-maven-plugin`; zero runtime template parsing; template classes shipped in JAR
 - Single public API: `GenerationEngine.generate(ProjectConfig) → byte[]`
 
-#### `starter-archetypes` — GenerationClient Interface + MVP Wrapper
+#### `starter-archetypes` — GenerationClient Interface + Embedded Wrapper
 
 **Generator:** None — plain Maven module.
 
 **Architectural decisions:**
 - Defines `GenerationClient` interface
-- MVP: `RestGenerationClient` (Java 11 `HttpClient`)
-- Phase 2+: `EmbeddedGenerationClient` (direct call to `starter-templates`, no network)
+- `EmbeddedGenerationClient` (direct in-process call to `starter-templates`) — the only implementation, no network, no REST-based client (see Amendment 2026-07-14)
 
 #### `starter-web` — Vue 3 SPA
 
@@ -278,9 +276,8 @@ operaton-starter/          ← Maven parent POM (multi-module)
 1. Define OpenAPI spec + metadata schema (no code)
 2. Bootstrap `starter-templates` — generation engine, testable standalone
 3. Bootstrap `starter-server` — wire engine behind REST API, freeze spec
-4. Generate CLI client stub for `starter-archetypes` from frozen spec
-5. Bootstrap `starter-web`
-6. Bootstrap `starter-archetypes` (`RestGenerationClient` MVP) last
+4. Bootstrap `starter-web`
+5. Bootstrap `starter-archetypes` (`EmbeddedGenerationClient`) — depends only on `starter-templates`, not gated on this sequence (see Amendment 2026-07-14)
 
 ## Core Architectural Decisions
 > arc42 Section 4: Solution Strategy & Technology Decisions
@@ -301,7 +298,6 @@ operaton-starter/          ← Maven parent POM (multi-module)
 
 **Deferred Decisions (Post-MVP):**
 - Scalar Spring Boot starter adoption (pending Spring Boot 4 compatibility confirmation — HTML+CDN preferred anyway)
-- `EmbeddedGenerationClient` for offline `mvn archetype:generate` (Phase 2)
 - Tailwind → CSS custom property export for non-Tailwind custom CSS (Phase 2 refinement)
 
 ### Data Architecture
@@ -510,13 +506,13 @@ distributions:
 4. Wire engine into `starter-server` REST API; freeze spec
 5. Extract operaton.org design tokens → `tailwind.config.js`
 6. Implement `starter-web` (consumes frozen spec)
-7. Implement `starter-archetypes` `RestGenerationClient` (MVP) last
+7. Implement `starter-archetypes` `EmbeddedGenerationClient` — no longer gated last; only requires `starter-templates` (see Amendment 2026-07-14)
 
 **Cross-component dependencies:**
 - `starter-templates` has no dependencies on other modules — can be developed and tested in isolation
 - `starter-server` depends on `starter-templates`; spec freeze gates all other channel work
 - `starter-web` depends on frozen spec; development is safe after freeze
-- `starter-archetypes` depends on `starter-server` being deployed (REST target); developed last
+- `starter-archetypes` depends only on `starter-templates` — no longer gated on `starter-server` deployment (see Amendment 2026-07-14)
 - All JTE templates in `starter-templates` are inputs to the CI test matrix — any template change triggers full matrix run
 
 ## Implementation Patterns & Consistency Rules
@@ -819,19 +815,19 @@ operaton-starter/
 │           └── integration/
 │               └── GenerationIntegrationTest.java
 │
-├── starter-archetypes/              ← GenerationClient interface + RestGenerationClient
+├── starter-archetypes/              ← GenerationClient interface + EmbeddedGenerationClient
 │   ├── pom.xml
 │   └── src/
 │       ├── main/
 │       │   ├── java/org/operaton/dev/starter/archetypes/
 │       │   │   ├── GenerationClient.java           ← interface
-│       │   │   ├── RestGenerationClient.java        ← MVP: calls /api/v1/generate
+│       │   │   ├── EmbeddedGenerationClient.java    ← MVP: calls GenerationEngine.generate() directly, in-process
 │       │   │   └── config/
-│       │   │       └── ClientConfig.java
+│       │   │       └── ClientConfig.java            ← open question: still needed with no server URL to configure? (see Amendment 2026-07-14)
 │       │   └── resources/META-INF/maven/
 │       │       └── archetype-metadata.xml
 │       └── test/java/org/operaton/dev/starter/archetypes/
-│           └── RestGenerationClientTest.java
+│           └── EmbeddedGenerationClientTest.java
 │
 ├── starter-web/                     ← Vue 3 SPA
 │   ├── pom.xml                      ← frontend-maven-plugin; copies dist/ → starter-server/src/main/resources/static/
@@ -914,7 +910,7 @@ flowchart TD
     subgraph clients["Channel clients"]
         WEB["starter-web\nVue 3 SPA"]
         CLI["starter-cli\nnpx CLI"]
-        ARCH["starter-archetypes\nRestGenerationClient"]
+        ARCH["starter-archetypes\nEmbeddedGenerationClient"]
     end
 
     CTRL --> SVC
@@ -926,7 +922,7 @@ flowchart TD
 
     WEB --> CTRL
     CLI --> CTRL
-    ARCH --> CTRL
+    ARCH --> ENGINE
 
     SPEC -.->|generates DTOs| CTRL
     SPEC -.->|generates client| WEB
@@ -1007,11 +1003,11 @@ Every submodule README must contain these sections in this order:
 - Usage example: complete `curl` command for `POST /api/v1/generate` with a minimal JSON body, saving the response as `project.zip`
 
 **`starter-archetypes/README.md`**
-- Role: `GenerationClient` interface + `RestGenerationClient` MVP wrapper; enables `mvn archetype:generate` to call the REST API
-- Prerequisites: Java 21+, Maven 3.9+; a running `starter-server` instance for integration use
+- Role: `GenerationClient` interface + `EmbeddedGenerationClient` MVP wrapper; enables `mvn archetype:generate` to call `starter-templates` directly, in-process (see Amendment 2026-07-14)
+- Prerequisites: Java 21+, Maven 3.9+; no running server required
 - Build in isolation: `mvn verify` from `starter-archetypes/`
-- Run / use locally: show the `mvn archetype:generate` invocation that calls the local server via `RestGenerationClient`
-- Usage example: full `mvn archetype:generate -DarchetypeGroupId=... -DserverUrl=http://localhost:8080` command
+- Run / use locally: show the `mvn archetype:generate` invocation and how it resolves to a direct `GenerationEngine.generate()` call
+- Usage example: full `mvn archetype:generate -DarchetypeGroupId=...` command with no server URL parameter
 
 **`starter-web/README.md`**
 - Role: Vue 3 SPA; gallery and configuration form; consumes `/api/v1/metadata` and `/api/v1/generate`
@@ -1067,7 +1063,7 @@ Required for every new config field added; prevents silent breakage of shareable
 4. Spec-first OpenAPI discipline with `openapi-generator`
 5. Scalar API docs via static HTML + CDN (no Spring Boot coupling)
 6. Stateless design — no database, no sessions
-7. `GenerationClient` strategy interface (MVP: REST → Phase 2: embedded)
+7. `GenerationClient` strategy interface (embedded only — direct call to `starter-templates`; no REST-based client, see Amendment 2026-07-14)
 8. Metadata schema as first-class contract (not a convenience endpoint)
 9. Individual URL query params for shareable config links
 10. Best-effort in-memory rate limiting (Bucket4j, no Redis)
@@ -1126,7 +1122,6 @@ Each ADR: **Context** / **Decision** / **Consequences** format. Authored by Paig
 - Metadata schema as first-class contract keeps all channels passively in sync
 
 **Areas for Future Enhancement:**
-- Phase 2: `EmbeddedGenerationClient` for offline `mvn archetype:generate`
 - Phase 2: Promote contract-check from warning to hard merge block
 - Phase 2: Camunda 7 Migration project type + OpenRewrite integration
 - Post-MVP: Evaluate Scalar Spring Boot starter once Spring Boot 4 support confirmed
@@ -1394,3 +1389,17 @@ Each story is independently shippable behind no flag — the feature is invisibl
 - The `examples[].lastUpdated` value is **author-asserted**, not derived from GitHub commit info — keep it that way for v1 to avoid an extra commits API call per source.
 - `ExampleSourcesEndpoint` is the canonical place to learn what happened at load time. Stories that touch loader logic should add to its returned `Status` shape rather than introducing parallel logging-only diagnostics.
 - The cache directory is shared across all source repositories. Stories that introduce per-repo logic (eviction policy, allow/deny lists) should keep that boundary clean — the cache itself is dumb storage; policy lives in the loader/refresh path.
+
+---
+
+## Amendment 2026-07-14 — Archetype: Embedded Generation Client (Course Correction)
+
+**Driver:** Sprint change proposal, 2026-07-14 — `starter-archetypes` must not depend on the REST service; it embeds `starter-templates` and calls the generation engine directly.
+
+This amendment **reverses** a core decision, not additive scope: the original MVP/Phase-2 split designated `RestGenerationClient` as MVP and `EmbeddedGenerationClient` as Phase 2+. That is now inverted — embedded is the only implementation; the REST-based client is dropped from scope entirely, not deferred.
+
+**Why:** `starter-archetypes/pom.xml` already depended only on `starter-templates`, never on `starter-server` — the REST-first decision was never reflected in the actual module dependency graph. Embedding also removes the "developed last, gated on a deployed server" sequencing constraint — the module can now be built any time after `starter-templates` exists.
+
+**What changed:** every reference to `RestGenerationClient` as the MVP/current archetype client is corrected in place throughout this document (Technical Constraints, System Context Diagram, Implementation Sequence, Cross-component Dependencies, Architectural Boundaries diagram, Monorepo Structure tree, `starter-archetypes/README.md` spec, ADR #7, Areas for Future Enhancement).
+
+**Open question carried into story-writing:** standard Maven archetypes fill a static `archetype-resources/` tree via Velocity substitution — they don't normally invoke arbitrary Java calling `GenerationEngine.generate()`. How `mvn archetype:generate` actually triggers `EmbeddedGenerationClient` (custom Mojo? post-generate hook? something else) is not resolved here and should be pinned down in Story 9.1 (`epics.md`) before implementation, not during it.
