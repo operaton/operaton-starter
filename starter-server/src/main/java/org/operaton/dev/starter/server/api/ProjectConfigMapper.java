@@ -34,10 +34,6 @@ public class ProjectConfigMapper {
             builder.deploymentTarget(mapDeploymentTarget(dto.getDeploymentTarget()));
         }
 
-        if (dto.getUseCaseId() != null && !dto.getUseCaseId().isBlank()) {
-            builder.useCaseId(dto.getUseCaseId());
-        }
-
         return builder.build();
     }
 

@@ -5,7 +5,6 @@ import gg.jte.ContentType;
 import gg.jte.TemplateEngine;
 import gg.jte.output.StringOutput;
 import gg.jte.resolve.DirectoryCodeResolver;
-import org.operaton.dev.starter.templates.model.BuildSystem;
 import org.operaton.dev.starter.templates.model.DependencyUpdater;
 import org.operaton.dev.starter.templates.model.ProjectConfig;
 import org.operaton.dev.starter.templates.model.ProjectType;
@@ -56,264 +55,18 @@ public class GenerationEngine {
     public byte[] generate(ProjectConfig config) {
         var baos = new ByteArrayOutputStream();
         try (var zos = new ZipOutputStream(baos)) {
-            ProjectConfig effectiveConfig = applyUseCaseDefaults(config);
-            String useCaseId = effectiveConfig.useCaseId();
-            if (useCaseId != null && !useCaseId.isBlank()) {
-                generateUseCaseExample(useCaseId, effectiveConfig, zos);
-            } else if (effectiveConfig.projectType() == ProjectType.PROCESS_APPLICATION) {
-                generateProcessApplication(effectiveConfig, zos);
-            } else if (effectiveConfig.projectType() == ProjectType.DMN_PROJECT) {
-                generateDmnProject(effectiveConfig, zos);
+            if (config.projectType() == ProjectType.PROCESS_APPLICATION) {
+                generateProcessApplication(config, zos);
+            } else if (config.projectType() == ProjectType.DMN_PROJECT) {
+                generateDmnProject(config, zos);
             } else {
-                generateProcessArchive(effectiveConfig, zos);
+                generateProcessArchive(config, zos);
             }
-            generateCommonExtras(effectiveConfig, zos);
+            generateCommonExtras(config, zos);
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to generate project archive", e);
         }
         return baos.toByteArray();
-    }
-
-    private ProjectConfig applyUseCaseDefaults(ProjectConfig config) {
-        String useCaseId = config.useCaseId();
-        if (useCaseId == null || useCaseId.isBlank()) {
-            return config;
-        }
-
-        return switch (useCaseId) {
-            case "uc-01-leave-request" ->
-                    config.withUseCaseDefaults(ProjectType.PROCESS_APPLICATION, BuildSystem.MAVEN, false);
-            case "uc-02-loan-application",
-                 "uc-03-incident-management",
-                 "uc-04-order-fulfillment" ->
-                    config.withUseCaseDefaults(ProjectType.PROCESS_APPLICATION, BuildSystem.MAVEN, true);
-            default -> throw new IllegalArgumentException("Unknown use case: " + useCaseId);
-        };
-    }
-
-    private void generateUseCaseExample(String useCaseId, ProjectConfig config,
-                                         ZipOutputStream zos) throws IOException {
-        switch (useCaseId) {
-            case "uc-01-leave-request" -> generateUC01LeaveRequest(config, zos);
-            case "uc-02-loan-application" -> generateUC02LoanApplication(config, zos);
-            case "uc-03-incident-management" -> generateUC03IncidentManagement(config, zos);
-            case "uc-04-order-fulfillment" -> generateUC04OrderFulfillment(config, zos);
-            default -> throw new IllegalArgumentException("Unknown use case: " + useCaseId);
-        }
-    }
-
-    private void generateUC01LeaveRequest(ProjectConfig config, ZipOutputStream zos) throws IOException {
-        String templateDir = "use-cases/uc-01-leave-request/";
-        String pkgPath = config.packagePath();
-
-        addTemplateEntry(zos, "pom.xml", templateDir + "maven/pom.xml.jte", config);
-        addMavenWrapper(zos);
-
-        addTemplateEntry(zos,
-                "src/main/java/" + pkgPath + "/Application.java",
-                templateDir + "Application.java.jte", config);
-        addTemplateEntry(zos,
-                "src/main/java/" + pkgPath + "/VacationBalanceService.java",
-                templateDir + "VacationBalanceService.java.jte", config);
-        addTemplateEntry(zos,
-                "src/main/java/" + pkgPath + "/delegate/LeaveRequestValidationDelegate.java",
-                templateDir + "delegate/LeaveRequestValidationDelegate.java.jte", config);
-        addTemplateEntry(zos,
-                "src/main/java/" + pkgPath + "/delegate/FinalizeLeaveApprovalDelegate.java",
-                templateDir + "delegate/FinalizeLeaveApprovalDelegate.java.jte", config);
-        addTemplateEntry(zos,
-                "src/main/java/" + pkgPath + "/delegate/EscalationReminderDelegate.java",
-                templateDir + "delegate/EscalationReminderDelegate.java.jte", config);
-        addTemplateEntry(zos,
-                "src/main/java/" + pkgPath + "/delegate/LeaveRejectionEmailDelegate.java",
-                templateDir + "delegate/LeaveRejectionEmailDelegate.java.jte", config);
-
-        addTemplateEntry(zos,
-                "src/main/resources/application.properties",
-                templateDir + "application.properties.jte", config);
-        addTemplateEntry(zos,
-                "src/main/resources/application-h2.properties",
-                templateDir + "application-h2.properties.jte", config);
-        addTemplateEntry(zos,
-                "src/main/resources/schema.sql",
-                templateDir + "schema.sql.jte", config);
-        addTemplateEntry(zos,
-                "src/main/resources/leave-request.bpmn",
-                templateDir + "leave-request.bpmn.jte", config);
-        addTemplateEntry(zos,
-                "src/main/java/" + pkgPath + "/DataInitializer.java",
-                templateDir + "DataInitializer.java.jte", config);
-
-        addTemplateEntry(zos,
-                "src/test/java/" + pkgPath + "/LeaveRequestIT.java",
-                templateDir + "LeaveRequestIT.java.jte", config);
-
-        addClasspathResource(zos,
-                "src/main/resources/static/forms/manager-review-form.html",
-                "use-cases/uc-01-leave-request/forms/manager-review-form.html");
-        addClasspathResource(zos,
-                "src/main/resources/static/forms/hr-record-form.html",
-                "use-cases/uc-01-leave-request/forms/hr-record-form.html");
-
-        addClasspathResource(zos, "src/main/resources/banner.txt", "process-application/banner.txt");
-        addTemplateEntry(zos, "docker-compose.yml", templateDir + "docker-compose.yml.jte", config);
-        addTemplateEntry(zos, "README.md", templateDir + "README.md.jte", config);
-    }
-
-    private void generateUC02LoanApplication(ProjectConfig config, ZipOutputStream zos) throws IOException {
-        String templateDir = "use-cases/uc-02-loan-application/";
-        String pkgPath = config.packagePath();
-
-        addTemplateEntry(zos, "pom.xml", templateDir + "maven/pom.xml.jte", config);
-        addMavenWrapper(zos);
-
-        addTemplateEntry(zos,
-                "src/main/java/" + pkgPath + "/Application.java",
-                templateDir + "Application.java.jte", config);
-        addTemplateEntry(zos,
-                "src/main/java/" + pkgPath + "/delegate/CreditScoreDelegate.java",
-                templateDir + "CreditScoreDelegate.java.jte", config);
-        addTemplateEntry(zos,
-                "src/main/java/" + pkgPath + "/delegate/NotificationDelegate.java",
-                templateDir + "NotificationDelegate.java.jte", config);
-        addTemplateEntry(zos,
-                "src/main/java/" + pkgPath + "/delegate/RejectionEmailDelegate.java",
-                templateDir + "RejectionEmailDelegate.java.jte", config);
-
-        addTemplateEntry(zos,
-                "src/main/resources/application.properties",
-                templateDir + "application.properties.jte", config);
-        addTemplateEntry(zos,
-                "src/main/resources/application-h2.properties",
-                templateDir + "application-h2.properties.jte", config);
-        addTemplateEntry(zos,
-                "src/main/resources/loan-application.bpmn",
-                templateDir + "loan-application.bpmn.jte", config);
-        addTemplateEntry(zos,
-                "src/main/resources/dmn/risk-assessment.dmn",
-                templateDir + "risk-assessment.dmn.jte", config);
-        addTemplateEntry(zos,
-                "src/main/java/" + pkgPath + "/DataInitializer.java",
-                templateDir + "DataInitializer.java.jte", config);
-        addTemplateEntry(zos,
-                "src/main/resources/wiremock/mappings/credit-score-stub.json",
-                templateDir + "wiremock/mappings/credit-score-stub.json.jte", config);
-
-        addTemplateEntry(zos,
-                "src/test/java/" + pkgPath + "/LoanApplicationIT.java",
-                templateDir + "LoanApplicationIT.java.jte", config);
-
-        addClasspathResource(zos, "src/main/resources/banner.txt", "process-application/banner.txt");
-        addTemplateEntry(zos, "docker-compose.yml", templateDir + "docker-compose.yml.jte", config);
-        addTemplateEntry(zos, "README.md", templateDir + "README.md.jte", config);
-    }
-
-    private void generateUC03IncidentManagement(ProjectConfig config, ZipOutputStream zos) throws IOException {
-        String templateDir = "use-cases/uc-03-incident-management/";
-        String pkgPath = config.packagePath();
-
-        addTemplateEntry(zos, "pom.xml", templateDir + "maven/pom.xml.jte", config);
-        addMavenWrapper(zos);
-
-        addTemplateEntry(zos,
-                "src/main/java/" + pkgPath + "/Application.java",
-                templateDir + "Application.java.jte", config);
-        addTemplateEntry(zos,
-                "src/main/java/" + pkgPath + "/delegate/CloseTicketDelegate.java",
-                templateDir + "CloseTicketDelegate.java.jte", config);
-        addTemplateEntry(zos,
-                "src/main/java/" + pkgPath + "/delegate/PostMortemDelegate.java",
-                templateDir + "PostMortemDelegate.java.jte", config);
-
-        addTemplateEntry(zos,
-                "src/main/resources/application.properties",
-                templateDir + "application.properties.jte", config);
-        addTemplateEntry(zos,
-                "src/main/resources/application-h2.properties",
-                templateDir + "application-h2.properties.jte", config);
-        addTemplateEntry(zos,
-                "src/main/resources/application-test.properties",
-                templateDir + "application-test.properties.jte", config);
-        addTemplateEntry(zos,
-                "src/main/resources/incident-management.bpmn",
-                templateDir + "incident-management.bpmn.jte", config);
-        addTemplateEntry(zos,
-                "src/main/java/" + pkgPath + "/DataInitializer.java",
-                templateDir + "DataInitializer.java.jte", config);
-        addTemplateEntry(zos,
-                "src/main/resources/wiremock/mappings/close-ticket-stub.json",
-                templateDir + "wiremock/mappings/close-ticket-stub.json.jte", config);
-        addTemplateEntry(zos,
-                "src/main/resources/wiremock/mappings/post-mortem-stub.json",
-                templateDir + "wiremock/mappings/post-mortem-stub.json.jte", config);
-
-        addTemplateEntry(zos,
-                "src/test/java/" + pkgPath + "/IncidentManagementIT.java",
-                templateDir + "IncidentManagementIT.java.jte", config);
-
-        addClasspathResource(zos, "src/main/resources/banner.txt", "process-application/banner.txt");
-        addTemplateEntry(zos, "docker-compose.yml", templateDir + "docker-compose.yml.jte", config);
-        addTemplateEntry(zos, "README.md", templateDir + "README.md.jte", config);
-    }
-
-    private void generateUC04OrderFulfillment(ProjectConfig config, ZipOutputStream zos) throws IOException {
-        String templateDir = "use-cases/uc-04-order-fulfillment/";
-        String pkgPath = config.packagePath();
-
-        addTemplateEntry(zos, "pom.xml", templateDir + "maven/pom.xml.jte", config);
-        addMavenWrapper(zos);
-
-        addTemplateEntry(zos,
-                "src/main/java/" + pkgPath + "/Application.java",
-                templateDir + "Application.java.jte", config);
-        addTemplateEntry(zos,
-                "src/main/java/" + pkgPath + "/delegate/InventoryDelegate.java",
-                templateDir + "InventoryDelegate.java.jte", config);
-        addTemplateEntry(zos,
-                "src/main/java/" + pkgPath + "/delegate/PaymentDelegate.java",
-                templateDir + "PaymentDelegate.java.jte", config);
-        addTemplateEntry(zos,
-                "src/main/java/" + pkgPath + "/delegate/NotifyCustomerDelegate.java",
-                templateDir + "NotifyCustomerDelegate.java.jte", config);
-        addTemplateEntry(zos,
-                "src/main/java/" + pkgPath + "/delegate/NotifyBackorderDelegate.java",
-                templateDir + "NotifyBackorderDelegate.java.jte", config);
-
-        addTemplateEntry(zos,
-                "src/main/resources/application.properties",
-                templateDir + "application.properties.jte", config);
-        addTemplateEntry(zos,
-                "src/main/resources/application-h2.properties",
-                templateDir + "application-h2.properties.jte", config);
-        addTemplateEntry(zos,
-                "src/main/resources/order-fulfillment.bpmn",
-                templateDir + "order-fulfillment.bpmn.jte", config);
-        addTemplateEntry(zos,
-                "src/main/java/" + pkgPath + "/DataInitializer.java",
-                templateDir + "DataInitializer.java.jte", config);
-        addTemplateEntry(zos,
-                "src/main/resources/wiremock/mappings/inventory-in-stock.json",
-                templateDir + "wiremock/mappings/inventory-in-stock.json.jte", config);
-        addTemplateEntry(zos,
-                "src/main/resources/wiremock/mappings/inventory-out-of-stock.json",
-                templateDir + "wiremock/mappings/inventory-out-of-stock.json.jte", config);
-        addTemplateEntry(zos,
-                "src/main/resources/wiremock/mappings/payment-success.json",
-                templateDir + "wiremock/mappings/payment-success.json.jte", config);
-        addTemplateEntry(zos,
-                "src/main/resources/wiremock/mappings/notify-customer.json",
-                templateDir + "wiremock/mappings/notify-customer.json.jte", config);
-        addTemplateEntry(zos,
-                "src/main/resources/wiremock/mappings/notify-backorder.json",
-                templateDir + "wiremock/mappings/notify-backorder.json.jte", config);
-
-        addTemplateEntry(zos,
-                "src/test/java/" + pkgPath + "/OrderFulfillmentIT.java",
-                templateDir + "OrderFulfillmentIT.java.jte", config);
-
-        addClasspathResource(zos, "src/main/resources/banner.txt", "process-application/banner.txt");
-        addTemplateEntry(zos, "docker-compose.yml", templateDir + "docker-compose.yml.jte", config);
-        addTemplateEntry(zos, "README.md", templateDir + "README.md.jte", config);
     }
 
     private void generateProcessApplication(ProjectConfig config, ZipOutputStream zos) throws IOException {
@@ -445,12 +198,7 @@ public class GenerationEngine {
     }
 
     private void generateCommonExtras(ProjectConfig config, ZipOutputStream zos) throws IOException {
-        boolean useCaseGeneration = config.useCaseId() != null && !config.useCaseId().isBlank();
-
-        // Use case examples include their own README; skip for those
-        if (!useCaseGeneration) {
-            addTemplateEntry(zos, "README.md", "common/README.md.jte", config);
-        }
+        addTemplateEntry(zos, "README.md", "common/README.md.jte", config);
 
         // Dependency updater — mutually exclusive
         switch (config.dependencyUpdater()) {
@@ -464,8 +212,7 @@ public class GenerationEngine {
             addTemplateEntry(zos, ".github/workflows/ci.yml", "common/ci.yml.jte", config);
         }
 
-        // Use case examples own their docker-compose setup when needed.
-        if (!useCaseGeneration && config.dockerCompose()) {
+        if (config.dockerCompose()) {
             addTemplateEntry(zos, "docker-compose.yml", "common/docker-compose.yml.jte", config);
             addTemplateEntry(zos, "Dockerfile", "common/dockerfile.jte", config);
         }

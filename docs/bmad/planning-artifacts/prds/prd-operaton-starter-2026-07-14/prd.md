@@ -20,13 +20,13 @@ note: "All five consolidated source PRDs above (plus the pre-existing excluded o
 **Project:** operaton-starter
 **Date:** 2026-07-14
 
-> This document supersedes the five source PRDs listed in the frontmatter as the single point of reference for product scope. It does not change what has shipped; it reconciles five separately-authored documents into one coherent requirement set, fixes a duplicate FR ID, retires struck scope, and flags one open reconciliation (Use Cases vs. Examples Gallery — see §9).
+> This document supersedes the five source PRDs listed in the frontmatter as the single point of reference for product scope. It reconciles five separately-authored documents into one coherent requirement set, fixes a duplicate FR ID, and retires struck scope. **Update (2026-07-14):** the built-in Use Cases feature is now fully removed from templates and code, resolving Open Item OI-1 — see §5.8 and §9.3.
 
 ## 1. Executive Summary
 
 Operaton Starter is a stateless, open-source project generator hosted at `start.operaton.org` that bootstraps Operaton-based projects — process applications and process archives today, with engine plugins, connectors, and Camunda 7 migrations planned for later phases (§12) — as downloadable, ready-to-build, immediately runnable project archives. It is the first and only dedicated project initializer for the Operaton ecosystem, filling the gap that Spring Initializr fills for Spring Boot and code.quarkus.io fills for Quarkus.
 
-Three first-class channels — a web UI, the `npx operaton-starter` CLI, and a single `curl` command — all invoke the same REST API (`POST /api/v1/generate`) and the same generation engine, guaranteeing no channel produces divergent output. The web UI serves two personas through a split landing experience: a direct configuration form for developers who already know what they want, and a visual gallery (project types, use cases, and — new since June 2026 — an Examples section sourced from external GitHub repositories) for developers who want to browse before committing. The tool is deployed as a single Spring Boot application on the `operaton.org` domain and distributed as a self-hostable Docker image, letting enterprise teams run a private instance behind their firewall with org-specific defaults.
+Three first-class channels — a web UI, the `npx operaton-starter` CLI, and a single `curl` command — all invoke the same REST API (`POST /api/v1/generate`) and the same generation engine, guaranteeing no channel produces divergent output. The web UI serves two personas through a split landing experience: a direct configuration form for developers who already know what they want, and a visual gallery (project types, plus an Examples section sourced from external GitHub repositories) for developers who want to browse before committing. The tool is deployed as a single Spring Boot application on the `operaton.org` domain and distributed as a self-hostable Docker image, letting enterprise teams run a private instance behind their firewall with org-specific defaults.
 
 Generated projects support Maven or Gradle (Groovy/Kotlin DSL), always target the current stable Operaton release, and include a personalized README. Since June 2026, generated Process Application projects can also select a target database (PostgreSQL, MySQL, MariaDB, MS SQL Server, Oracle, DB2, or the H2 default) with matching Docker Compose services and connection profiles. Optional Extras — Dependency Updates, Docker Compose, GitHub Actions CI/CD — remain off by default. Projects are identity-aware: Group ID, Artifact ID, and project name propagate into BPMN process IDs, Java packages, and Spring `application.name`. No authentication, no user profiles — stateless by design.
 
@@ -48,7 +48,7 @@ Today's Explorer is tomorrow's Practitioner — the quality of the first session
 
 Brief, capability-checking walkthroughs for the two personas whose journeys span multiple FRs — not full narrative UJs, since this PRD is predominantly a capability spec (§5) rather than UX-narrative-shaped.
 
-- **UJ-1 (Thomas, Explorer path):** Lands on the gallery (FR29), browses project types and use cases, opens the inline explanation to tell Process Application from Process Archive apart (FR33), picks a use case card (FR32 — type locked read-only), watches the live file-tree preview update as he reviews defaults (FR36–FR38), and downloads. Checks that FR29→FR33→FR32→FR36 actually compose into one continuous flow with no dead end.
+- **UJ-1 (Thomas, Explorer path):** Lands on the gallery (FR29), browses project types, opens the inline explanation to tell Process Application from Process Archive apart (FR33), picks a project-type card (FR32 — type locked read-only), watches the live file-tree preview update as he reviews defaults (FR36–FR38), and downloads. Checks that FR29→FR33→FR32→FR36 actually compose into one continuous flow with no dead end.
 - **UJ-2 (Marcus, Practitioner path):** Clicks "Configure Now" straight from the landing hero (FR31), gets the form with Process Application pre-selected but still editable, sets Group ID/Artifact ID/version (FR9, FR12), picks Maven, enables Docker Compose with PostgreSQL (FR15, FR19, FR22), downloads, and follows the generated README's `chmod +x` instruction to run it in under 30 seconds end to end (FR55, NFR3). Checks that the "recommend but don't force" Compose nudge (FR22) doesn't add friction to this path.
 - **UJ-3 (Klaus, Self-hosted admin):** Pulls the Docker image (FR66), sets `STARTER_DEFAULTS_GROUP_ID` and `STARTER_EXAMPLES_REPOSITORIES` via environment variables with no config file (FR68, NFR24), confirms the health check endpoint (FR69) before putting the instance behind a load balancer, and never sees an outbound call to a service he hasn't explicitly configured (NFR6).
 
@@ -103,7 +103,7 @@ FR IDs are renumbered sequentially and are stable going forward from this docume
 **Identity & coordinates**
 - **FR9** The developer specifies Group ID, Artifact ID, and project name; both Group ID and Artifact ID remain freely editable.
 - **FR10** The default Group ID for example/gallery-originated projects is `org.operaton.example`.
-- **FR11** Default Artifact ID and project name do not contain the word "example"; naming follows the selected use case or project type (e.g. `leave-request`, `my-process-app`).
+- **FR11** Default Artifact ID and project name do not contain the word "example"; naming follows the selected project type (e.g. `my-process-app`).
 - **FR12** The configuration form includes a version field, defaulting to `1.0.0-SNAPSHOT`, accepting any non-empty, whitespace-free Maven-format version string; invalid input shows an inline error and blocks generation.
 
 **Build system & platform**
@@ -119,7 +119,7 @@ FR IDs are renumbered sequentially and are stable going forward from this docume
 - **FR20** The generated README documents database setup for all three cases: H2 default, non-H2 with Docker Compose, and non-H2 without Docker Compose (manual install instructions).
 - **FR21** All generation channels (REST API, CLI) expose database selection; the CLI additionally prompts for it interactively between project-type and build-system questions.
 - **FR22** The web UI's database selector lives in the configuration form's Infrastructure section, next to the Docker Compose toggle. Choosing a non-H2 database visually recommends (but does not force) enabling Docker Compose.
-- **FR23** Use case examples reached via the gallery default to PostgreSQL with Docker Compose enabled, unless the caller explicitly supplies a different value; CLI and REST API callers who omit the field still get the H2/no-compose defaults (FR15).
+- ~~**FR23**~~ **Retired (2026-07-14).** Formerly: use case examples reached via the gallery defaulted to PostgreSQL with Docker Compose enabled. Moot now that Use Cases are removed (§5.8) — there is no longer an in-app generation path this default could apply to; Examples Gallery downloads are static repository content, not run through `POST /api/v1/generate`.
 
 **Database selection non-goals:** schema migration tooling (Flyway/Liquibase) in generated projects; database selection for Process Archive or DMN Project types; guaranteeing that every Docker-image/Operaton-version combination is covered by Operaton's own test suite (registry access and image currency are the user's responsibility, documented in the generated README).
 
@@ -134,9 +134,9 @@ FR IDs are renumbered sequentially and are stable going forward from this docume
 
 **Landing & navigation**
 - **FR29** A project type is selected from the gallery/landing page before the configuration form is reached — a prerequisite, not a form field.
-- **FR30** The landing page hero offers, in order: a primary "Configure Now →" call-to-action, a "Project Types ↓" link, and a "Browse Use Cases ↓" link (see §5.8 — sunset-planned, so this link's copy and prominence are expected to change as Use Cases winds down); the latter two share the same outlined visual style.
+- **FR30** The landing page hero offers, in order: a primary "Configure Now →" call-to-action and a secondary, outlined-style "Project Types ↓" link. *(Previously also listed a "Browse Use Cases ↓" link alongside "Project Types ↓"; removed 2026-07-14 along with the Use Cases feature — see §5.8.)*
 - **FR31** "Configure Now" navigates directly to the configuration form with `PROCESS_APPLICATION` pre-selected and the project-type field left editable; if `PROCESS_APPLICATION` is unavailable in the metadata response, the form falls back to the first available project type.
-- **FR32** Reaching the configuration form from a project-type or use-case card (i.e. with an explicit type already chosen) keeps the project-type field read-only, as before.
+- **FR32** Reaching the configuration form from a project-type card (i.e. with an explicit type already chosen) keeps the project-type field read-only, as before.
 - **FR33** The developer can access an explanation distinguishing the available project types.
 
 **Configuration form & preview**
@@ -150,8 +150,8 @@ FR IDs are renumbered sequentially and are stable going forward from this docume
 - **FR41** The web UI serves a favicon derived from the Operaton logo (no 404 on `/favicon.ico`).
 
 **Gallery**
-- **FR42** The gallery lists project types first, followed by curated use cases (see §5.8, legacy) and the Examples section (see §5.9).
-- **FR43** Tag chips across gallery cards (project types, use cases, Examples) are color-coded by category — BPMN concept, technology, platform, or standard — with an unrecognized/missing category rendering as a neutral grey chip; colors meet WCAG AA contrast.
+- **FR42** The gallery lists project types first, followed by the Examples section (see §5.9). *(Previously also listed a curated use cases section, between project types and Examples; removed 2026-07-14 — see §5.8.)*
+- **FR43** Tag chips across gallery cards (project types, Examples) are color-coded by category — BPMN concept, technology, platform, or standard — with an unrecognized/missing category rendering as a neutral grey chip; colors meet WCAG AA contrast.
 - **FR44** A search box and filter chips narrow the Examples section by title, description, tags, runtime, build system, complexity, and integrations.
 - **FR45** An empty Examples section (no sources loaded) explains how to register a repository and links to the manifest-format documentation.
 
@@ -164,7 +164,7 @@ FR IDs are renumbered sequentially and are stable going forward from this docume
 
 - **FR47** `POST /api/v1/generate` generates and returns a ZIP archive.
 - **FR48** `GET /api/v1/generate` supports the same generation as a query-parameter mode, for IDE deep-links and shareable URLs.
-- **FR49** `GET /api/v1/metadata` returns all configuration options, template manifests, use cases, and Examples Gallery entries.
+- **FR49** `GET /api/v1/metadata` returns all configuration options, template manifests, and Examples Gallery entries.
 - **FR50** The OpenAPI spec and an interactive API docs UI are available at `/api/v1/docs`.
 - **FR51** The API enforces a per-IP rate limit and returns a structured error on breach.
 
@@ -195,16 +195,18 @@ FR IDs are renumbered sequentially and are stable going forward from this docume
 - **FR68** Self-hosted defaults (default Group ID, Maven registry URL, Operaton version) are configurable via environment variables — see CLAUDE.md's environment variable table for the current set (`STARTER_DEFAULTS_GROUP_ID`, `STARTER_DEFAULTS_OPERATON_VERSION`, `STARTER_CORS_ALLOWED_ORIGINS`, `STARTER_EXAMPLES_REPOSITORIES`, `RATE_LIMIT_REQUESTS_PER_MINUTE`).
 - **FR69** The running instance exposes a health check endpoint.
 
-### 5.8 Use Cases — Legacy, Sunset-Planned
+### 5.8 Use Cases — Removed
 
-> **Status: deprecated.** `[ASSUMPTION: this status is an inference from the codebase check in §9.1 and the product owner's consolidation-time decision, not a previously-documented roadmap commitment — treat as the current working decision, revisit if a future PRD update states otherwise.]` The built-in Use Cases feature (four in-app-generated example processes: Leave Request, Loan Application, Incident Management, Order Fulfillment) predates the Examples Gallery (§5.9) and is being phased out in its favor. The code has not yet caught up with this decision — `useCaseExamples` is still served alongside `examples` in the metadata response, and the four use cases remain fully generatable — but no new functional requirements should be added against this feature. See §9 for the reconciliation history behind this call.
+> **Status: removed (2026-07-14).** The built-in Use Cases feature (four in-app-generated example processes: Leave Request, Loan Application, Incident Management, Order Fulfillment) has been removed from operaton-starter's templates and generation engine. Use cases are now maintained exclusively in external repositories (`operaton/operaton-examples`) and surfaced through the Examples Gallery (§5.9) like any other community-contributed example, with no in-app distinction between "a use case" and "an example" anymore. This resolves Open Item OI-1 (§8) — see §9.3 for the decision record. No functional requirements remain active against this feature.
 
-- **FR70** (current behavior, retained until sunset) Each use case example is self-contained: `docker compose up -d` plus the standard build-tool run command starts it with no manual configuration, and its integration tests assert process deployment before business-logic assertions.
-- **FR71** Each use case seeds user roles/groups via `data.sql` (username equals password per seeded user).
-- **FR72** Each use case's Docker Compose file starts PostgreSQL as the default datasource (plus WireMock where the use case needs external-service stubs); an `application-h2.properties` profile switches to embedded H2 with no code changes and is active during `mvn test`, so CI does not require Docker.
-- **FR73** Use cases are discoverable and generatable via every channel; `GET /api/v1/metadata` lists them with ID, name, description, tags, and parameter bundle, and `POST /api/v1/generate` accepts an optional `useCaseId` resolved through the same generation engine as any other request.
+**Retired FRs (no longer implemented; kept for traceability only — see addendum §A):**
+- ~~FR70~~ — in-app use-case self-containment (`docker compose up -d` + standard run command, no manual config)
+- ~~FR71~~ — per-use-case seeded roles/groups via `data.sql`
+- ~~FR72~~ — per-use-case PostgreSQL-default/H2-fallback Docker Compose profile switching
+- ~~FR73~~ — cross-channel use-case discoverability and `useCaseId`-driven generation via `POST /api/v1/generate`
+- ~~FR89~~ (§5.11) — per-use-case live template-manifest preview
 
-**Sunset plan (to be scheduled, not yet dated):** migrate remaining use-case content to `operaton/operaton-examples` (mirroring the Examples Gallery's own deprecation note for the same content), then remove the in-app generation path and the `useCaseExamples` metadata field. This PRD does not commit to a date — see Open Item OI-1 in §8.
+Anyone wanting this functionality for a specific example should propose it against the Examples Gallery's manifest schema (§5.9, `docs/examples-repository-format.md`) instead — e.g. a manifest field indicating a recommended default database, rather than a generation-engine special case.
 
 ### 5.9 Examples Gallery — Remote Example Repositories
 
@@ -216,7 +218,7 @@ FR IDs are renumbered sequentially and are stable going forward from this docume
 - **FR78** Manifest and example content are resolved against a pinned commit of the source repository at each load, so mid-session repository changes never affect a user's current gallery view.
 
 **Discovery & download**
-- **FR79** `GET /api/v1/metadata` lists Examples Gallery entries (parallel to the legacy use-case list) with enough computed fields (source repository, resolved commit, download availability) for the UI to render and gate the download action.
+- **FR79** `GET /api/v1/metadata` lists Examples Gallery entries with enough computed fields (source repository, resolved commit, download availability) for the UI to render and gate the download action. *(Previously described as "parallel to the use-case list" — the use-case list no longer exists, see §5.8.)*
 - **FR80** Each example can be downloaded as a ZIP of its content directory with one click, mirroring the download-a-generated-project experience.
 - **FR81** Example availability is validated asynchronously after each manifest load; a card whose target no longer exists shows as unavailable with a link to the source repository, rather than failing at download time.
 - **FR82** Downloaded ZIPs are served from a bounded, evictable cache so repeat downloads of the same example/commit do not require a fresh fetch from GitHub.
@@ -232,7 +234,7 @@ FR IDs are renumbered sequentially and are stable going forward from this docume
 
 These four items surfaced when each source PRD was diffed against the first consolidated draft; they are genuine requirements that were missing, not new scope. Numbered to continue the sequence without disturbing FR1–FR84 above.
 
-- **FR89** Each use case's live file-tree preview (FR36) reflects that use case's own template manifest — including its actual BPMN model — rather than a generic Process Application template.
+- ~~**FR89**~~ **Retired (2026-07-14).** Formerly: each use case's live file-tree preview (FR36) reflected that use case's own template manifest. Moot now that Use Cases are removed (§5.8).
 - **FR90** If the Examples Gallery's repository-tree scan is truncated by the GitHub API, the affected source logs a warning identifying itself and processes whatever descriptors were visible rather than being dropped or failing outright.
 - **FR91** A source's per-descriptor load failures are exposed individually (descriptor path plus failure reason) in that source's status detail, not just as a single pass/fail per source.
 - **FR92** The repository's own dependency-update automation (Dependabot/Renovate on the operaton-starter repo itself, not on generated projects) proposes Operaton version bumps as they become available.
@@ -292,7 +294,7 @@ These four items surfaced when each source PRD was diffed against the first cons
 
 | ID | Item | Owner | Status | Condition to resolve |
 |---|---|---|---|---|
-| OI-1 | Use Cases sunset date and migration plan to `operaton/operaton-examples` | Product | Open, undated | Before removing the in-app Use Cases generation path (§5.8) |
+| OI-1 | Use Cases sunset date and migration plan to `operaton/operaton-examples` | Product | **Resolved 2026-07-14** — feature removed, see §5.8 and §9.3 | — |
 | OI-2 | DB2 (`icr.io/db2_community/db2`) mandatory environment variables for `docker-compose.yml`/`application-docker.properties` | Engineering | **Blocker** for the DB2 database option specifically | Must resolve before the DB2 template is authored |
 | OI-3 | Oracle Docker Compose healthcheck `start_period` tuning (first-start ~2 min) | Engineering | Open, non-blocking | Before finalizing the Oracle template |
 | OI-4 | Gradle JDBC driver version management — Spring Boot BOM vs. explicit pin | Engineering | Open, non-blocking | Before implementation of remaining database options |
@@ -303,12 +305,13 @@ These four items surfaced when each source PRD was diffed against the first cons
 
 This consolidation surfaced two conflicts between source documents that could not be resolved from the documents alone; both were decided with the product owner during this consolidation pass and are recorded here for audit:
 
-1. **Use Cases vs. Examples Gallery.** The Examples Gallery PRD (2026-06-13) states built-in Use Cases were "migrated" and "replaced" by the gallery. A codebase check during this consolidation found both features still fully present and coexisting (`useCaseExamples` and `examples` are both served by `GET /api/v1/metadata`; `starter-templates` still ships all four use-case templates). Decision: treat Use Cases as deprecated and sunset-planned (§5.8), Examples Gallery as their intended replacement, without asserting a completion that hasn't happened in code yet. Tracked as OI-1.
-2. **UC-enhancements PRD.** The archived PRD (2026-06-06/07) specifies authorization, email-notification, Mailpit, and task-form-data enhancements to the four built-in use cases. A codebase check found none of it implemented. Given the Use Cases sunset decision above, the product owner chose to drop this PRD from the consolidated requirement set entirely rather than carry it forward as backlog against a feature being phased out. The original document remains at `docs/bmad/planning-artifacts/_archived/prd-operaton-starter-uc-enhancements-2026-06-06/prd.md` as historical record only.
+1. **Use Cases vs. Examples Gallery.** The Examples Gallery PRD (2026-06-13) states built-in Use Cases were "migrated" and "replaced" by the gallery. A codebase check during this consolidation found both features still fully present and coexisting (`useCaseExamples` and `examples` are both served by `GET /api/v1/metadata`; `starter-templates` still ships all four use-case templates). Decision at the time: treat Use Cases as deprecated and sunset-planned (§5.8), Examples Gallery as their intended replacement, without asserting a completion that hadn't happened in code yet. Tracked as OI-1. **Superseded by §9.3 below** — the sunset has since been executed.
+2. **UC-enhancements PRD.** The archived PRD (2026-06-06/07) specifies authorization, email-notification, Mailpit, and task-form-data enhancements to the four built-in use cases. A codebase check found none of it implemented. Given the Use Cases sunset decision above, the product owner chose to drop this PRD from the consolidated requirement set entirely rather than carry it forward as backlog against a feature being phased out. The original document remains at `docs/bmad/planning-artifacts/_archived/prd-operaton-starter-uc-enhancements-2026-06-06/prd.md` as historical record only. Now doubly moot: even if reintroduced, its target (the in-app Use Cases feature) no longer exists.
+3. **Use Cases removal (resolves OI-1).** On 2026-07-14, following this consolidation, the product owner directed removal of the built-in Use Cases feature from templates and code entirely — use cases are now maintained only in external repositories and surfaced via the Examples Gallery, with no special-cased generation path. §5.8 updated from "deprecated, sunset-planned" to "removed." Retired: FR23, FR70–FR73, FR89. Edited to drop use-case-specific wording: FR11, FR30, FR32, FR42, FR43, FR49, FR79. See addendum §A for the retirement mapping and the corresponding code-removal work (Java `UseCaseExample`/`buildUseCaseExamples()`, `starter-templates` use-case resources/JTE templates, web UI use-case gallery components, OpenAPI schema fields) tracked outside this PRD as an implementation task.
 
 ## 10. Glossary
 
-- **Use case** — a built-in, in-app-generated example process (Leave Request, Loan Application, Incident Management, Order Fulfillment). Legacy, sunset-planned (§5.8).
+- **Use case** — historical term for the four built-in, in-app-generated example processes (Leave Request, Loan Application, Incident Management, Order Fulfillment). **Removed as of 2026-07-14** (§5.8); no longer a distinct concept from an Examples Gallery entry.
 - **Example** — an entry in the Examples Gallery, sourced from an external GitHub repository's manifest (§5.9). The current and intended long-term mechanism for showcasing working Operaton projects.
 - **Manifest** and **descriptor** — the same artifact, the `.operaton-starter.yml`/`.yaml` file that declares one or more Examples. `prd.md` consistently says "manifest"; `addendum.md` §C introduces "descriptor" when discussing per-directory discovery, because a repository can have several of them at different depths — at that point "descriptor" emphasizes the individual file, while "manifest" emphasizes its content/schema. They are not different things.
 - **Extras** — the opt-in, off-by-default generation add-ons: Dependency Updates, Docker Compose, GitHub Actions CI/CD (§3, §5.2).
@@ -318,8 +321,9 @@ This consolidation surfaced two conflicts between source documents that could no
 
 Every `[ASSUMPTION: …]` tag inline in this document or `addendum.md`, gathered for quick review:
 
-1. **§5.8 status line** — that "deprecated" is the correct characterization of Use Cases' status, given it's a consolidation-time inference plus a product-owner decision rather than a prior documented commitment.
-2. **`addendum.md` §D, Examples Gallery caching** — that the disk-cache functional requirement (not the "out of scope" risk note) is the authoritative statement of intended behavior, where the two source-document statements conflicted.
+1. **`addendum.md` §D, Examples Gallery caching** — that the disk-cache functional requirement (not the "out of scope" risk note) is the authoritative statement of intended behavior, where the two source-document statements conflicted.
+
+*(A former entry 1 here — the §5.8 Use Cases status assumption — was resolved by explicit product-owner decision on 2026-07-14 and removed from this index; the decision itself is recorded in §9.3, not as a standing assumption.)*
 
 ## 12. Deferred / Roadmap (from master PRD, unchanged)
 
@@ -329,7 +333,7 @@ Every `[ASSUMPTION: …]` tag inline in this document or `addendum.md`, gathered
 
 **Explicitly out of scope, not reconsidered by this consolidation:** the MCP integration channel and `operaton-starter-mcp` npm package (removed from scope entirely, per the master PRD's 2026-07-14 update — see git history for the removal commit).
 
-**Deferred use case, with rationale:** a `document-approval` use case (multi-level review plus a MinIO file archive) was considered and deferred — file storage is infrastructure, not process logic, and the Explorer audience should learn Operaton, not MinIO. Given the Use Cases sunset decision (§9), any future version of this idea should target the Examples Gallery, not the in-app Use Cases path.
+**Deferred example idea, with rationale:** a `document-approval` example (multi-level review plus a MinIO file archive) was considered and deferred — file storage is infrastructure, not process logic, and the Explorer audience should learn Operaton, not MinIO. Now that Use Cases are removed (§5.8, §9.3), any future version of this idea targets the Examples Gallery exclusively — there is no other path left to consider.
 
 ---
 _Technical mechanism detail (manifest schema, per-database JDBC/Docker image reference table, GitHub API interaction pattern, cache layout, FR traceability to source documents) is kept in `addendum.md`._

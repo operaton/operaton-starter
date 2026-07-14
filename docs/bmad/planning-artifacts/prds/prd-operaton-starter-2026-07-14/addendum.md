@@ -11,7 +11,7 @@ Companion to `prd.md`. Holds implementation-level detail, rejected/considered al
 | FR10–FR12 | UI Enhancements (2026-06-08) | FR-1.1–FR-1.4 |
 | FR13 | Master PRD | FR10 |
 | FR14 | Master PRD | FR12 |
-| FR15–FR23 | Database Selection (2026-06-06) | FR-1–FR-8 |
+| FR15–FR23 | Database Selection (2026-06-06) | FR-1–FR-8 (FR23 retired 2026-07-14, see §A note below) |
 | FR24–FR28 | Master PRD | FR13, FR14, FR15, FR56, FR16 |
 | FR29 | Master PRD | FR9 |
 | FR30–FR32 | UI Enhancements | FR-2.1–FR-2.4, FR-3.1–FR-3.2 |
@@ -27,13 +27,15 @@ Companion to `prd.md`. Holds implementation-level detail, rejected/considered al
 | FR52–FR54 | Master PRD | FR28–FR30 |
 | FR55–FR65 | Master PRD | FR33, FR45 (build-tool-wrapper sense), FR34–FR36, FR44, FR75, FR58, FR59, FR69, FR71 |
 | FR66–FR69 | Master PRD | FR37, FR47, FR38, FR39 |
-| FR70–FR73 | Master PRD | FR68, FR69, FR70/FR74, FR73 |
+| FR70–FR73 | Master PRD | FR68, FR69, FR70/FR74, FR73 (all four retired 2026-07-14, see §A note below) |
 | FR74–FR82 | Examples Gallery + Descriptor Discovery | Groups A–D, and FR-1 through FR-6 (discovery PRD) |
 | FR83–FR84 | Examples Gallery + Master PRD | FR-E1–FR-E3, NFR22 |
 | FR85–FR88 | Master PRD | FR49–FR53 |
-| FR89–FR92 | (new — no prior source) | Surfaced during input-reconciliation diffs against master PRD (FR89: per-use-case `templateManifest`, originally master FR78; FR92: originally master NFR4) and the descriptor-discovery PRD (FR90: FR-1.4/OQ-1; FR91: FR-6.2) |
+| FR89–FR92 | (new — no prior source) | Surfaced during input-reconciliation diffs against master PRD (FR89: per-use-case `templateManifest`, originally master FR78; FR92: originally master NFR4) and the descriptor-discovery PRD (FR90: FR-1.4/OQ-1; FR91: FR-6.2). **FR89 retired 2026-07-14**, see note below. |
 
 **Retired/struck *master-PRD-numbered* IDs, not carried forward (master PRD frontmatter, 2026-07-14):** master-PRD FR31, FR32, FR48, FR52, NFR15 — all MCP-integration-channel requirements, removed with the MCP module. These are the *original* master-PRD numbers, pre-renumbering — do not confuse with the consolidated document's own FR31/FR32/FR48/FR52/NFR15 above (Configure Now navigation, `GET /api/v1/generate` query mode, `npx operaton-starter`, and keyboard operability, respectively), which are unrelated live requirements that happen to reuse the same numbers after renumbering.
+
+**Retired *consolidated-document-numbered* IDs (Use Cases removal, 2026-07-14):** FR23, FR70, FR71, FR72, FR73, FR89 — all described behavior of the built-in Use Cases feature, which has been removed from templates and code (prd.md §5.8, §9.3). Unlike the MCP-related retirements above, these are the consolidated document's own numbers — the FR text in prd.md is struck through in place rather than deleted, so the ID and its history stay visible. FR11, FR30, FR32, FR42, FR43, FR49, FR79 were edited (not retired) to drop use-case-specific wording, since the capability they describe continues to exist without the use-case option.
 
 **Numbering defect fixed:** the master PRD used "FR45" twice (once for details-page routing behavior, once for build-tool-wrapper inclusion). The routing requirement is now FR32/FR35 (folded into navigation/conditional-rendering); the build-tool-wrapper requirement is now FR56.
 
@@ -115,4 +117,4 @@ Carried here rather than in `prd.md` because it's positioning/rationale rather t
 
 **Persona detail not captured in the §2 table (prd.md):** Marcus's README troubleshooting notes are port-aware (flags the actual configured port, not a hardcoded default); Thomas's inline help copy disambiguates project types in plain language rather than jargon — both are UX-writing guidance for whoever implements FR39/FR55, not separately testable requirements.
 
-**Built-in Use Cases — technical detail not reproduced in prd.md §5.8** (informational only, since the feature is sunset-planned per OI-1): UC-02 Loan Application uses a DMN decision table (`risk-assessment.dmn`, `FIRST` hit policy) for risk scoring; timer-dependent tests use `ClockUtil` to avoid real waiting; WireMock-backed use cases include a readiness check before asserting business logic. None of this changes as part of this consolidation — recorded here only so the detail isn't lost if/when someone picks up the sunset migration (OI-1).
+**Built-in Use Cases — technical detail not reproduced in prd.md §5.8** (informational/historical only — the feature itself was removed 2026-07-14, see prd.md §5.8, §9.3): UC-02 Loan Application used a DMN decision table (`risk-assessment.dmn`, `FIRST` hit policy) for risk scoring; timer-dependent tests used `ClockUtil` to avoid real waiting; WireMock-backed use cases included a readiness check before asserting business logic. Recorded here only in case any of this detail is useful if similar behavior is ever proposed for an Examples Gallery entry — it does not describe anything still running in operaton-starter's own codebase.

@@ -161,9 +161,6 @@ export function useProjectForm() {
     if (query.githubActions === 'true' || query.githubActions === 'false') {
       form.githubActions = query.githubActions === 'true'
     }
-    if (query.useCaseId?.trim()) {
-      form.useCaseId = query.useCaseId.trim()
-    }
 
     if (form.projectType === 'PROCESS_ARCHIVE') {
       form.githubActions = false

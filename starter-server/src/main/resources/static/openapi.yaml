@@ -80,13 +80,6 @@ paths:
           schema:
             type: boolean
             default: true
-        - name: useCaseId
-          in: query
-          schema:
-            type: string
-          description: |
-            Optional use case example identifier. When provided, the server resolves the
-            full parameter bundle for that use case and generates use-case-specific files.
       responses:
         "200":
           description: ZIP archive of the generated project
@@ -235,12 +228,6 @@ components:
           type: boolean
           description: Include GitHub Actions CI/CD skeleton in generated project
           default: true
-        useCaseId:
-          type: string
-          description: |
-            Optional use case example identifier. When provided, the server resolves the
-            full parameter bundle for that use case and generates use-case-specific files.
-          example: uc-01-leave-request
 
     Metadata:
       type: object
@@ -266,11 +253,6 @@ components:
             sets STARTER_DEFAULTS_GROUP_ID. Clients should pre-fill the groupId field with
             this value when present.
           example: com.example
-        useCaseExamples:
-          type: array
-          items:
-            $ref: "#/components/schemas/UseCaseExample"
-          description: Pre-configured use case example projects available in the gallery
 
     ProjectTypeInfo:
       type: object
@@ -380,86 +362,6 @@ components:
             This is the static template source — it does not reflect the current form state.
             Null for binary files or files where preview is not meaningful.
           example: "package ${groupId};\n\nimport org.springframework.boot.SpringApplication;\n..."
-
-    UseCaseExample:
-      type: object
-      required:
-        - useCaseId
-        - title
-        - description
-        - tags
-        - projectType
-        - buildSystem
-        - defaultArtifactId
-        - defaultProjectName
-        - dockerCompose
-      properties:
-        useCaseId:
-          type: string
-          description: Unique identifier for the use case example
-          example: uc-01-leave-request
-        title:
-          type: string
-          description: Short display title for the gallery card
-          example: Leave Request
-        description:
-          type: string
-          description: One-sentence scenario description for the gallery card
-          example: A manager approves employee leave — two roles, one process, zero infrastructure overhead.
-        tags:
-          type: array
-          items:
-            type: string
-          description: Capability tags displayed on the gallery card
-          example: ["multi-role", "human-tasks"]
-        projectType:
-          type: string
-          description: Base project type for generation
-          example: PROCESS_APPLICATION
-        buildSystem:
-          type: string
-          description: Default build system for generation
-          example: MAVEN
-        defaultArtifactId:
-          type: string
-          description: Default artifact ID to pre-fill in the configure form
-          example: leave-request-example
-        defaultProjectName:
-          type: string
-          description: Default project name to pre-fill in the configure form
-          example: Leave Request Example
-        dockerCompose:
-          type: boolean
-          description: Whether the example requires Docker Compose by default
-          example: false
-        processSummary:
-          type: string
-          description: One or two sentence plain-language description of what the process does end-to-end.
-        bpmnConcepts:
-          type: array
-          items:
-            type: string
-          description: BPMN elements and patterns demonstrated in this use case.
-          example: ["User Task", "Timer Boundary Event", "Exclusive Gateway"]
-        integrations:
-          type: array
-          items:
-            type: string
-          description: External systems and technologies integrated in this use case.
-          example: ["PostgreSQL", "WireMock", "Jakarta Mail"]
-        learnings:
-          type: array
-          items:
-            type: string
-          description: What a developer will learn from this example.
-        templateManifest:
-          type: array
-          items:
-            $ref: "#/components/schemas/TemplateManifestEntry"
-          description: >
-            File tree manifest for the use case example, used by the UI to render
-            the preview. Contains the actual use-case-specific templates (e.g. the
-            real BPMN, not the skeleton).
 
     ProblemDetail:
       type: object

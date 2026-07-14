@@ -59,25 +59,6 @@ class MetadataControllerTest {
                 "Expected buildSystems field in metadata");
         assertTrue(response.body().contains("\"globalOptions\""),
                 "Expected globalOptions field in metadata");
-        assertTrue(response.body().contains("\"useCaseExamples\""),
-                "Expected useCaseExamples field in metadata");
-    }
-
-    @Test
-    void metadata_response_includes_new_tag_categories() throws Exception {
-        var response = httpClient.send(
-                HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/api/v1/metadata"))
-                        .header("Accept", "application/json")
-                        .build(),
-                HttpResponse.BodyHandlers.ofString()
-        );
-
-        assertEquals(200, response.statusCode());
-        // Verify the new tag categories are available in the response
-        // The existing tags in useCaseExamples should compile without errors
-        // The new categories (RUNTIME, BUILD_SYSTEM, COMPLEXITY) are available for future use
-        assertTrue(response.body().contains("\"useCaseExamples\""),
-                "Expected useCaseExamples in metadata");
     }
 
     @Test

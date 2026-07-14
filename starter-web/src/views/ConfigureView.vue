@@ -66,12 +66,8 @@ watch(
   { immediate: true }
 )
 
-// Selected project type manifest — use the use-case-specific manifest when a use case is active
+// Selected project type manifest
 const selectedTypeManifest = computed(() => {
-  if (form.useCaseId) {
-    const uc = metadata.value?.useCaseExamples?.find((u) => u.useCaseId === form.useCaseId)
-    if (uc?.templateManifest?.length) return uc.templateManifest
-  }
   return metadata.value?.projectTypes.find((pt) => pt.id === form.projectType)?.templateManifest ?? []
 })
 
