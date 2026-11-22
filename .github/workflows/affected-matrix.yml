@@ -7,7 +7,7 @@ name: Affected Matrix
 
 on:
   pull_request:
-    branches: ["main"]
+    branches: ["main", "release/**"]
     paths:
       - "starter-templates/src/main/jte/**"
 
