@@ -161,8 +161,6 @@ jobs:
           JRELEASER_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
           JRELEASER_MAVENCENTRAL_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           JRELEASER_MAVENCENTRAL_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
-          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_PASSWORD }}
           JRELEASER_DOCKER_DEFAULT_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           JRELEASER_DOCKER_DEFAULT_PASSWORD: ${{ secrets.DOCKERHUB_TOKEN }}
 
@@ -197,8 +195,8 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           SNAPSHOT_TAGS=(
-            "${{ needs.release_build.outputs.version }}-SNAPSHOT"
-            "v${{ needs.release_build.outputs.version }}-SNAPSHOT"
+            "${{ needs.prepare.outputs.version }}-SNAPSHOT"
+            "v${{ needs.prepare.outputs.version }}-SNAPSHOT"
           )
 
           for SNAPSHOT_TAG in "${SNAPSHOT_TAGS[@]}"; do
@@ -216,8 +214,8 @@ jobs:
       - name: Set next development version
         id: set-next-version
         run: |
-          if [ -n "${{needs.prepaare.outputs.is_prerelease}}" ]; then
-            NEXT_VERSION=${{needs.prepare.outputs.outputs.base_version}}-SNAPSHOT
+          if [ "${{needs.prepare.outputs.is_prerelease}}" == "true" ]; then
+            NEXT_VERSION=${{needs.prepare.outputs.base_version}}-SNAPSHOT
           else
             NEXT_VERSION=${{needs.prepare.outputs.next_version}}-SNAPSHOT
           fi
