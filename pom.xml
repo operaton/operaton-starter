@@ -53,7 +53,7 @@
     <java.version>21</java.version>
     <maven.compiler.release>21</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <operaton.version>2.0.0</operaton.version>
+    <operaton.version>2.2.2</operaton.version>
     <archunit.version>1.5.1</archunit.version>
     <jte.version>3.2.5</jte.version>
     <frontend-maven-plugin.version>1.15.4</frontend-maven-plugin.version>
