@@ -7,18 +7,23 @@ on:
     branches: ["main", "release/**"]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   build-java:
     name: Build Java
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Set up Java 21
-        uses: actions/setup-java@v6
+        uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
         with:
           distribution: temurin
           java-version: "21"
-          cache: maven
+          cache: maven  # zizmor: ignore[cache-poisoning] only builds and tests, publishes nothing; release.yml uses no caches
       - name: Build with Maven
         run: mvn verify --batch-mode
 
@@ -30,16 +35,21 @@ jobs:
         project-type: [process-application, process-archive]
         build-system: [maven, gradle-groovy, gradle-kotlin]
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Set up Java 21
-        uses: actions/setup-java@v6
+        uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
         with:
           distribution: temurin
           java-version: "21"
-          cache: maven
+          cache: maven  # zizmor: ignore[cache-poisoning] only builds and tests, publishes nothing; release.yml uses no caches
       - name: Run test matrix (${{ matrix.project-type }} / ${{ matrix.build-system }})
+        env:
+          PROJECT_TYPE: ${{ matrix.project-type }}
+          BUILD_SYSTEM: ${{ matrix.build-system }}
         run: |
-          echo "Matrix test: projectType=${{ matrix.project-type }} buildSystem=${{ matrix.build-system }}"
+          echo "Matrix test: projectType=${PROJECT_TYPE} buildSystem=${BUILD_SYSTEM}"
           mvn verify -pl starter-templates -am --batch-mode
 
   contract-check:
@@ -47,13 +57,15 @@ jobs:
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Set up Java 21
-        uses: actions/setup-java@v6
+        uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
         with:
           distribution: temurin
           java-version: "21"
-          cache: maven
+          cache: maven  # zizmor: ignore[cache-poisoning] only builds and tests, publishes nothing; release.yml uses no caches
       - name: Validate OpenAPI contract
         run: |
           echo "Contract check: validating OpenAPI spec consistency"
@@ -67,12 +79,14 @@ jobs:
     name: Lint Web
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Set up Node.js 22
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "22"
-          cache: npm
+          cache: npm  # zizmor: ignore[cache-poisoning] only builds and tests, publishes nothing; release.yml uses no caches
           cache-dependency-path: |
             starter-web/package-lock.json
       - name: Install starter-web deps
