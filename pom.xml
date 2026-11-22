@@ -7,7 +7,7 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>4.0.4</version>
+    <version>4.2.0</version>
     <relativePath/>
   </parent>
 
@@ -54,12 +54,12 @@
     <maven.compiler.release>21</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <operaton.version>2.0.0</operaton.version>
-    <archunit.version>1.3.0</archunit.version>
+    <archunit.version>1.5.1</archunit.version>
     <jte.version>3.1.12</jte.version>
-    <frontend-maven-plugin.version>1.15.1</frontend-maven-plugin.version>
+    <frontend-maven-plugin.version>1.15.4</frontend-maven-plugin.version>
     <node.version>v22.14.0</node.version>
     <npm.version>10.9.2</npm.version>
-    <openapi-generator.version>7.10.0</openapi-generator.version>
+    <openapi-generator.version>7.27.0</openapi-generator.version>
     <deploy.skip>false</deploy.skip>
   </properties>
 
@@ -128,7 +128,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-deploy-plugin</artifactId>
-          <version>3.1.4</version>
+          <version>3.2.0</version>
           <configuration>
             <skip>${deploy.skip}</skip>
             <altDeploymentRepository>local::file:${maven.multiModuleProjectDirectory}/target/staging-deploy</altDeploymentRepository>
@@ -173,7 +173,7 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-gpg-plugin</artifactId>
-            <version>3.2.7</version>
+            <version>3.2.8</version>
             <executions>
               <execution>
                 <id>sign-artifacts</id>
