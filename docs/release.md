@@ -61,7 +61,6 @@ Go to **GitHub → Repository Settings → Secrets and variables → Actions** a
 
 4. **Verify artifacts:**
    - Docker Hub: `docker pull operaton/operaton-starter:1.0.0`
-   - npm (MCP): `npm info operaton-starter-mcp version`
    - npm (CLI): `npm info operaton-starter version`
    - Maven Central: search `org.operaton.dev` at [central.sonatype.com](https://central.sonatype.com)
    - GitHub Release: confirm changelog and release notes at the repo releases page
@@ -103,7 +102,7 @@ JReleaser will validate all credentials and configuration, print what it would d
 
 **npm publish fails with 401/403:**
 - Use an **Automation** type npm token — not a Publish token that requires 2FA
-- Confirm the `operaton-starter-mcp` and `operaton-starter` packages are either new or your account has publish rights to them
+- Confirm the `operaton-starter` package is either new or your account has publish rights to it
 
 **Docker push fails:**
 - Confirm `DOCKERHUB_USERNAME` is the account owner (not org name) of the `operaton/operaton-starter` repository

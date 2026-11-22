@@ -43,7 +43,7 @@
 - ✅ `groupId`, `artifactId`, `projectName`, `buildSystem`, `javaVersion`
 - ❌ `group_id`, `artifact_id`, `GroupId`
 
-### TypeScript (`starter-web`, `starter-mcp`, `starter-cli`)
+### TypeScript (`starter-web`, `starter-cli`)
 
 | Item | Convention | Example |
 |------|-----------|---------|

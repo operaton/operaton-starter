@@ -14,7 +14,7 @@
 
 | Constraint | Rationale |
 |-----------|-----------|
-| OpenAPI spec frozen before client generation | `openapi.yaml` is the source of truth. Any post-freeze change requires regenerating all clients (web, MCP, CLI). CI enforces this as a PR status check. |
+| OpenAPI spec frozen before client generation | `openapi.yaml` is the source of truth. Any post-freeze change requires regenerating all clients (web, CLI). CI enforces this as a PR status check. |
 | No hardcoded option lists in any channel | All project types, build systems, and Java versions come from `GET /api/v1/metadata`. Changing options requires no code changes in channels. |
 | Generated files in `src/generated/` are immutable | Only the OpenAPI generator may modify these. Hand-edits are overwritten on next generation run. |
 

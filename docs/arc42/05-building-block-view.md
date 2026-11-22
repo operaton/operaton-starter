@@ -20,7 +20,6 @@ flowchart TD
 
     subgraph clients["Channel clients"]
         WEB["starter-web\nVue 3 SPA"]
-        MCP["starter-mcp\nMCP package"]
         CLI["starter-cli\nnpx CLI"]
         ARCH["starter-archetypes\nRestGenerationClient"]
     end
@@ -33,13 +32,11 @@ flowchart TD
     META --> MODEL
 
     WEB --> CTRL
-    MCP --> CTRL
     CLI --> CTRL
     ARCH --> CTRL
 
     SPEC -.->|generates DTOs| CTRL
     SPEC -.->|generates client| WEB
-    SPEC -.->|generates client| MCP
     SPEC -.->|generates client| CLI
 ```
 
@@ -115,20 +112,6 @@ src/
 
 **Key rule:** `src/generated/` is owned by the OpenAPI generator. No hand-edits.
 
-### `starter-mcp` — MCP npm Package
-
-**Responsibility:** Exposes the generation API as an MCP tool callable by AI assistants.
-
-**Package name:** `operaton-starter-mcp`
-
-**Layout:**
-```
-src/
-├── generated/       ← OpenAPI-generated client (do not edit)
-├── tools/           ← generateProject.ts (MCP tool definition)
-└── index.ts         ← package entry point
-```
-
 ### `starter-cli` — CLI npm Package
 
 **Responsibility:** `npx operaton-starter` entry point. Dual-mode: pipe to stdout (scriptable) / TTY interactive (Phase 2).
@@ -147,7 +130,7 @@ src/
 
 ```
 operaton-starter/
-├── pom.xml                          ← Maven parent POM (6 modules)
+├── pom.xml                          ← Maven parent POM (5 modules)
 ├── openapi.yaml                     ← API contract source of truth
 ├── Dockerfile                       ← starter-server image (eclipse-temurin:25-jre-alpine)
 ├── docker-compose.dev.yml           ← local development environment
@@ -251,11 +234,6 @@ operaton-starter/
 │   ├── tailwind.config.js
 │   └── src/ (see layout above)
 │
-├── starter-mcp/
-│   ├── pom.xml
-│   ├── package.json
-│   └── src/ (see layout above)
-│
 └── starter-cli/
     ├── pom.xml
     ├── package.json
@@ -271,6 +249,5 @@ operaton-starter/
 | Web UI (FR17–23, FR40–41, FR43) | `starter-web/src/` — views, components, composables |
 | REST API (FR24–27) | `starter-server/src/main/`, `openapi.yaml` |
 | CLI (FR28–30) | `starter-cli/src/` |
-| MCP Integration (FR31–32) | `starter-mcp/src/tools/generateProject.ts` |
 | Generated Project Quality (FR33–36, FR44) | `starter-templates/jte/` — all JTE template files |
 | Self-Hosting & Operations (FR37–39) | `Dockerfile`, `application.properties`, `WebConfig.java` |

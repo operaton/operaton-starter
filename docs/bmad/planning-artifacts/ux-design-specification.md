@@ -35,7 +35,6 @@ Operaton Starter is a stateless, open-source project generator at `start.operato
 - **First dedicated Operaton project initializer** — no alternative exists.
 - **Split landing page** — Practitioner path (direct form) and Explorer path (visual gallery) serve both personas without compromise.
 - **Live file tree preview** — client-side, zero server round-trips per change.
-- **MCP module** — natively callable from AI assistants.
 - **Benchmark competition**: `start.spring.io` (Practitioner UX reference) and `code.quarkus.io` (Explorer/gallery UX reference).
 
 ---

@@ -14,7 +14,7 @@
 
 **Decision:** `openapi.yaml` at project root is the single source of truth. All server stubs and channel clients are generated from it via `openapi-generator`.
 
-**Why:** Prevents API drift between channels by construction. Server stubs, web client, MCP client, and CLI client are all generated — they cannot diverge.
+**Why:** Prevents API drift between channels by construction. Server stubs, web client, and CLI client are all generated — they cannot diverge.
 
 **Consequences:** Spec must be frozen before any channel implementation begins. Post-freeze changes require regenerating all clients. CI enforces this as a PR status check.
 
@@ -60,7 +60,7 @@ The sequence is driven by the spec-first constraint — the API contract must ex
 3. Implement generation engine (starter-templates)
 4. Wire engine into starter-server REST API  ← spec frozen after this step
 5. Extract operaton.org design tokens → tailwind.config.js
-6. Implement starter-web and starter-mcp in parallel (both consume frozen spec)
+6. Implement starter-web (consumes frozen spec)
 7. Implement starter-archetypes RestGenerationClient (MVP) last
 ```
 
@@ -100,17 +100,13 @@ Scaffolded with `npm create vue@latest`:
 
 Output served as static assets embedded in Spring Boot JAR (`starter-server/src/main/resources/static/`).
 
-### `starter-mcp` — MCP npm Package
-
-Manual setup with `@modelcontextprotocol/sdk` 1.28.0. Client code generated from frozen OpenAPI spec. Published as `operaton-starter-mcp` on npm.
-
 ### `starter-cli` — CLI npm Package
 
 Manual setup. Published as `operaton-starter` npm package. Dual-mode: pipe to stdout (scriptable) / TTY interactive (Phase 2). Frontend-maven-plugin wraps it as a Maven module.
 
 ## Frontend-Maven-Plugin Hermetic Builds
 
-`starter-web`, `starter-mcp`, and `starter-cli` are Maven modules using `com.github.eirslett:frontend-maven-plugin` to download a pinned Node.js/npm version and execute `npm ci && npm run build`. This ensures hermetic builds — no system Node.js dependency, identical Node version in CI and local builds.
+`starter-web` and `starter-cli` are Maven modules using `com.github.eirslett:frontend-maven-plugin` to download a pinned Node.js/npm version and execute `npm ci && npm run build`. This ensures hermetic builds — no system Node.js dependency, identical Node version in CI and local builds.
 
 ## Data Architecture
 

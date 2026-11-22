@@ -52,7 +52,6 @@ public class GenerateController {
             @RequestParam(defaultValue = "RENOVATE") String dependencyUpdater,
             @RequestParam(defaultValue = "false") boolean dockerCompose,
             @RequestParam(defaultValue = "true") boolean githubActions,
-            @RequestParam(required = false) String useCaseId,
             @RequestParam(defaultValue = "1.0.0-SNAPSHOT") String version
     ) {
         var dto = new ProjectConfig(
@@ -69,9 +68,6 @@ public class GenerateController {
         dto.setDependencyUpdater(ProjectConfig.DependencyUpdaterEnum.fromValue(dependencyUpdater));
         dto.setDockerCompose(dockerCompose);
         dto.setGithubActions(githubActions);
-        if (useCaseId != null && !useCaseId.isBlank()) {
-            dto.setUseCaseId(useCaseId);
-        }
         dto.setVersion(version);
  
         return generateProjectResponse(toEffectiveConfig(dto));

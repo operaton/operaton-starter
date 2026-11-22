@@ -17,8 +17,6 @@ services:
       # - STARTER_DEFAULTS_MAVEN_REGISTRY=https://nexus.example.com/repository/maven-public
       # - STARTER_DEFAULTS_OPERATON_VERSION=2.0.0
       # - STARTER_CORS_ALLOWED_ORIGINS=https://start.example.com
-    # MCP: to connect operaton-starter-mcp to this instance, set OPERATON_STARTER_URL
-    # in your AI assistant MCP config: "OPERATON_STARTER_URL": "http://localhost:8080"
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:8080/actuator/health"]
       interval: 30s

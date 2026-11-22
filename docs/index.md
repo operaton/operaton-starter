@@ -15,7 +15,7 @@ System architecture documented using the [arc42](https://arc42.org) template.
 | [03 — Context](arc42/03-context.md) | System context diagram, external interfaces, channel matrix |
 | [04 — Solution Strategy](arc42/04-solution-strategy.md) | Key technology decisions, implementation sequence, module bootstrapping |
 | [05 — Building Block View](arc42/05-building-block-view.md) | Module responsibilities, package layout, complete project tree |
-| [06 — Runtime View](arc42/06-runtime-view.md) | Generation flow, metadata/preview, rate limiting, CLI/MCP scenarios |
+| [06 — Runtime View](arc42/06-runtime-view.md) | Generation flow, metadata/preview, rate limiting, CLI scenarios |
 | [07 — Deployment View](arc42/07-deployment-view.md) | Docker image, CI/CD pipeline, self-hosted setup, local dev |
 | [08 — Cross-Cutting Concepts](arc42/08-crosscutting-concepts.md) | Domain model ownership, error handling, logging, testing patterns |
 | [09 — Architecture Decisions](arc42/09-architecture-decisions.md) | ADRs 01–10 (JTE, OpenAPI spec-first, Scalar, Tailwind, stateless design, …) |

@@ -4,7 +4,7 @@
 
 **Status:** Accepted
 
-**Context:** Multiple channels (web UI, REST API, CLI, MCP, `mvn archetype:generate`) all generate the same output. Without a shared engine, each channel could evolve independently, leading to divergence in generated project content.
+**Context:** Multiple channels (web UI, REST API, CLI, `mvn archetype:generate`) all generate the same output. Without a shared engine, each channel could evolve independently, leading to divergence in generated project content.
 
 **Decision:** A single `GenerationEngine.generate(ProjectConfig) → byte[]` in `starter-templates` is the only code that produces project archives. All channels are thin wrappers that call this engine (directly or via REST API). No channel contains template logic.
 
@@ -51,7 +51,7 @@
 
 **Context:** Multiple channels consume the same API. Without a single source of truth, server implementation and client expectations can drift silently.
 
-**Decision:** `openapi.yaml` at project root is the single source of truth. Server stubs (`starter-server`) and all channel clients (`starter-web`, `starter-mcp`, `starter-cli`) are generated via `openapi-generator`. The spec is frozen before any channel implementation begins.
+**Decision:** `openapi.yaml` at project root is the single source of truth. Server stubs (`starter-server`) and all channel clients (`starter-web`, `starter-cli`) are generated via `openapi-generator`. The spec is frozen before any channel implementation begins.
 
 **Consequences:**
 - `openapi-generator-maven-plugin` in `starter-server` uses `useSpringBoot3=true` for Spring Framework 6/7 compatibility
@@ -112,7 +112,7 @@
 
 **Status:** Accepted
 
-**Context:** All channels (web UI, CLI, MCP) need to present the same list of project types, build systems, and options. Hardcoding these lists in each channel creates maintenance burden and divergence risk.
+**Context:** All channels (web UI, CLI) need to present the same list of project types, build systems, and options. Hardcoding these lists in each channel creates maintenance burden and divergence risk.
 
 **Decision:** `GET /api/v1/metadata` is the projection contract between the engine and all consumers. The schema is defined before any channel implementation begins. `templateManifest` within each project type descriptor enables client-side file tree preview without server round-trips.
 

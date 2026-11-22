@@ -74,7 +74,6 @@ jobs:
           cache: npm
           cache-dependency-path: |
             starter-web/package-lock.json
-            starter-mcp/package-lock.json
       - name: Install starter-web deps
         run: npm ci
         working-directory: starter-web
@@ -84,12 +83,6 @@ jobs:
       - name: Test starter-web
         run: npm run test:unit
         working-directory: starter-web
-      - name: Install starter-mcp deps
-        run: npm ci
-        working-directory: starter-mcp
-      - name: Build starter-mcp
-        run: npm run build
-        working-directory: starter-mcp
 
   # docker-publish and npm-publish have been moved to .github/workflows/release.yml (JReleaser).
   # Triggered on v*.*.* tags; coordinates GitHub Release + Docker Hub + Maven Central + npm.

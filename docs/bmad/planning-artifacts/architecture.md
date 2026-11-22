@@ -33,12 +33,11 @@ _This document builds collaboratively through step-by-step discovery. Sections a
 
 | Category | Count | Architectural Significance |
 |----------|-------|---------------------------|
-| Generation Engine | 9 (FR1–8, FR42) | Unified engine shared by all channels; CLI/MCP clients generated from OpenAPI spec |
+| Generation Engine | 9 (FR1–8, FR42) | Unified engine shared by all channels; CLI clients generated from OpenAPI spec |
 | Project Configuration | 8 (FR9–16) | Identity propagation (Group/Artifact/name) is a correctness invariant across all generated files |
 | Web UI | 10 (FR17–23, FR40–41, FR43) | SPA consuming metadata endpoint; client-side preview from template manifests; no per-change server round-trip |
 | REST API | 4 (FR24–27) | Spec-first contract; rate limiting at IP level; metadata drives all channels |
 | CLI | 3 (FR28–30) | Thin REST wrapper; dual-mode (scriptable pipe vs interactive terminal) |
-| MCP Integration | 2 (FR31–32) | npm package client generated from OpenAPI spec; configurable base URL |
 | Generated Project Quality | 6 (FR33–36, FR44) | CI matrix validates all project type × build system combinations |
 | Self-Hosting & Operations | 3 (FR37–39) | Docker image; env-var configuration only; health endpoint |
 
@@ -58,7 +57,7 @@ _This document builds collaboratively through step-by-step discovery. Sections a
 
 **Scale & Complexity:**
 
-- Primary domain: Full-stack monorepo (Java server/templates/archetypes + TypeScript web/MCP)
+- Primary domain: Full-stack monorepo (Java server/templates/archetypes + TypeScript web)
 - Complexity level: Medium
 - Estimated architectural components: 5 monorepo modules + deployment infrastructure
 - Resource profile: Solo developer
@@ -67,8 +66,8 @@ _This document builds collaboratively through step-by-step discovery. Sections a
 
 - **Operaton BOM:** Generated projects always target current stable Operaton release; starter updates within 24h via automated Dependabot/Renovate PR + CI matrix pass. SLA is conditional on CI matrix passing cleanly — a breaking Operaton release pauses the SLA clock until templates are fixed.
 - **Generation engine performance:** `mvn archetype:generate` (Maven subprocess) MUST NOT be used at runtime — Maven startup overhead violates NFR1 ≤1s. Maven Archetype format is the template authoring standard only; runtime engine is a pure-Java in-process library.
-- **OpenAPI Generator:** CLI and MCP client code generated from the spec; spec must be frozen before client generation begins; any post-freeze change requires regenerating all clients.
-- **GenerationClient strategy interface:** `starter-archetypes` defines a `GenerationClient` interface. MVP: `RestGenerationClient` (HTTP call to `/api/v1/generate`). Phase 2+: `EmbeddedGenerationClient` (calls `starter-templates` directly, no network). Enables offline `mvn archetype:generate` without engine duplication.
+- **OpenAPI Generator:** CLI client code generated from the spec; spec must be frozen before client generation begins; any post-freeze change requires regenerating all clients.
+- **GenerationClient strategy interface:** `starter-archetypes` defines a `GenerationClient` interface. `starter-archetypes` calls `GenerationEngine.generate()` in `starter-templates` directly, in-process. No REST-based client — no network dependency, no running server required. See Amendment 2026-07-14.
 - **`starter-templates` zero Spring dependency:** Pure-Java library; no Spring context in generation path; enables fast CI matrix and direct embedding.
 - **Rate limiting:** Bucket4j in-memory, best-effort per IP; no Redis; stateless constraint preserved.
 - **Design system:** operaton.org is Jekyll-based (`github.com/operaton/operaton.org`); CSS design tokens (colors, typography, spacing) extracted before `starter-web` implementation begins.
@@ -81,11 +80,11 @@ _This document builds collaboratively through step-by-step discovery. Sections a
 
 ### Metadata Schema as First-Class Contract
 
-`GET /api/v1/metadata` is the **projection contract** between the engine and all consumers (web UI, CLI, MCP, future channels). Schema must be defined before any channel implementation begins. Each `projectTypes` entry contains:
+`GET /api/v1/metadata` is the **projection contract** between the engine and all consumers (web UI, CLI, future channels). Schema must be defined before any channel implementation begins. Each `projectTypes` entry contains:
 
 | Field | Purpose |
 |-------|---------|
-| `id` | Flag value for CLI, tool parameter for MCP |
+| `id` | Flag value for CLI |
 | `displayName` | Rendered in gallery cards and dropdowns |
 | `description` | Gallery card body copy |
 | `tags` | Capability badges |
@@ -112,7 +111,6 @@ flowchart TD
         DEV_BROWSER["👤 Developer\n(Browser)"]
         DEV_CLI["👤 Developer\n(npx / curl)"]
         DEV_MVN["👤 Developer\n(mvn archetype:generate)"]
-        AI["🤖 AI Assistant\n(Claude, Copilot, Cursor)"]
         OPS["👤 Operator\n(self-hosted Docker)"]
     end
 
@@ -121,38 +119,32 @@ flowchart TD
         SERVER["starter-server\nSpring Boot"]
         TEMPLATES["starter-templates\nPure-Java Engine"]
         ARCHETYPES["starter-archetypes\nGenerationClient"]
-        MCP["starter-mcp\nnpm package"]
     end
 
     subgraph external_systems["External Systems"]
         OPERATON["Operaton BOM\n(Maven Central)"]
-        NPMREG["npm Registry"]
         OPENREWRITE["migrate-from-camunda-recipe\n(OpenRewrite, Phase 2)"]
         DOCKER["Docker Hub\ndocker.io/operaton/operaton-starter"]
     end
 
     DEV_BROWSER -->|HTTPS| WEB
     DEV_CLI -->|HTTPS POST /api/v1/generate| SERVER
-    DEV_MVN -->|HTTP via RestGenerationClient| ARCHETYPES
-    AI -->|MCP tool call| MCP
+    DEV_MVN -->|mvn archetype:generate| ARCHETYPES
     OPS -->|docker run| SERVER
 
     WEB -->|REST /api/v1/*| SERVER
-    MCP -->|REST /api/v1/generate| SERVER
-    ARCHETYPES -->|MVP: REST /api/v1/generate| SERVER
-    ARCHETYPES -.->|Phase 2: EmbeddedGenerationClient| TEMPLATES
+    ARCHETYPES -->|Embedded, in-process| TEMPLATES
 
     SERVER --> TEMPLATES
 
     SERVER -.->|Dependabot/Renovate bump| OPERATON
-    MCP -.->|published to| NPMREG
     SERVER -.->|image published to| DOCKER
     TEMPLATES -.->|Phase 2| OPENREWRITE
 ```
 
 ### Cross-Cutting Concerns Identified
 
-1. **Channel consistency** — Web UI, REST API, CLI, MCP, and `mvn archetype:generate` invoke the same generation engine; functionally identical output enforced by CI matrix
+1. **Channel consistency** — Web UI, REST API, CLI, and `mvn archetype:generate` invoke the same generation engine; functionally identical output enforced by CI matrix
 2. **Spec-first discipline** — OpenAPI spec and metadata schema frozen before any channel implementation; spec freeze enforced as a GitHub Actions PR status check (warning level)
 3. **Stateless design** — No session state, no database, no sticky sessions; Bucket4j in-memory rate limiting (best-effort)
 4. **Identity propagation** — Group ID, Artifact ID, project name flow into BPMN process IDs, Java package names, `application.name`, build coordinates
@@ -160,14 +152,14 @@ flowchart TD
 6. **Client-side preview** — Metadata template manifest schema drives file tree rendering without server round-trips; schema is an architectural artifact, not an implementation detail
 7. **Observability** — Structured JSON logs; `/actuator/health` for load balancer integration
 8. **Security** — HTTPS enforced; transient IP rate limiting; zero PII persistence
-9. **Implementation sequence** — OpenAPI spec → metadata schema → generate clients → engine → channels (web UI and MCP parallel once API is solid; CLI last)
+9. **Implementation sequence** — OpenAPI spec → metadata schema → generate clients → engine → channels (web UI once API is solid; CLI last)
 
 ## Starter Template Evaluation
 > arc42 Section 4 (partial): Technology Decisions & Bootstrapping Strategy
 
 ### Primary Technology Domain
 
-Multi-module monorepo: Java backend (Spring Boot) + TypeScript SPA (Vue 3) + TypeScript npm package (MCP). No single starter covers the full project — each module bootstrapped from its canonical generator.
+Multi-module monorepo: Java backend (Spring Boot) + TypeScript SPA (Vue 3). No single starter covers the full project — each module bootstrapped from its canonical generator.
 
 ### Versions (current as of 2026-03-27)
 
@@ -213,14 +205,13 @@ curl https://start.spring.io/starter.zip \
 - **JTE** (Java Template Engine) as template engine — precompiled at build time via `jte-maven-plugin`; zero runtime template parsing; template classes shipped in JAR
 - Single public API: `GenerationEngine.generate(ProjectConfig) → byte[]`
 
-#### `starter-archetypes` — GenerationClient Interface + MVP Wrapper
+#### `starter-archetypes` — GenerationClient Interface + Embedded Wrapper
 
 **Generator:** None — plain Maven module.
 
 **Architectural decisions:**
 - Defines `GenerationClient` interface
-- MVP: `RestGenerationClient` (Java 11 `HttpClient`)
-- Phase 2+: `EmbeddedGenerationClient` (direct call to `starter-templates`, no network)
+- `EmbeddedGenerationClient` (direct in-process call to `starter-templates`) — the only implementation, no network, no REST-based client (see Amendment 2026-07-14)
 
 #### `starter-web` — Vue 3 SPA
 
@@ -239,22 +230,6 @@ npm create vue@latest starter-web
 - Vitest for unit tests
 - ESLint + Prettier
 
-#### `starter-mcp` — MCP npm Package
-
-**Generator:** `npm init` + manual TypeScript setup
-
-```bash
-mkdir starter-mcp && cd starter-mcp && npm init -y
-npm install @modelcontextprotocol/sdk@1.28.0
-npm install -D typescript @types/node ts-node
-```
-
-**Architectural decisions:**
-- `@modelcontextprotocol/sdk` 1.28.0
-- Client code generated from OpenAPI spec (spec-first discipline)
-- Published as `operaton-starter-mcp` on npm
-- `main` field points to compiled JS; `types` field to `.d.ts`
-
 ### Monorepo Build Coordination
 
 ```
@@ -263,11 +238,10 @@ operaton-starter/          ← Maven parent POM (multi-module)
 ├── starter-server/        ← Spring Boot (Maven module)
 ├── starter-templates/     ← Pure Java library (Maven module)
 ├── starter-archetypes/    ← GenerationClient (Maven module)
-├── starter-web/           ← Vue 3 SPA (Maven module via frontend-maven-plugin)
-└── starter-mcp/           ← MCP npm package (Maven module via frontend-maven-plugin)
+└── starter-web/           ← Vue 3 SPA (Maven module via frontend-maven-plugin)
 ```
 
-`starter-web` and `starter-mcp` are Maven modules whose POMs use `com.github.eirslett:frontend-maven-plugin` to download a pinned Node.js/npm version and execute `npm ci && npm run build`. This ensures hermetic builds — no system Node.js dependency, identical Node version in CI and local builds.
+`starter-web` is a Maven module whose POM uses `com.github.eirslett:frontend-maven-plugin` to download a pinned Node.js/npm version and execute `npm ci && npm run build`. This ensures hermetic builds — no system Node.js dependency, identical Node version in CI and local builds.
 
 ```xml
 <plugin>
@@ -302,9 +276,8 @@ operaton-starter/          ← Maven parent POM (multi-module)
 1. Define OpenAPI spec + metadata schema (no code)
 2. Bootstrap `starter-templates` — generation engine, testable standalone
 3. Bootstrap `starter-server` — wire engine behind REST API, freeze spec
-4. Generate CLI client stub for `starter-archetypes` from frozen spec
-5. Bootstrap `starter-web` and `starter-mcp` in parallel
-6. Bootstrap `starter-archetypes` (`RestGenerationClient` MVP) last
+4. Bootstrap `starter-web`
+5. Bootstrap `starter-archetypes` (`EmbeddedGenerationClient`) — depends only on `starter-templates`, not gated on this sequence (see Amendment 2026-07-14)
 
 ## Core Architectural Decisions
 > arc42 Section 4: Solution Strategy & Technology Decisions
@@ -325,7 +298,6 @@ operaton-starter/          ← Maven parent POM (multi-module)
 
 **Deferred Decisions (Post-MVP):**
 - Scalar Spring Boot starter adoption (pending Spring Boot 4 compatibility confirmation — HTML+CDN preferred anyway)
-- `EmbeddedGenerationClient` for offline `mvn archetype:generate` (Phase 2)
 - Tailwind → CSS custom property export for non-Tailwind custom CSS (Phase 2 refinement)
 
 ### Data Architecture
@@ -427,9 +399,8 @@ Options that do not apply to the current project type are removed from the DOM e
 
 ### Infrastructure & Deployment
 
-- **Docker base image** — multi-stage build: Maven build stage (`maven:3-eclipse-temurin-25`) produces the JAR; final runtime stage uses `eclipse-temurin:25-jre-alpine` + Node.js Active LTS (installed via `apk add nodejs npm` or copied from a `node:lts-alpine` stage); single image bundles both the JVM application and the MCP server process
-- **Process supervision** — `s6-overlay` (or equivalent lightweight init) manages both the Spring Boot JVM process and the `node starter-mcp/dist/index.js` MCP server process; if either process exits, the container exits (no zombie processes, clean Docker restart semantics)
-- **MCP base URL wiring** — the bundled MCP server process defaults to `http://localhost:{SERVER_PORT}/` (loopback, no external network hop); `OPERATON_STARTER_BASE_URL` env var overrides to point at a remote instance (enabling the standalone MCP package use case unchanged)
+- **Docker base image** — multi-stage build: Maven build stage (`maven:3-eclipse-temurin-25`) produces the JAR; final runtime stage uses `eclipse-temurin:25-jre-alpine`; single image bundles the JVM application
+- **Process supervision** — the container runs the Spring Boot JVM process directly; if the process exits, the container exits (clean Docker restart semantics)
 - **Generated project Java** — Java 21 minimum; no version picker (see NFR13 update); all combinations validated in CI matrix against Java 21
 - **Docker registry** — `docker.io/operaton/operaton-starter`; published on every tagged release
 - **Environment configuration** — all runtime config via environment variables; no file-based config at runtime
@@ -452,7 +423,6 @@ flowchart LR
     JR --> GHR["GitHub Release\nchangelog from conventional commits"]
     JR --> MCN["Maven Central\nvia Sonatype OSSRH"]
     JR --> DHB["Docker Hub\noperaton/operaton-starter:X.Y.Z + latest"]
-    JR --> NPM["npm registry\noperaton-starter-mcp@X.Y.Z"]
 ```
 
 **Template-diff workflow — `.github/workflows/template-validation.yml`:**
@@ -505,7 +475,7 @@ release:
 distributions:
   starter-server:       ← Maven Central (starter-server, starter-templates, starter-archetypes)
   operaton-starter:     ← Docker Hub (docker.io/operaton/operaton-starter)
-  operaton-starter-mcp: ← npm (operaton-starter-mcp)
+  operaton-starter-cli: ← npm (operaton-starter)
 ```
 
 **Required GitHub Actions secrets (all must be set before first release):**
@@ -525,7 +495,7 @@ distributions:
 - `org.operaton.dev` groupId claimed at `central.sonatype.com` before first Maven Central publish
 - GPG key registered with a public keyserver (`keys.openpgp.org` or `keyserver.ubuntu.com`)
 - Docker Hub repository `operaton/operaton-starter` created under the `operaton` org
-- npm package name `operaton-starter-mcp` claimed (publish a `0.0.1-alpha` if needed to reserve)
+- npm package name `operaton-starter` claimed (publish a `0.0.1-alpha` if needed to reserve)
 
 ### Decision Impact Analysis
 
@@ -535,14 +505,14 @@ distributions:
 3. Implement generation engine in `starter-templates`
 4. Wire engine into `starter-server` REST API; freeze spec
 5. Extract operaton.org design tokens → `tailwind.config.js`
-6. Implement `starter-web` and `starter-mcp` in parallel (both consume frozen spec)
-7. Implement `starter-archetypes` `RestGenerationClient` (MVP) last
+6. Implement `starter-web` (consumes frozen spec)
+7. Implement `starter-archetypes` `EmbeddedGenerationClient` — no longer gated last; only requires `starter-templates` (see Amendment 2026-07-14)
 
 **Cross-component dependencies:**
 - `starter-templates` has no dependencies on other modules — can be developed and tested in isolation
 - `starter-server` depends on `starter-templates`; spec freeze gates all other channel work
-- `starter-web` and `starter-mcp` both depend on frozen spec; parallel development is safe after freeze
-- `starter-archetypes` depends on `starter-server` being deployed (REST target); developed last
+- `starter-web` depends on frozen spec; development is safe after freeze
+- `starter-archetypes` depends only on `starter-templates` — no longer gated on `starter-server` deployment (see Amendment 2026-07-14)
 - All JTE templates in `starter-templates` are inputs to the CI test matrix — any template change triggers full matrix run
 
 ## Implementation Patterns & Consistency Rules
@@ -589,7 +559,7 @@ Agents working on different modules could independently make incompatible choice
 - ✅ `groupId`, `artifactId`, `projectName`, `buildSystem`, `javaVersion`
 - ❌ `group_id`, `artifact_id`, `GroupId`
 
-**TypeScript naming (`starter-web`, `starter-mcp`):**
+**TypeScript naming (`starter-web`, `starter-cli`):**
 - Vue components: `PascalCase` filename and name → `ProjectGallery.vue`
 - Composables: `use` prefix → `useMetadata.ts`, `useProjectForm.ts`
 - Types / interfaces: `PascalCase` → `ProjectConfig`, `MetadataResponse`
@@ -619,14 +589,6 @@ src/
 ├── router/          ← Vue Router configuration
 ├── types/           ← TypeScript type definitions
 └── views/           ← GalleryView.vue, ConfigureView.vue
-```
-
-**`starter-mcp` layout:**
-```
-src/
-├── generated/       ← OpenAPI-generated client (do not edit)
-├── tools/           ← MCP tool definitions
-└── index.ts         ← package entry point
 ```
 
 **Rule:** `src/generated/` in any module is owned by the OpenAPI generator. No human or agent edits these files. Spec changes require re-running the generator.
@@ -750,9 +712,9 @@ void templateModuleHasNoSpringDependencies() {
 
 ```
 operaton-starter/
-├── pom.xml                          ← Maven parent POM (6 modules)
+├── pom.xml                          ← Maven parent POM (5 modules)
 ├── openapi.yaml                     ← API contract source of truth (referenced by all modules)
-├── Dockerfile                       ← multi-stage: Maven build → eclipse-temurin:25-jre-alpine + Node.js LTS; s6-overlay supervises JVM + MCP processes
+├── Dockerfile                       ← multi-stage: Maven build → eclipse-temurin:25-jre-alpine
 ├── docker-compose.dev.yml           ← local development environment
 ├── jreleaser.yml                    ← JReleaser config: GitHub Release + Maven Central + Docker Hub + npm
 ├── renovate.json                    ← automated Operaton/dependency version bumps
@@ -853,19 +815,19 @@ operaton-starter/
 │           └── integration/
 │               └── GenerationIntegrationTest.java
 │
-├── starter-archetypes/              ← GenerationClient interface + RestGenerationClient
+├── starter-archetypes/              ← GenerationClient interface + EmbeddedGenerationClient
 │   ├── pom.xml
 │   └── src/
 │       ├── main/
 │       │   ├── java/org/operaton/dev/starter/archetypes/
 │       │   │   ├── GenerationClient.java           ← interface
-│       │   │   ├── RestGenerationClient.java        ← MVP: calls /api/v1/generate
+│       │   │   ├── EmbeddedGenerationClient.java    ← MVP: calls GenerationEngine.generate() directly, in-process
 │       │   │   └── config/
-│       │   │       └── ClientConfig.java
+│       │   │       └── ClientConfig.java            ← open question: still needed with no server URL to configure? (see Amendment 2026-07-14)
 │       │   └── resources/META-INF/maven/
 │       │       └── archetype-metadata.xml
 │       └── test/java/org/operaton/dev/starter/archetypes/
-│           └── RestGenerationClientTest.java
+│           └── EmbeddedGenerationClientTest.java
 │
 ├── starter-web/                     ← Vue 3 SPA
 │   ├── pom.xml                      ← frontend-maven-plugin; copies dist/ → starter-server/src/main/resources/static/
@@ -909,16 +871,6 @@ operaton-starter/
 │           ├── GalleryView.vue
 │           └── ConfigureView.vue
 │
-├── starter-mcp/                     ← operaton-starter-mcp npm package
-│   ├── pom.xml                      ← frontend-maven-plugin wrapper
-│   ├── package.json                 ← name: "operaton-starter-mcp"
-│   ├── tsconfig.json
-│   └── src/
-│       ├── index.ts
-│       ├── tools/
-│       │   └── generateProject.ts
-│       └── generated/               ← OpenAPI-generated client (do not edit)
-│
 └── starter-cli/                     ← operaton-starter npm CLI package
     ├── pom.xml                      ← frontend-maven-plugin wrapper
     ├── package.json                 ← name: "operaton-starter", bin: "operaton-starter"
@@ -957,9 +909,8 @@ flowchart TD
 
     subgraph clients["Channel clients"]
         WEB["starter-web\nVue 3 SPA"]
-        MCP["starter-mcp\nMCP package"]
         CLI["starter-cli\nnpx CLI"]
-        ARCH["starter-archetypes\nRestGenerationClient"]
+        ARCH["starter-archetypes\nEmbeddedGenerationClient"]
     end
 
     CTRL --> SVC
@@ -970,13 +921,11 @@ flowchart TD
     META --> MODEL
 
     WEB --> CTRL
-    MCP --> CTRL
     CLI --> CTRL
-    ARCH --> CTRL
+    ARCH --> ENGINE
 
     SPEC -.->|generates DTOs| CTRL
     SPEC -.->|generates client| WEB
-    SPEC -.->|generates client| MCP
     SPEC -.->|generates client| CLI
 ```
 
@@ -989,7 +938,6 @@ flowchart TD
 | Web UI (FR17–23, FR40–41, FR43) | `starter-web/src/` — views, components, composables |
 | REST API (FR24–27) | `starter-server/src/main/`, `openapi.yaml` at root |
 | CLI (FR28–30) | `starter-cli/src/` — dual-mode entry point |
-| MCP Integration (FR31–32) | `starter-mcp/src/tools/generateProject.ts` |
 | Generated Project Quality (FR33–36, FR44) | `starter-templates/jte/` — all JTE template files |
 | Self-Hosting & Operations (FR37–39) | `Dockerfile`, `application.properties`, `WebConfig.java` |
 
@@ -1020,7 +968,6 @@ Client → GET /api/v1/metadata
 openapi.yaml (project root)
   → starter-server: openapi-generator-maven-plugin → target/generated-sources/openapi/dto/
   → starter-web:    openapi-generator (npm) → src/generated/
-  → starter-mcp:    openapi-generator (npm) → src/generated/
   → starter-cli:    openapi-generator (npm) → src/generated/
 ```
 
@@ -1056,11 +1003,11 @@ Every submodule README must contain these sections in this order:
 - Usage example: complete `curl` command for `POST /api/v1/generate` with a minimal JSON body, saving the response as `project.zip`
 
 **`starter-archetypes/README.md`**
-- Role: `GenerationClient` interface + `RestGenerationClient` MVP wrapper; enables `mvn archetype:generate` to call the REST API
-- Prerequisites: Java 21+, Maven 3.9+; a running `starter-server` instance for integration use
+- Role: `GenerationClient` interface + `EmbeddedGenerationClient` MVP wrapper; enables `mvn archetype:generate` to call `starter-templates` directly, in-process (see Amendment 2026-07-14)
+- Prerequisites: Java 21+, Maven 3.9+; no running server required
 - Build in isolation: `mvn verify` from `starter-archetypes/`
-- Run / use locally: show the `mvn archetype:generate` invocation that calls the local server via `RestGenerationClient`
-- Usage example: full `mvn archetype:generate -DarchetypeGroupId=... -DserverUrl=http://localhost:8080` command
+- Run / use locally: show the `mvn archetype:generate` invocation and how it resolves to a direct `GenerationEngine.generate()` call
+- Usage example: full `mvn archetype:generate -DarchetypeGroupId=...` command with no server URL parameter
 
 **`starter-web/README.md`**
 - Role: Vue 3 SPA; gallery and configuration form; consumes `/api/v1/metadata` and `/api/v1/generate`
@@ -1068,13 +1015,6 @@ Every submodule README must contain these sections in this order:
 - Build in isolation: `npm ci && npm run build` from `starter-web/`; `npm run dev` for local development with Vite proxy to `localhost:8080`
 - Run / use locally: `npm run dev` — show the Vite proxy config that forwards `/api` to the backend
 - Usage example: screenshot-equivalent description of gallery → configure → download flow, plus `npm run test:unit` to run Vitest suite
-
-**`starter-mcp/README.md`**
-- Role: `operaton-starter-mcp` npm package; exposes `generate_project` MCP tool for AI assistants
-- Prerequisites: Node.js Active LTS, npm 10+
-- Build in isolation: `npm ci && npm run build` from `starter-mcp/`
-- Run / use locally: show how to register the package with Claude Code (`claude mcp add`) pointing at a local or remote `starter-server` via `OPERATON_STARTER_BASE_URL`
-- Usage example: MCP tool invocation JSON (`{"name":"generate_project","arguments":{...}}`) and the expected ZIP response
 
 ### Documentation Consistency Rules
 
@@ -1105,7 +1045,6 @@ All 44 functional requirements and 20 non-functional requirements have architect
 | Gap | Resolution |
 |-----|-----------|
 | FR16 — Shareable config links encoding | Individual URL query params (`?type=...&build=...&groupId=...`). Human-readable, debuggable, no decoder needed. `useShareableLink.ts` serializes/deserializes form state. Round-trip unit test required. |
-| FR32 — MCP configurable base URL | Env var `OPERATON_STARTER_BASE_URL`; default `https://start.operaton.org` |
 | openapi-generator Spring Boot 4 | `<useSpringBoot3>true</useSpringBoot3>` in `starter-server` POM |
 
 ### Additional Testing Pattern — Shareable Links
@@ -1124,7 +1063,7 @@ Required for every new config field added; prevents silent breakage of shareable
 4. Spec-first OpenAPI discipline with `openapi-generator`
 5. Scalar API docs via static HTML + CDN (no Spring Boot coupling)
 6. Stateless design — no database, no sessions
-7. `GenerationClient` strategy interface (MVP: REST → Phase 2: embedded)
+7. `GenerationClient` strategy interface (embedded only — direct call to `starter-templates`; no REST-based client, see Amendment 2026-07-14)
 8. Metadata schema as first-class contract (not a convenience endpoint)
 9. Individual URL query params for shareable config links
 10. Best-effort in-memory rate limiting (Bucket4j, no Redis)
@@ -1148,7 +1087,7 @@ Each ADR: **Context** / **Decision** / **Consequences** format. Authored by Paig
 - [x] Docker: `eclipse-temurin:25-jre-alpine`; `docker.io/operaton/operaton-starter`
 - [x] Generated project Java: default 17, picker 17/21/25
 - [x] Rate limiting: Bucket4j in-memory, best-effort
-- [x] 6-module monorepo confirmed (`starter-cli` as 6th module)
+- [x] 5-module monorepo confirmed (`starter-cli` as 5th module)
 
 **✅ Implementation Patterns**
 - [x] Package naming: `org.operaton.dev.starter.*`
@@ -1161,7 +1100,7 @@ Each ADR: **Context** / **Decision** / **Consequences** format. Authored by Paig
 - [x] Shareable link round-trip unit test
 
 **✅ Project Structure**
-- [x] Complete 6-module monorepo tree defined
+- [x] Complete 5-module monorepo tree defined
 - [x] `openapi.yaml` at project root
 - [x] Generated sources to `target/` (never `src/`)
 - [x] `starter-web` dist copied to `starter-server/src/main/resources/static/`
@@ -1183,7 +1122,6 @@ Each ADR: **Context** / **Decision** / **Consequences** format. Authored by Paig
 - Metadata schema as first-class contract keeps all channels passively in sync
 
 **Areas for Future Enhancement:**
-- Phase 2: `EmbeddedGenerationClient` for offline `mvn archetype:generate`
 - Phase 2: Promote contract-check from warning to hard merge block
 - Phase 2: Camunda 7 Migration project type + OpenRewrite integration
 - Post-MVP: Evaluate Scalar Spring Boot starter once Spring Boot 4 support confirmed
@@ -1451,3 +1389,17 @@ Each story is independently shippable behind no flag — the feature is invisibl
 - The `examples[].lastUpdated` value is **author-asserted**, not derived from GitHub commit info — keep it that way for v1 to avoid an extra commits API call per source.
 - `ExampleSourcesEndpoint` is the canonical place to learn what happened at load time. Stories that touch loader logic should add to its returned `Status` shape rather than introducing parallel logging-only diagnostics.
 - The cache directory is shared across all source repositories. Stories that introduce per-repo logic (eviction policy, allow/deny lists) should keep that boundary clean — the cache itself is dumb storage; policy lives in the loader/refresh path.
+
+---
+
+## Amendment 2026-07-14 — Archetype: Embedded Generation Client (Course Correction)
+
+**Driver:** Sprint change proposal, 2026-07-14 — `starter-archetypes` must not depend on the REST service; it embeds `starter-templates` and calls the generation engine directly.
+
+This amendment **reverses** a core decision, not additive scope: the original MVP/Phase-2 split designated `RestGenerationClient` as MVP and `EmbeddedGenerationClient` as Phase 2+. That is now inverted — embedded is the only implementation; the REST-based client is dropped from scope entirely, not deferred.
+
+**Why:** `starter-archetypes/pom.xml` already depended only on `starter-templates`, never on `starter-server` — the REST-first decision was never reflected in the actual module dependency graph. Embedding also removes the "developed last, gated on a deployed server" sequencing constraint — the module can now be built any time after `starter-templates` exists.
+
+**What changed:** every reference to `RestGenerationClient` as the MVP/current archetype client is corrected in place throughout this document (Technical Constraints, System Context Diagram, Implementation Sequence, Cross-component Dependencies, Architectural Boundaries diagram, Monorepo Structure tree, `starter-archetypes/README.md` spec, ADR #7, Areas for Future Enhancement).
+
+**Open question carried into story-writing:** standard Maven archetypes fill a static `archetype-resources/` tree via Velocity substitution — they don't normally invoke arbitrary Java calling `GenerationEngine.generate()`. How `mvn archetype:generate` actually triggers `EmbeddedGenerationClient` (custom Mojo? post-generate hook? something else) is not resolved here and should be pinned down in Story 9.1 (`epics.md`) before implementation, not during it.

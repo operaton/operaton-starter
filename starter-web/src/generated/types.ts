@@ -17,24 +17,6 @@ export interface ProjectConfig {
   dependencyUpdater?: 'DEPENDABOT' | 'RENOVATE'
   dockerCompose?: boolean
   githubActions?: boolean
-  useCaseId?: string
-}
-
-export interface UseCaseExample {
-  useCaseId: string
-  title: string
-  description: string
-  tags: Tag[]
-  projectType: string
-  buildSystem: 'MAVEN' | 'GRADLE_GROOVY' | 'GRADLE_KOTLIN'
-  defaultArtifactId: string
-  defaultProjectName: string
-  dockerCompose: boolean
-  processSummary?: string
-  bpmnConcepts?: string[]
-  integrations?: string[]
-  learnings?: string[]
-  templateManifest?: TemplateManifestEntry[]
 }
 
 export interface Author {
@@ -76,7 +58,6 @@ export interface Metadata {
   buildSystems: BuildSystemInfo[]
   globalOptions: GlobalOptions
   defaultGroupId?: string
-  useCaseExamples?: UseCaseExample[]
   examples?: Example[]
 }
 

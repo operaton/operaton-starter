@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Operaton Starter is a multi-channel project generator for the Operaton BPM ecosystem — similar to Spring Initializr, but for BPMN/DMN projects. All generation channels (web UI, REST API, CLI, MCP tool, Maven archetype) converge to a single entry point: `GenerationEngine.generate(ProjectConfig) → byte[]` in the `starter-templates` module.
+Operaton Starter is a multi-channel project generator for the Operaton BPM ecosystem — similar to Spring Initializr, but for BPMN/DMN projects. All generation channels (web UI, REST API, CLI, Maven archetype) converge to a single entry point: `GenerationEngine.generate(ProjectConfig) → byte[]` in the `starter-templates` module.
 
 ## Build Commands
 
@@ -52,7 +52,7 @@ cd starter-web && npm run lint
 
 ## Module Architecture
 
-This is a 6-module Maven monorepo. The dependency direction is: everything depends on `starter-templates`; nothing in `starter-templates` depends on Spring.
+This is a 5-module Maven monorepo. The dependency direction is: everything depends on `starter-templates`; nothing in `starter-templates` depends on Spring.
 
 ### `starter-templates` (Pure Java, zero Spring)
 The core domain and generation engine. Key types:
@@ -77,9 +77,6 @@ REST API layer. Controllers are generated from `openapi.yaml` (root level). Key 
 ### `starter-web` (Vue 3 + Vite + Tailwind CSS)
 Dual UI paths: **Practitioner** (form-first) and **Explorer** (gallery-first). The OpenAPI-generated client lives in `src/generated/` — never edit those files manually. Build system selection is a two-step UI: first Maven vs. Gradle, then DSL choice for Gradle.
 
-### `starter-mcp` (npm: `operaton-starter-mcp`)
-MCP server exposing a `generate_project` tool for Claude Desktop, GitHub Copilot, Cursor. Uses an OpenAPI-generated TypeScript client and Zod for schema validation.
-
 ### `starter-cli` (npm: `operaton-starter`)
 Entry: `npx operaton-starter`. Dual-mode: piping to stdout (scriptable) or interactive TTY via Commander.
 
@@ -90,7 +87,7 @@ Maven archetype integration. Uses a `GenerationClient` strategy interface; curre
 
 `openapi.yaml` at the repo root is the **single source of truth** for the API. It generates:
 - Spring server stubs in `starter-server`
-- TypeScript clients in `starter-web`, `starter-cli`, `starter-mcp`
+- TypeScript clients in `starter-web`, `starter-cli`
 
 Never hand-edit files in `target/generated-sources/` or `src/generated/`. To change the API, edit `openapi.yaml` and regenerate.
 
