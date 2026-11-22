@@ -9,7 +9,7 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
-      time: "00:45"
+      time: "01:10"
     reviewers:
       - "kthoms"
     target-branch: "main"
@@ -19,9 +19,6 @@ updates:
     ignore:
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
-      # Spring Boot upgrades beyond patch level are done deliberately
-      - dependency-name: "org.springframework.boot:*"
-        update-types: ["version-update:semver-major", "version-update:semver-minor"]
     labels:
       - "dependencies:maven"
     groups:
@@ -39,7 +36,7 @@ updates:
     directory: "/starter-web"
     schedule:
       interval: "cron"
-      cronjob: "15 2 * * 1,3,5"
+      cronjob: "33 2 * * 1,3,5"
     cooldown:
       default-days: 7
     reviewers:
@@ -71,7 +68,7 @@ updates:
     directory: "/starter-cli"
     schedule:
       interval: "cron"
-      cronjob: "30 2 * * 1,3,5"
+      cronjob: "33 2 * * 1,3,5"
     cooldown:
       default-days: 7
     reviewers:
@@ -87,7 +84,7 @@ updates:
     directory: "/"
     schedule:
       interval: "cron"
-      cronjob: "15 2 * * 1,3,5"
+      cronjob: "19 2 * * 1,3,5"
     cooldown:
       default-days: 7
     reviewers:
