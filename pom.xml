@@ -55,7 +55,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <operaton.version>2.0.0</operaton.version>
     <archunit.version>1.5.1</archunit.version>
-    <jte.version>3.1.12</jte.version>
+    <jte.version>3.1.16</jte.version>
     <frontend-maven-plugin.version>1.15.4</frontend-maven-plugin.version>
     <node.version>v22.14.0</node.version>
     <npm.version>10.9.2</npm.version>
