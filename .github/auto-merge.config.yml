@@ -1,0 +1,56 @@
+# Auto-merge configuration
+# Defines which pull requests the auto-merge workflow may approve and squash-merge
+# once all checks have passed and no review threads are unresolved.
+#
+# Rule format:
+# - author:   GitHub login of the PR author (e.g. 'dependabot[bot]')
+#   labels:   labels that must all be present on the PR (used with includes)
+#   includes: title patterns to allow (wildcards with *)
+#   excludes: title patterns that override includes (wildcards with *)
+#   title:    title pattern, alternative to labels + includes
+
+auto-merge-rules:
+  # npm dependencies (starter-web, starter-cli) - major updates are ignored in dependabot.yml
+  - author: 'dependabot[bot]'
+    labels: ['dependencies:npm']
+    includes:
+      - '*'
+
+  # npm security update PRs - Dependabot security alerts bypass the label configuration in
+  # dependabot.yml and get GitHub's default labels instead.
+  - author: 'dependabot[bot]'
+    labels: ['dependencies', 'javascript']
+    includes:
+      - '*'
+
+  # Maven dependencies that are safe to merge after a green build.
+  # Operaton BPM artifacts (org.operaton*) are intentionally NOT listed: review manually.
+  - author: 'dependabot[bot]'
+    labels: ['dependencies:maven']
+    includes:
+      - 'ch.qos.logback*'
+      - 'com.fasterxml.jackson*'
+      - 'com.tngtech.archunit*'
+      - 'gg.jte*'
+      - 'io.swagger*'
+      - 'org.assertj*'
+      - 'org.junit*'
+      - 'org.mockito*'
+      - 'org.openapitools*'
+      - 'org.slf4j*'
+      - 'tools.jackson*'
+      # Maven distribution for the Maven wrapper
+      - 'org.apache.maven:apache-maven'
+      # Dependency groups (see dependabot.yml)
+      - 'maven-plugins group'
+      - 'spring-boot group'
+
+  # GitHub Actions from GitHub (actions/*) can be auto-merged
+  - author: 'dependabot[bot]'
+    labels: ['dependencies:github-action']
+    includes:
+      - 'actions/*'
+      - 'github-actions group'
+
+# Note: 3rd party GitHub Actions (not actions/*) are NOT allowlisted - they require manual review.
+# Note: Docker base image updates are NOT allowlisted - they require manual review.
