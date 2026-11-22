@@ -32,6 +32,7 @@ auto-merge-rules:
       - 'com.tngtech.archunit*'
       - 'gg.jte*'
       - 'io.swagger*'
+      - 'org.apache.commons:commons-compress'
       - 'org.apache.maven.wrapper:maven-wrapper'
       - 'org.assertj*'
       - 'org.junit*'
