@@ -26,7 +26,8 @@ release:
     skipTag: false
     releaseName: '{{tagName}}'
     prerelease:
-      enabled: true
+      # Only versions with a preliminary qualifier (e.g. 1.1.0-M1, 1.1.0-RC1) are pre-releases
+      pattern: '.*-(M|RC|SNAPSHOT)[0-9]*'
     issues:
       enabled: true
       comment: '🎉 This issue has been resolved in `{{tagName}}` ([Release Notes]({{releaseNotesUrl}}))'
@@ -89,6 +90,9 @@ packagers:
     registries:
       - serverName: DEFAULT
     repository:
+      # Do not commit the generated Dockerfile back to the repository on every release
+      # (it would land on the default branch, also for releases from release/* branches).
+      active: NEVER
       owner: operaton
       name: operaton-starter
     buildx:

@@ -111,3 +111,106 @@ updates:
     target-branch: "main"
     labels:
       - "dependencies:docker"
+
+  # ---------------------------------------------------------------------------
+  # Maintenance branch release/1.0.x
+  # Patch updates only. They run on Mondays so that the auto-merge workflow can
+  # merge them before the weekly patch release (scheduled-release.yml, Tuesdays).
+  # When a new maintenance branch is created, copy this block and adjust
+  # target-branch; remove the block when the branch reaches end of life.
+  # ---------------------------------------------------------------------------
+  - package-ecosystem: "maven"
+    directory: "/"
+    target-branch: "release/1.0.x"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "00:40"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+    labels:
+      - "dependencies:maven"
+    groups:
+      spring-boot:
+        patterns:
+          - "org.springframework.boot:*"
+      maven-plugins:
+        patterns:
+          - "org.apache.maven.plugins:*"
+          - "org.codehaus.mojo:*"
+          - "org.openapitools:openapi-generator-maven-plugin"
+          - "com.github.eirslett:frontend-maven-plugin"
+
+  - package-ecosystem: "npm"
+    directory: "/starter-web"
+    target-branch: "release/1.0.x"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "00:40"
+    cooldown:
+      default-days: 3
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+    labels:
+      - "dependencies:npm"
+    groups:
+      npm-patches:
+        patterns:
+          - "*"
+
+  - package-ecosystem: "npm"
+    directory: "/starter-cli"
+    target-branch: "release/1.0.x"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "00:40"
+    cooldown:
+      default-days: 3
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+    labels:
+      - "dependencies:npm"
+    groups:
+      npm-patches:
+        patterns:
+          - "*"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    target-branch: "release/1.0.x"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "00:40"
+    cooldown:
+      default-days: 7
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+    labels:
+      - "dependencies:github-action"
+    groups:
+      github-actions:
+        patterns:
+          - "actions/*"
+      3rd-party-actions:
+        patterns:
+          - "*"
+
+  - package-ecosystem: "docker"
+    directory: "/"
+    target-branch: "release/1.0.x"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "00:40"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+    labels:
+      - "dependencies:docker"
