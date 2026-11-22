@@ -1,0 +1,96 @@
+# Path-based PR label rules for actions/labeler
+# Negative globs (!pattern) exclude paths within a match set.
+# sync-labels: true in the workflow removes stale labels automatically.
+
+lang:java:
+- changed-files:
+  - any-glob-to-any-file:
+    - '**/*.java'
+
+lang:javascript:
+- changed-files:
+  - any-glob-to-any-file:
+    - '**/*.js'
+    - '**/*.ts'
+    - '**/*.mjs'
+    - '**/*.vue'
+
+documentation:
+- changed-files:
+  - any-glob-to-any-file:
+    - '**/*.md'
+    - 'docs/**'
+
+scope:build:
+- changed-files:
+  - any-glob-to-any-file:
+    - '.mvn/**'
+    - 'mvnw'
+    - 'mvnw.cmd'
+    - '**/pom.xml'
+
+scope:ci:
+- changed-files:
+  - any-glob-to-any-file:
+    - '.github/**'
+    - 'jreleaser.yml'
+    - 'src/jreleaser/**'
+
+scope:docker:
+- changed-files:
+  - any-glob-to-any-file:
+    - 'Dockerfile'
+    - 'docker-compose*.yml'
+    - 'src/jreleaser/**/docker/**'
+
+scope:tests:
+- changed-files:
+  - any-glob-to-any-file:
+    - '**/src/test/**'
+    - '**/__tests__/**'
+    - '**/*.test.ts'
+    - '**/*.spec.ts'
+
+scope:templates:
+- all:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'starter-templates/**'
+    - any-glob-to-any-file:
+      - '!**/src/test/**'
+
+scope:server:
+- all:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'starter-server/**'
+    - any-glob-to-any-file:
+      - '!**/src/test/**'
+      - '!starter-server/src/main/resources/static/**'
+
+scope:web:
+- all:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'starter-web/**'
+    - any-glob-to-any-file:
+      - '!starter-web/node_modules/**'
+      - '!**/__tests__/**'
+
+scope:cli:
+- all:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'starter-cli/**'
+    - any-glob-to-any-file:
+      - '!starter-cli/node_modules/**'
+
+scope:archetypes:
+- changed-files:
+  - any-glob-to-any-file:
+    - 'starter-archetypes/**'
+
+api:openapi:
+- changed-files:
+  - any-glob-to-any-file:
+    - 'openapi.yaml'

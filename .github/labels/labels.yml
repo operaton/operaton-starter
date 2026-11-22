@@ -1,0 +1,136 @@
+# GitHub labels for operaton-starter (modeled after operaton/operaton)
+# Format: https://github.com/crazy-max/ghaction-github-labeler
+# Synced to the repository by .github/workflows/sync-labels.yml on pushes to main.
+
+# Issue type
+- name: "bug"
+  color: "#d73a4a"
+  description: "Something isn't working"
+
+- name: "enhancement"
+  color: "#a2eeef"
+  description: "New feature or request"
+
+- name: "documentation"
+  color: "#0075ca"
+  description: "Improvements or additions to documentation"
+
+- name: "question"
+  color: "#d876e3"
+  description: "Further information is requested"
+
+# Community
+- name: "good first issue"
+  color: "#7057ff"
+  description: "Good for newcomers"
+
+- name: "help wanted"
+  color: "#008672"
+  description: "Extra attention is needed"
+
+# Resolution
+- name: "duplicate"
+  color: "#cfd3d7"
+  description: "This issue or pull request already exists"
+
+- name: "invalid"
+  color: "#e4e669"
+  description: "This doesn't seem right"
+
+- name: "wontfix"
+  color: "#ffffff"
+  description: "This will not be worked on"
+
+# Release
+- name: "released"
+  color: "#8ddd84"
+  description: "Issue has been released"
+
+# Language
+- name: "lang:java"
+  color: "#ffa221"
+  description: "Pull requests that update Java code"
+
+- name: "lang:javascript"
+  color: "#168700"
+  description: "Pull requests that update JavaScript/TypeScript code"
+
+# Default labels Dependabot applies to security update PRs
+- name: "java"
+  color: "#ffa221"
+  description: "Pull requests that update Java code"
+
+- name: "javascript"
+  color: "#168700"
+  description: "Pull requests that update Javascript code"
+
+# Dependencies
+- name: "dependencies"
+  color: "#0366d6"
+  description: "Changes that update a dependency"
+
+- name: "dependencies:maven"
+  color: "#0366d6"
+  description: "Updates of Maven dependencies"
+
+- name: "dependencies:npm"
+  color: "#0366d6"
+  description: "Updates of npm dependencies"
+
+- name: "dependencies:github-action"
+  color: "#0366d6"
+  description: "Updates of GitHub actions"
+
+- name: "dependencies:docker"
+  color: "#0366d6"
+  description: "Updates of Docker base images"
+
+# Integration
+- name: "integration:spring-boot"
+  color: "#ec6de6"
+  description: "Spring Boot dependencies"
+
+- name: "integration:operaton"
+  color: "#ec6de6"
+  description: "Operaton BPM dependencies"
+
+# Scope
+- name: "scope:build"
+  color: "#FEF1B4"
+  description: "Changes affecting the build, e.g. Maven configuration, shell scripts"
+
+- name: "scope:ci"
+  color: "#FEF1B4"
+  description: "Changes to CI/CD, GitHub Actions workflows and release automation"
+
+- name: "scope:tests"
+  color: "#FEF1B4"
+  description: "Changes to tests"
+
+- name: "scope:docker"
+  color: "#FEF1B4"
+  description: "Changes to Docker packaging"
+
+- name: "scope:templates"
+  color: "#C2E0C6"
+  description: "starter-templates: generation engine and project templates"
+
+- name: "scope:server"
+  color: "#C2E0C6"
+  description: "starter-server: REST API (Spring Boot)"
+
+- name: "scope:web"
+  color: "#C2E0C6"
+  description: "starter-web: Vue web UI"
+
+- name: "scope:cli"
+  color: "#C2E0C6"
+  description: "starter-cli: command line interface"
+
+- name: "scope:archetypes"
+  color: "#C2E0C6"
+  description: "starter-archetypes: Maven archetype integration"
+
+- name: "api:openapi"
+  color: "#C2E0C6"
+  description: "Changes to the OpenAPI contract (openapi.yaml)"
