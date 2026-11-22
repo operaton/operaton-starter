@@ -1,0 +1,91 @@
+name: Scheduled Patch Release
+
+# Releases every maintenance branch (release/X.Y.x) once a week as its next patch version.
+# Scheduled workflows only run on the default branch, so this workflow lives on main and
+# dispatches the Release workflow (release.yml) on each eligible release branch.
+#
+# A branch is released when
+#   - its name matches release/X.Y.x,
+#   - its project version is X.Y.Z-SNAPSHOT (same X.Y as the branch name), and
+#   - it has commits since the last release, i.e. its HEAD is not the
+#     "[releng] Bump version to ..." commit written by the Release workflow.
+#
+# After each release, release.yml sets the branch to the next patch SNAPSHOT version.
+
+on:
+  schedule:
+    # Every Tuesday at 05:17 UTC (after the nightly Dependabot/auto-merge runs)
+    - cron: '17 5 * * 2'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dispatch the Release workflow in dry-run mode'
+        type: boolean
+        required: true
+        default: true
+      branch:
+        description: 'Only consider this release branch (e.g. release/1.0.x). Leave empty for all.'
+        required: false
+        default: ''
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  dispatch:
+    name: Dispatch patch releases
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+      contents: read
+    steps:
+      - name: Dispatch Release workflow for eligible release branches
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          # Scheduled runs are always real releases; manual runs default to dry-run
+          DRY_RUN: ${{ github.event_name == 'schedule' && 'false' || inputs.dry_run }}
+          ONLY_BRANCH: ${{ inputs.branch }}
+        run: |
+          set -euo pipefail
+
+          branches=$(gh api --paginate "repos/$REPO/branches?per_page=100" --jq '.[].name' \
+            | grep -E '^release/[0-9]+\.[0-9]+\.x$' || true)
+          if [ -n "$ONLY_BRANCH" ]; then
+            branches=$(echo "$branches" | grep -Fx "$ONLY_BRANCH" || true)
+          fi
+          if [ -z "$branches" ]; then
+            echo "No release branches found."
+            exit 0
+          fi
+
+          dispatched=0
+          for branch in $branches; do
+            echo "::group::$branch"
+            line="${branch#release/}"; line="${line%.x}"   # e.g. 1.0
+
+            head_message=$(gh api "repos/$REPO/commits/$branch" --jq '.commit.message' | head -n 1)
+            if [[ "$head_message" == "[releng] Bump version to "* ]]; then
+              echo "No changes since the last release (HEAD: '$head_message'), skipping."
+              echo "::endgroup::"; continue
+            fi
+
+            version=$(gh api -H 'Accept: application/vnd.github.raw' "repos/$REPO/contents/pom.xml?ref=$branch" \
+              | python3 -c 'import sys, xml.etree.ElementTree as ET
+          ns = {"m": "http://maven.apache.org/POM/4.0.0"}
+          print(ET.parse(sys.stdin).getroot().find("m:version", ns).text)')
+            if [[ ! "$version" =~ ^${line//./\\.}\.[0-9]+-SNAPSHOT$ ]]; then
+              echo "::warning::$branch has version '$version', expected ${line}.Z-SNAPSHOT. Skipping."
+              echo "::endgroup::"; continue
+            fi
+
+            echo "Dispatching release of ${version%-SNAPSHOT} on $branch (dry_run=$DRY_RUN)"
+            gh workflow run release.yml --repo "$REPO" --ref "$branch" -f dry_run="$DRY_RUN"
+            dispatched=$((dispatched + 1))
+            echo "::endgroup::"
+          done
+
+          echo "Dispatched $dispatched release(s)." >> "$GITHUB_STEP_SUMMARY"

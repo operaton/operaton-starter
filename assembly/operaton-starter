@@ -1,6 +1,6 @@
 #!/bin/sh
-# Generated with JReleaser 1.25.0 at 2026-07-09T11:55:42.927532147Z
+# Generated with JReleaser 1.27.0 at 2026-11-22T06:26:55.34169842Z
 
 $JAVA_HOME/bin/java $JAVA_OPTS \
-    -jar /operaton-starter-0.1.0/lib/starter-server-0.1.0.jar \
+    -jar /operaton-starter-1.0.0/lib/starter-server-1.0.0.jar \
     "$@"
