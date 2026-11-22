@@ -11,6 +11,9 @@ on:
     paths:
       - "starter-templates/src/main/jte/**"
 
+permissions:
+  contents: read
+
 jobs:
   detect:
     name: Detect Affected Combinations
@@ -19,14 +22,17 @@ jobs:
       matrix: ${{ steps.compute.outputs.matrix }}
       has-combinations: ${{ steps.compute.outputs.has-combinations }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Compute affected matrix
         id: compute
+        env:
+          BASE_REF: ${{ github.base_ref }}
         run: |
-          bash .github/scripts/affected-combinations.sh "origin/${{ github.base_ref }}" > /tmp/matrix.json
+          bash .github/scripts/affected-combinations.sh "origin/${BASE_REF}" > /tmp/matrix.json
           cat /tmp/matrix.json
           matrix=$(cat /tmp/matrix.json)
           echo "matrix=${matrix}" >> "$GITHUB_OUTPUT"
@@ -37,9 +43,12 @@ jobs:
           fi
 
       - name: Log result
+        env:
+          HAS_COMBINATIONS: ${{ steps.compute.outputs.has-combinations }}
+          MATRIX: ${{ steps.compute.outputs.matrix }}
         run: |
-          echo "has-combinations: ${{ steps.compute.outputs.has-combinations }}"
-          echo "matrix: ${{ steps.compute.outputs.matrix }}"
+          echo "has-combinations: ${HAS_COMBINATIONS}"
+          echo "matrix: ${MATRIX}"
 
   validate:
     name: Validate (${{ matrix.projectType }} × ${{ matrix.buildSystem }})
@@ -52,14 +61,16 @@ jobs:
         include: ${{ fromJson(needs.detect.outputs.matrix) }}
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Set up Java 21
-        uses: actions/setup-java@v6
+        uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
         with:
           distribution: temurin
           java-version: "21"
-          cache: maven
+          cache: maven  # zizmor: ignore[cache-poisoning] only builds and tests, publishes nothing; release.yml uses no caches
 
       - name: Build server JAR (skip tests for speed)
         run: mvn package -pl starter-server -am --batch-mode -DskipTests -q
