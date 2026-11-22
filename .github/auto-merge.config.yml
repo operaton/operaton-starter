@@ -24,7 +24,6 @@ auto-merge-rules:
       - '*'
 
   # Maven dependencies that are safe to merge after a green build.
-  # Operaton BPM artifacts (org.operaton*) are intentionally NOT listed: review manually.
   - author: 'dependabot[bot]'
     labels: ['dependencies:maven']
     includes:
@@ -33,17 +32,22 @@ auto-merge-rules:
       - 'com.tngtech.archunit*'
       - 'gg.jte*'
       - 'io.swagger*'
+      - 'org.apache.maven.wrapper:maven-wrapper'
       - 'org.assertj*'
       - 'org.junit*'
       - 'org.mockito*'
       - 'org.openapitools*'
+      - 'org.operaton.bpm:*'
       - 'org.slf4j*'
+      - 'org.wiremock:*'
       - 'tools.jackson*'
       # Maven distribution for the Maven wrapper
       - 'org.apache.maven:apache-maven'
       # Dependency groups (see dependabot.yml)
       - 'maven-plugins group'
       - 'spring-boot group'
+      # version properties
+      - 'jte.version'
 
   # GitHub Actions from GitHub (actions/*) can be auto-merged
   - author: 'dependabot[bot]'

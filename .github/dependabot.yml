@@ -31,6 +31,7 @@ updates:
           - "org.codehaus.mojo:*"
           - "org.openapitools:openapi-generator-maven-plugin"
           - "com.github.eirslett:frontend-maven-plugin"
+          - "org.sonatype.central:central-publishing-maven-plugin"
 
   - package-ecosystem: "npm"
     directory: "/starter-web"
