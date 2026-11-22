@@ -1,0 +1,116 @@
+# Dependabot version updates (modeled after operaton/operaton).
+# Auto-merge of eligible PRs is handled by .github/workflows/auto-merge.yml
+# according to .github/auto-merge.config.yml.
+# The labels below must exist in the repository for the auto-merge rules to match.
+
+version: 2
+updates:
+  - package-ecosystem: "maven"
+    directory: "/"
+    schedule:
+      interval: "daily"
+      time: "00:45"
+    reviewers:
+      - "kthoms"
+    target-branch: "main"
+    cooldown:  # zizmor: ignore[dependabot-cooldown] Spring Boot patches wanted immediately; intentional zero cooldown
+      exclude:
+        - "org.springframework.boot:*"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+      # Spring Boot upgrades beyond patch level are done deliberately
+      - dependency-name: "org.springframework.boot:*"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+    labels:
+      - "dependencies:maven"
+    groups:
+      spring-boot:
+        patterns:
+          - "org.springframework.boot:*"
+      maven-plugins:
+        patterns:
+          - "org.apache.maven.plugins:*"
+          - "org.codehaus.mojo:*"
+          - "org.openapitools:openapi-generator-maven-plugin"
+          - "com.github.eirslett:frontend-maven-plugin"
+
+  - package-ecosystem: "npm"
+    directory: "/starter-web"
+    schedule:
+      interval: "cron"
+      cronjob: "15 2 * * 1,3,5"
+    cooldown:
+      default-days: 7
+    reviewers:
+      - "kthoms"
+    target-branch: "main"
+    labels:
+      - "dependencies:npm"
+    groups:
+      vue:
+        patterns:
+          - "vue*"
+          - "@vue/*"
+          - "pinia"
+      eslint:
+        patterns:
+          - "eslint*"
+          - "@eslint/*"
+          - "typescript-eslint"
+          - "prettier"
+      vitest:
+        patterns:
+          - "vitest"
+          - "@vitest/*"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: "npm"
+    directory: "/starter-cli"
+    schedule:
+      interval: "cron"
+      cronjob: "30 2 * * 1,3,5"
+    cooldown:
+      default-days: 7
+    reviewers:
+      - "kthoms"
+    target-branch: "main"
+    labels:
+      - "dependencies:npm"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "cron"
+      cronjob: "15 2 * * 1,3,5"
+    cooldown:
+      default-days: 7
+    reviewers:
+      - "kthoms"
+    target-branch: "main"
+    labels:
+      - "dependencies:github-action"
+    groups:
+      github-actions:
+        patterns:
+          - "actions/*"
+      3rd-party-actions:
+        patterns:
+          - "*"
+
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 7
+    reviewers:
+      - "kthoms"
+    target-branch: "main"
+    labels:
+      - "dependencies:docker"
