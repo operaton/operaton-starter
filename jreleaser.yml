@@ -25,6 +25,8 @@ release:
     draft: false
     skipTag: false
     releaseName: '{{tagName}}'
+    # release.yml switches this to false for patch releases of older release lines
+    makeLatest: true
     prerelease:
       # Only versions with a preliminary qualifier (e.g. 1.1.0-M1, 1.1.0-RC1) are pre-releases
       pattern: '.*-(M|RC|SNAPSHOT)[0-9]*'
