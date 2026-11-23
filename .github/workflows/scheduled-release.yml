@@ -1,6 +1,9 @@
 name: Scheduled Patch Release
 
-# Releases every maintenance branch (release/X.Y.x) once a week as its next patch version.
+# Releases every maintenance branch (release/X.Y.x) once a month as its next patch version,
+# on the Monday after the Operaton release Friday. Operaton publishes its monthly patch
+# releases on the second-to-last Friday of the month (https://operaton.org/roadmap/), so the
+# starter picks up the new Operaton version (via Dependabot/auto-merge) and releases three days later.
 # Scheduled workflows only run on the default branch, so this workflow lives on main and
 # dispatches the Release workflow (release.yml) on each eligible release branch.
 #
@@ -14,8 +17,9 @@ name: Scheduled Patch Release
 
 on:
   schedule:
-    # Every Tuesday at 05:17 UTC (after the nightly Dependabot/auto-merge runs)
-    - cron: '17 5 * * 2'
+    # Every Monday at 05:17 UTC; the job only proceeds on the Monday after the
+    # second-to-last Friday of the month (cron cannot express that directly).
+    - cron: '17 5 * * 1'
   workflow_dispatch:
     inputs:
       dry_run:
@@ -51,6 +55,19 @@ jobs:
           ONLY_BRANCH: ${{ inputs.branch }}
         run: |
           set -euo pipefail
+
+          if [ "$GITHUB_EVENT_NAME" = "schedule" ]; then
+            # Release Friday = second-to-last Friday of the month: one more Friday follows
+            # within the same month, but not two.
+            friday=$(date -u -d '3 days ago' +%F)
+            month=$(date -u -d "$friday" +%m)
+            if [ "$(date -u -d "$friday + 7 days" +%m)" != "$month" ] \
+              || [ "$(date -u -d "$friday + 14 days" +%m)" = "$month" ]; then
+              echo "$friday was not the Operaton release Friday, nothing to do." | tee -a "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            echo "$friday was the Operaton release Friday, releasing."
+          fi
 
           branches=$(gh api --paginate "repos/$REPO/branches?per_page=100" --jq '.[].name' \
             | grep -E '^release/[0-9]+\.[0-9]+\.x$' || true)
